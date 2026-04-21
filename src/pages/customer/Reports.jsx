@@ -1,0 +1,117 @@
+import React from 'react'
+import { FileText, Download, Calendar, Shield, BarChart3, TrendingUp, CheckCircle } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
+
+const monthlyData = [
+  { month: 'יוני', blocked: 245, phishing: 98, malware: 67, bec: 80 },
+  { month: 'יולי', blocked: 312, phishing: 120, malware: 89, bec: 103 },
+  { month: 'אוג׳', blocked: 289, phishing: 115, malware: 71, bec: 103 },
+  { month: 'ספט׳', blocked: 380, phishing: 148, malware: 95, bec: 137 },
+  { month: 'אוק׳', blocked: 421, phishing: 162, malware: 108, bec: 151 },
+  { month: 'נוב׳', blocked: 356, phishing: 140, malware: 91, bec: 125 },
+]
+
+const reports = [
+  { title: 'דוח אבטחה חודשי — נובמבר 2025', type: 'Monthly', date: '01/12/2025', size: '2.4 MB' },
+  { title: 'דוח אבטחה חודשי — אוקטובר 2025', type: 'Monthly', date: '01/11/2025', size: '2.1 MB' },
+  { title: 'דוח Threat Intelligence — Q3 2025', type: 'Quarterly', date: '01/10/2025', size: '5.8 MB' },
+  { title: 'דוח עמידה בתקנים — ISO 27001', type: 'Compliance', date: '15/09/2025', size: '3.2 MB' },
+  { title: 'דוח Executive — Q3 2025', type: 'Executive', date: '01/10/2025', size: '1.1 MB' },
+]
+
+const typeColors = {
+  Monthly: 'badge-blue',
+  Quarterly: 'badge-amber',
+  Compliance: 'badge-green',
+  Executive: 'badge-blue',
+}
+
+export default function CustomerReports() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">דוחות</h1>
+        <p className="text-slate-500 text-sm mt-0.5">Reports & Analytics</p>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          { label: 'נחסמו ב-30 יום', value: '356', icon: Shield, color: 'text-emerald-400', bg: 'bg-emerald-600/15' },
+          { label: 'Phishing שנחסמו', value: '140', icon: BarChart3, color: 'text-red-400', bg: 'bg-red-600/15' },
+          { label: 'Malware שנחסמו', value: '91', icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-600/15' },
+          { label: 'Security Score', value: '98%', icon: CheckCircle, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
+        ].map(s => (
+          <div key={s.label} className="stat-card">
+            <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
+              <s.icon className={`w-4 h-4 ${s.color}`} />
+            </div>
+            <div className="text-2xl font-bold text-white">{s.value}</div>
+            <div className="text-xs text-slate-500 mt-0.5">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Chart */}
+      <div className="glass glow-border rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="font-semibold text-white text-sm">איומים שנחסמו — 6 חודשים</div>
+            <div className="text-xs text-slate-500">Threat Blocking Trends</div>
+          </div>
+          <div className="flex gap-3 text-[10px]">
+            {[{ color: '#5B9BB8', label: 'Phishing' }, { color: '#ef4444', label: 'Malware' }, { color: '#f59e0b', label: 'BEC' }].map(l => (
+              <div key={l.label} className="flex items-center gap-1 text-slate-500">
+                <div className="w-2 h-2 rounded-full" style={{ background: l.color }}></div>
+                {l.label}
+              </div>
+            ))}
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={monthlyData} barSize={14} barGap={4}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+            <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis hide />
+            <Tooltip
+              contentStyle={{ background: '#0a1428', border: '1px solid rgba(44,106,138,0.2)', borderRadius: 8, fontSize: 11 }}
+            />
+            <Bar dataKey="phishing" fill="#5B9BB8" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="malware" fill="#ef4444" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="bec" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Reports List */}
+      <div className="glass glow-border rounded-2xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-white/8 flex items-center justify-between">
+          <div className="font-semibold text-white text-sm">דוחות זמינים להורדה</div>
+          <span className="badge-blue text-xs">{reports.length} דוחות</span>
+        </div>
+        {reports.map((r, i) => (
+          <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-white/[0.04] hover:bg-white/[0.02] transition-all group cursor-pointer">
+            <div className="w-9 h-9 rounded-xl bg-cdata-500/15 border border-cdata-500/15 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-4 h-4 text-cdata-300" />
+            </div>
+            <div className="flex-1">
+              <div className="font-medium text-white text-sm">{r.title}</div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`text-[10px] ${typeColors[r.type]}`}>{r.type}</span>
+                <span className="text-[10px] text-slate-600 flex items-center gap-1">
+                  <Calendar className="w-2.5 h-2.5" />
+                  {r.date}
+                </span>
+                <span className="text-[10px] text-slate-600">{r.size}</span>
+              </div>
+            </div>
+            <button className="flex items-center gap-1.5 text-xs text-cdata-300 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+              <Download className="w-3.5 h-3.5" />
+              הורד
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

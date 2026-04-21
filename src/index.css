@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    background-color: #07111E;
+    color: #e2e8f0;
+    font-family: 'Inter', system-ui, sans-serif;
+    direction: rtl;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0B1929; }
+  ::-webkit-scrollbar-thumb { background: #1A3450; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2C6A8A; }
+}
+
+@layer components {
+  /* Glass — C-Data navy tones */
+  .glass {
+    background: rgba(11, 25, 41, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(44, 106, 138, 0.12);
+  }
+
+  .glass-strong {
+    background: rgba(7, 17, 30, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(44, 106, 138, 0.15);
+  }
+
+  /* Glow borders — C-Data blue */
+  .glow-border {
+    border: 1px solid rgba(44, 106, 138, 0.25);
+    box-shadow: 0 0 24px rgba(44, 106, 138, 0.06), inset 0 0 16px rgba(44, 106, 138, 0.02);
+  }
+  .glow-border:hover {
+    border-color: rgba(44, 106, 138, 0.45);
+    box-shadow: 0 0 32px rgba(44, 106, 138, 0.12);
+  }
+
+  /* Glow border — SpotNet orange accent */
+  .glow-border-orange {
+    border: 1px solid rgba(245, 124, 32, 0.25);
+    box-shadow: 0 0 24px rgba(245, 124, 32, 0.06);
+  }
+  .glow-border-orange:hover {
+    border-color: rgba(245, 124, 32, 0.45);
+    box-shadow: 0 0 32px rgba(245, 124, 32, 0.12);
+  }
+
+  /* Gradients */
+  .text-gradient {
+    background: linear-gradient(135deg, #2C6A8A 0%, #5B9BB8 50%, #87BFDA 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-orange {
+    background: linear-gradient(135deg, #F57C20 0%, #FAB97A 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-hero {
+    background: linear-gradient(135deg, #87BFDA 0%, #5B9BB8 40%, #F57C20 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-cdata-500 hover:bg-cdata-400 text-white font-semibold px-5 py-2.5 rounded-lg transition-all duration-200;
+    box-shadow: 0 4px 15px rgba(44, 106, 138, 0.3);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 6px 25px rgba(44, 106, 138, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn-orange {
+    @apply bg-spot-500 hover:bg-spot-400 text-white font-semibold px-5 py-2.5 rounded-lg transition-all duration-200;
+    box-shadow: 0 4px 15px rgba(245, 124, 32, 0.3);
+  }
+  .btn-orange:hover {
+    box-shadow: 0 6px 25px rgba(245, 124, 32, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn-ghost {
+    @apply border border-white/10 hover:border-cdata-500/40 text-slate-300 hover:text-white font-medium px-5 py-2.5 rounded-lg transition-all duration-200;
+  }
+
+  /* Cards */
+  .stat-card {
+    @apply glass rounded-xl p-5 glow-border transition-all duration-300;
+  }
+
+  /* Nav */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 cursor-pointer;
+  }
+  .nav-item.active {
+    @apply text-cdata-300 bg-cdata-500/10;
+    border-right: 2px solid #5B9BB8;
+  }
+  .nav-item-customer.active {
+    color: #87BFDA;
+    background: rgba(44, 106, 138, 0.1);
+    border-right: 2px solid #87BFDA;
+  }
+
+  /* Badges */
+  .badge-blue {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-cdata-500/15 text-cdata-300 border border-cdata-500/25;
+  }
+  .badge-orange {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-spot-500/15 text-spot-400 border border-spot-500/25;
+  }
+  .badge-green {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20;
+  }
+  .badge-amber {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/20;
+  }
+  .badge-red {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/15 text-red-400 border border-red-500/20;
+  }
+  .badge-steel {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-steel-500/15 text-steel-400 border border-steel-500/20;
+  }
+}
+
+@layer utilities {
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(44, 106, 138, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(44, 106, 138, 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .bg-radial-cdata {
+    background: radial-gradient(ellipse at 60% 0%, rgba(44, 106, 138, 0.1) 0%, transparent 65%);
+  }
+  .bg-radial-spotnet {
+    background: radial-gradient(ellipse at 30% 80%, rgba(245, 124, 32, 0.06) 0%, transparent 55%);
+  }
+
+  /* Sidebar accent line */
+  .sidebar-cdata {
+    border-left: 1px solid rgba(44, 106, 138, 0.12);
+  }
+}
