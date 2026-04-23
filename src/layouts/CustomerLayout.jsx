@@ -1,19 +1,21 @@
 import React from 'react'
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
-  Home, Shield, Users, Activity, Layers, FileText,
-  HelpCircle, Bell, LogOut, CheckCircle
+  Home, Users, Monitor, Globe2, ShieldCheck, AlertTriangle,
+  Key, FileText, Settings2, Bell, LogOut, CheckCircle
 } from 'lucide-react'
 import { CDataLogo, CDataMark } from '../components/Logos'
 
 const navItems = [
-  { icon: Home,      label: 'Overview',        labelHe: 'סקירה כללית',   path: '/customer/overview' },
-  { icon: Shield,    label: 'Security Status', labelHe: 'סטטוס הגנה',    path: '/customer/security' },
-  { icon: Users,     label: 'Users',           labelHe: 'משתמשים',        path: '/customer/users' },
-  { icon: Activity,  label: 'Activity',        labelHe: 'פעילות',         path: '/customer/activity' },
-  { icon: Layers,    label: 'Services',        labelHe: 'שירותים',        path: '/customer/services' },
-  { icon: FileText,  label: 'Reports',         labelHe: 'דוחות',          path: '/customer/reports' },
-  { icon: HelpCircle,label: 'Support',         labelHe: 'תמיכה',          path: '/customer/support' },
+  { icon: Home,          label: 'Overview',  labelHe: 'סקירה כללית', path: '/customer/overview' },
+  { icon: Users,         label: 'Users',     labelHe: 'משתמשים',     path: '/customer/users' },
+  { icon: Monitor,       label: 'Devices',   labelHe: 'התקנים',      path: '/customer/devices' },
+  { icon: Globe2,        label: 'Sites',     labelHe: 'אתרים',       path: '/customer/sites' },
+  { icon: ShieldCheck,   label: 'Policies',  labelHe: 'מדיניות',     path: '/customer/policies' },
+  { icon: AlertTriangle, label: 'Alerts',    labelHe: 'התראות',      path: '/customer/alerts' },
+  { icon: Key,           label: 'Licenses',  labelHe: 'רישיונות',    path: '/customer/licenses' },
+  { icon: FileText,      label: 'Reports',   labelHe: 'דוחות',       path: '/customer/reports' },
+  { icon: Settings2,     label: 'Settings',  labelHe: 'הגדרות',      path: '/customer/settings' },
 ]
 
 export default function CustomerLayout() {

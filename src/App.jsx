@@ -2,51 +2,81 @@ import React, { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
-const PartnerLayout = lazy(() => import('./layouts/PartnerLayout'))
+
+// Layouts
+const DistributorLayout = lazy(() => import('./layouts/DistributorLayout'))
+const IntegratorLayout = lazy(() => import('./layouts/IntegratorLayout'))
 const CustomerLayout = lazy(() => import('./layouts/CustomerLayout'))
-const PartnerDashboard = lazy(() => import('./pages/partner/Dashboard'))
-const PartnerSolutions = lazy(() => import('./pages/partner/Solutions'))
-const PartnerSolutionDetail = lazy(() => import('./pages/partner/SolutionDetail'))
-const PartnerCompare = lazy(() => import('./pages/partner/Compare'))
-const PartnerOpportunities = lazy(() => import('./pages/partner/Opportunities'))
-const PartnerSalesKit = lazy(() => import('./pages/partner/SalesKit'))
-const PartnerCustomers = lazy(() => import('./pages/partner/Customers'))
+
+// Distributor pages
+const DistributorDashboard = lazy(() => import('./pages/distributor/Dashboard'))
+const IntegratorsList = lazy(() => import('./pages/distributor/IntegratorsList'))
+const CreateIntegrator = lazy(() => import('./pages/distributor/CreateIntegrator'))
+const IntegratorProfile = lazy(() => import('./pages/distributor/IntegratorProfile'))
+const DistributorReports = lazy(() => import('./pages/distributor/Reports'))
+const DistributorSettings = lazy(() => import('./pages/distributor/Settings'))
+
+// Integrator pages
+const IntegratorDashboard = lazy(() => import('./pages/integrator/Dashboard'))
+const CustomersList = lazy(() => import('./pages/integrator/CustomersList'))
+const CreateCustomer = lazy(() => import('./pages/integrator/CreateCustomer'))
+const IntegratorCustomerProfile = lazy(() => import('./pages/integrator/CustomerProfile'))
+const IntegratorOnboarding = lazy(() => import('./pages/integrator/Onboarding'))
+const IntegratorReports = lazy(() => import('./pages/integrator/Reports'))
+const IntegratorSettings = lazy(() => import('./pages/integrator/Settings'))
+
+// Customer pages
 const CustomerOverview = lazy(() => import('./pages/customer/Overview'))
-const CustomerSecurity = lazy(() => import('./pages/customer/Security'))
 const CustomerUsers = lazy(() => import('./pages/customer/Users'))
-const CustomerActivity = lazy(() => import('./pages/customer/Activity'))
-const CustomerServices = lazy(() => import('./pages/customer/Services'))
+const CustomerDevices = lazy(() => import('./pages/customer/Devices'))
+const CustomerSites = lazy(() => import('./pages/customer/Sites'))
+const CustomerPolicies = lazy(() => import('./pages/customer/Policies'))
+const CustomerAlerts = lazy(() => import('./pages/customer/Alerts'))
+const CustomerLicenses = lazy(() => import('./pages/customer/Licenses'))
 const CustomerReports = lazy(() => import('./pages/customer/Reports'))
-const CustomerSupport = lazy(() => import('./pages/customer/Support'))
+const CustomerSettings = lazy(() => import('./pages/customer/Settings'))
 
 export default function App() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+    <Suspense fallback={<div className="min-h-screen bg-navy-900" />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
 
-        {/* Partner Portal */}
-        <Route path="/partner" element={<PartnerLayout />}>
-          <Route index element={<Navigate to="/partner/dashboard" replace />} />
-          <Route path="dashboard" element={<PartnerDashboard />} />
-          <Route path="solutions" element={<PartnerSolutions />} />
-          <Route path="solutions/:id" element={<PartnerSolutionDetail />} />
-          <Route path="compare" element={<PartnerCompare />} />
-          <Route path="opportunities" element={<PartnerOpportunities />} />
-          <Route path="sales-kit" element={<PartnerSalesKit />} />
-          <Route path="customers" element={<PartnerCustomers />} />
+        {/* Distributor Portal */}
+        <Route path="/distribution" element={<DistributorLayout />}>
+          <Route index element={<Navigate to="/distribution/dashboard" replace />} />
+          <Route path="dashboard" element={<DistributorDashboard />} />
+          <Route path="integrators" element={<IntegratorsList />} />
+          <Route path="integrators/new" element={<CreateIntegrator />} />
+          <Route path="integrators/:id" element={<IntegratorProfile />} />
+          <Route path="reports" element={<DistributorReports />} />
+          <Route path="settings" element={<DistributorSettings />} />
+        </Route>
+
+        {/* Integrator Portal */}
+        <Route path="/integrator" element={<IntegratorLayout />}>
+          <Route index element={<Navigate to="/integrator/dashboard" replace />} />
+          <Route path="dashboard" element={<IntegratorDashboard />} />
+          <Route path="customers" element={<CustomersList />} />
+          <Route path="customers/new" element={<CreateCustomer />} />
+          <Route path="customers/:id" element={<IntegratorCustomerProfile />} />
+          <Route path="onboarding" element={<IntegratorOnboarding />} />
+          <Route path="reports" element={<IntegratorReports />} />
+          <Route path="settings" element={<IntegratorSettings />} />
         </Route>
 
         {/* Customer Portal */}
         <Route path="/customer" element={<CustomerLayout />}>
           <Route index element={<Navigate to="/customer/overview" replace />} />
           <Route path="overview" element={<CustomerOverview />} />
-          <Route path="security" element={<CustomerSecurity />} />
           <Route path="users" element={<CustomerUsers />} />
-          <Route path="activity" element={<CustomerActivity />} />
-          <Route path="services" element={<CustomerServices />} />
+          <Route path="devices" element={<CustomerDevices />} />
+          <Route path="sites" element={<CustomerSites />} />
+          <Route path="policies" element={<CustomerPolicies />} />
+          <Route path="alerts" element={<CustomerAlerts />} />
+          <Route path="licenses" element={<CustomerLicenses />} />
           <Route path="reports" element={<CustomerReports />} />
-          <Route path="support" element={<CustomerSupport />} />
+          <Route path="settings" element={<CustomerSettings />} />
         </Route>
       </Routes>
     </Suspense>
