@@ -4,7 +4,7 @@ import { getDevicesByCustomer, getUsersByCustomer } from '../../data/mockData'
 
 const CUSTOMER_ID = 'c1'
 const allDevices = getDevicesByCustomer(CUSTOMER_ID)
-const allUsers = getUsersByCustomer(CUSTOMER_ID)
+const allUsers   = getUsersByCustomer(CUSTOMER_ID)
 
 function getUserName(userId) {
   if (!userId) return '—'
@@ -18,11 +18,11 @@ function formatLastSeen(isoStr) {
 }
 
 const FILTERS = [
-  { id: 'all', label: 'הכל' },
-  { id: 'Windows', label: 'Windows' },
-  { id: 'macOS', label: 'macOS' },
-  { id: 'Linux', label: 'Linux' },
-  { id: 'non-compliant', label: 'לא תקני' },
+  { id: 'all',          label: 'הכל' },
+  { id: 'Windows',      label: 'Windows' },
+  { id: 'macOS',        label: 'macOS' },
+  { id: 'Linux',        label: 'Linux' },
+  { id: 'non-compliant',label: 'לא תקני' },
 ]
 
 export default function CustomerDevices() {
@@ -34,21 +34,26 @@ export default function CustomerDevices() {
     return d.os.toLowerCase().startsWith(activeFilter.toLowerCase())
   })
 
-  const totalDevices = allDevices.length
-  const compliantCount = allDevices.filter(d => d.compliance === 'compliant').length
+  const totalDevices     = allDevices.length
+  const compliantCount   = allDevices.filter(d => d.compliance === 'compliant').length
   const nonCompliantCount = allDevices.filter(d => d.compliance === 'non-compliant').length
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">התקנים</h1>
           <p className="text-slate-500 text-sm mt-0.5">מלאי התקנים ועמידת תקנים</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[10px] text-cdata-500">מנוהל דרך:</span>
+            <code className="text-[10px] text-slate-400 font-mono">ftntsa.saas.fortinet.com</code>
+          </div>
         </div>
       </div>
 
-      {/* KPI Row */}
+      {/* ── KPI Row ─────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-4">
         <div className="stat-card">
           <div className="w-9 h-9 rounded-xl bg-cdata-500/15 flex items-center justify-center mb-3">
@@ -80,7 +85,7 @@ export default function CustomerDevices() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
+      {/* ── Filter Tabs ─────────────────────────────────────────────────────── */}
       <div className="flex gap-2">
         {FILTERS.map(f => (
           <button
@@ -97,7 +102,7 @@ export default function CustomerDevices() {
         ))}
       </div>
 
-      {/* Device Table */}
+      {/* ── Device Table ─────────────────────────────────────────────────────── */}
       <div className="glass glow-border rounded-2xl overflow-hidden">
         <div className="grid grid-cols-7 px-5 py-3 border-b border-white/8 text-xs text-slate-500 font-medium">
           <div className="col-span-1">התקן</div>
@@ -132,12 +137,16 @@ export default function CustomerDevices() {
               {/* OS */}
               <div className="text-sm text-slate-400">{device.os}</div>
 
-              {/* Posture / Managed */}
+              {/* Posture / Managed — with FortiSASE badge for managed devices */}
               <div>
-                {device.postureStatus === 'managed'
-                  ? <span className="badge-blue">מנוהל</span>
-                  : <span className="badge-steel">לא מנוהל</span>
-                }
+                {device.postureStatus === 'managed' ? (
+                  <div className="flex flex-col gap-0.5">
+                    <span className="badge-blue">מנוהל</span>
+                    <span className="text-[9px] text-cdata-500 font-medium">FortiSASE</span>
+                  </div>
+                ) : (
+                  <span className="badge-steel">לא מנוהל</span>
+                )}
               </div>
 
               {/* Compliance */}

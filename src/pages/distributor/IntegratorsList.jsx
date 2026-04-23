@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, Eye, MoreHorizontal, Building2 } from 'lucide-react'
+import { Search, Plus, Eye, MoreHorizontal, Building2, Shield } from 'lucide-react'
 import { integrators, getCustomersByIntegrator } from '../../data/mockData'
 
 const STATUS_TABS = ['הכל', 'active', 'onboarding', 'suspended']
@@ -54,11 +54,12 @@ export default function IntegratorsList() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         {[
           { label: 'סה"כ אינטגרטורים', value: totalCount, icon: Building2, color: 'text-cdata-300', bg: 'rgba(44,106,138,0.12)' },
           { label: 'פעילים', value: activeCount, icon: Building2, color: 'text-emerald-400', bg: 'rgba(16,185,129,0.10)' },
           { label: 'Onboarding', value: onboardingCount, icon: Building2, color: 'text-amber-400', bg: 'rgba(245,158,11,0.10)' },
+          { label: 'FortiSASE Environments', value: '5', icon: Shield, color: 'text-cdata-300', bg: 'rgba(44,106,138,0.15)' },
         ].map((s, i) => (
           <div key={i} className="stat-card">
             <div className="flex items-center justify-between mb-3">
@@ -105,11 +106,12 @@ export default function IntegratorsList() {
       {/* Table */}
       <div className="glass glow-border rounded-2xl overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-6 px-5 py-3 border-b border-white/8 text-xs text-slate-500 font-medium">
+        <div className="grid grid-cols-7 px-5 py-3 border-b border-white/8 text-xs text-slate-500 font-medium">
           <div className="col-span-2">אינטגרטור</div>
           <div>איש קשר</div>
           <div>לקוחות</div>
           <div>סטטוס</div>
+          <div>פעילות אחרונה</div>
           <div>נוצר</div>
         </div>
 
@@ -131,7 +133,7 @@ export default function IntegratorsList() {
             return (
               <div
                 key={item.id}
-                className="grid grid-cols-6 items-center px-5 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] cursor-pointer transition-colors group"
+                className="grid grid-cols-7 items-center px-5 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] cursor-pointer transition-colors group"
                 onClick={() => navigate('/distribution/integrators/' + item.id)}
               >
                 {/* Company */}
@@ -158,6 +160,9 @@ export default function IntegratorsList() {
                 <div>
                   <span className={`${statusBadge(item.status)} text-xs`}>{item.status}</span>
                 </div>
+
+                {/* Last Activity */}
+                <div className="text-xs text-slate-500">{formatDate(item.lastActivity)}</div>
 
                 {/* Created date + actions */}
                 <div className="flex items-center justify-between">

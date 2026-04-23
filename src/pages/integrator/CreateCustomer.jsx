@@ -46,11 +46,14 @@ export default function CreateCustomer() {
     domain: '',
     country: 'Israel',
     numberOfUsers: '',
+    fortisaseUser: '',
     adminEmail: '',
     phone: '',
     contactName: '',
     package: 'sase',
     deploymentType: 'cloud',
+    bandwidthPerUser: '2',
+    requiresStaticIp: false,
     notes: '',
   })
 
@@ -139,6 +142,83 @@ export default function CreateCustomer() {
           value={form.numberOfUsers}
           onChange={e => set('numberOfUsers', e.target.value)}
         />
+      </div>
+      {/* Bandwidth per user */}
+      <div>
+        <label className={labelClass}>רוחב פס פר משתמש</label>
+        <select
+          className={inputClass}
+          value={form.bandwidthPerUser}
+          onChange={e => set('bandwidthPerUser', e.target.value)}
+        >
+          <option value="1">1 Mbps</option>
+          <option value="2">2 Mbps</option>
+          <option value="5">5 Mbps</option>
+          <option value="10">10 Mbps</option>
+          <option value="20">20 Mbps</option>
+        </select>
+      </div>
+      <div className="flex flex-col justify-end">
+        {form.numberOfUsers && (
+          <div className="h-full flex items-end pb-0.5">
+            <div className="w-full bg-cdata-500/10 border border-cdata-500/20 rounded-lg px-3 py-2.5 text-xs">
+              <span className="text-slate-500">סה"כ נדרש: </span>
+              <span className="text-cdata-300 font-semibold">
+                {form.bandwidthPerUser} Mbps × {form.numberOfUsers} = <strong>{(parseInt(form.bandwidthPerUser, 10) * parseInt(form.numberOfUsers, 10)).toLocaleString()} Mbps</strong>
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Static IP */}
+      <div className="col-span-2">
+        <button
+          type="button"
+          onClick={() => set('requiresStaticIp', !form.requiresStaticIp)}
+          className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all text-right ${
+            form.requiresStaticIp
+              ? 'border-cdata-500/50 bg-cdata-500/10 ring-1 ring-cdata-500/20'
+              : 'border-white/10 hover:border-white/20 bg-white/[0.02]'
+          }`}
+        >
+          <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 border transition-all ${
+            form.requiresStaticIp ? 'bg-cdata-500 border-cdata-500' : 'border-white/20 bg-white/5'
+          }`}>
+            {form.requiresStaticIp && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+          </div>
+          <div>
+            <div className={`text-sm font-medium ${form.requiresStaticIp ? 'text-white' : 'text-slate-400'}`}>
+              נדרשת כתובת IP קבועה (Static IP)
+            </div>
+            <div className="text-[11px] text-slate-600 mt-0.5">
+              הסביבה תקבל כתובת IP ייעודית וקבועה לצורך חיבורי VPN וזיהוי
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div className="col-span-2 mt-2">
+        <label className={labelClass}>
+          FortiSASE Username
+          <span className="text-slate-600 font-normal mr-1">(שם משתמש בסביבת FortiSASE)</span>
+        </label>
+        <div className="flex gap-2">
+          <input
+            className={inputClass + " font-mono"}
+            placeholder="admin_companyname"
+            value={form.fortisaseUser}
+            onChange={e => set('fortisaseUser', e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => set('fortisaseUser', 'admin_' + (form.companyName || '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '').slice(0, 20))}
+            className="btn-ghost text-xs px-3 whitespace-nowrap"
+          >
+            הצע אוטומטי
+          </button>
+        </div>
+        <p className="text-[10px] text-slate-600 mt-1">דוגמא: admin_elbit · admin_hapoalim · admin_2bsecure</p>
       </div>
     </div>
   )
@@ -235,6 +315,9 @@ export default function CreateCustomer() {
   // Step 3: Confirmation
   const Step3 = () => {
     const deployLabel = { cloud: 'Cloud-Native', hybrid: 'Hybrid', onprem: 'On-Premise' }
+    const totalBw = form.numberOfUsers && form.bandwidthPerUser
+      ? `${form.bandwidthPerUser} Mbps × ${form.numberOfUsers} = ${(parseInt(form.bandwidthPerUser, 10) * parseInt(form.numberOfUsers, 10)).toLocaleString()} Mbps`
+      : '—'
     const rows = [
       { label: 'Company', value: form.companyName || '—' },
       { label: 'Domain', value: form.domain || '—' },
@@ -243,6 +326,8 @@ export default function CreateCustomer() {
       { label: 'Package', value: packageLabel(form.package) },
       { label: 'Country', value: form.country },
       { label: 'Deployment', value: deployLabel[form.deploymentType] || form.deploymentType },
+      { label: 'Bandwidth', value: totalBw },
+      { label: 'Static IP', value: form.requiresStaticIp ? 'כן — נדרשת IP קבועה' : 'לא' },
     ]
     return (
       <div className="space-y-4">
@@ -253,6 +338,10 @@ export default function CreateCustomer() {
               <span className="text-sm text-white font-medium">{r.value}</span>
             </div>
           ))}
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">FortiSASE User:</span>
+            <code className="text-cdata-300 font-mono">{form.fortisaseUser || '—'}</code>
+          </div>
         </div>
 
         <div>
@@ -275,9 +364,12 @@ export default function CreateCustomer() {
   const resetForm = () => {
     setForm({
       companyName: '', domain: '', country: 'Israel', numberOfUsers: '',
+      fortisaseUser: '',
       adminEmail: '', phone: '', contactName: '',
       package: 'sase',
       deploymentType: 'cloud',
+      bandwidthPerUser: '2',
+      requiresStaticIp: false,
       notes: '',
     })
     setStep(0)

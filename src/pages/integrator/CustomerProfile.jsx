@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, CheckCircle, Circle, Users, Monitor, Globe, AlertTriangle,
-  ExternalLink, ChevronRight, Mail, Phone, Package, Calendar,
+  ExternalLink, ChevronRight, Mail, Phone, Package, Calendar, Shield, Copy,
 } from 'lucide-react'
 import {
   getCustomer,
@@ -136,6 +136,49 @@ export default function CustomerProfile() {
           פתח פורטל לקוח
         </button>
       </div>
+
+      {/* FortiSASE access panel */}
+      {customer.fortisaseUser && (
+        <div className="rounded-2xl p-5 flex items-center gap-5"
+          style={{ background: 'linear-gradient(135deg, rgba(44,106,138,0.15) 0%, rgba(44,106,138,0.05) 100%)', border: '1px solid rgba(44,106,138,0.3)' }}>
+
+          {/* Fortinet/FortiSASE icon area */}
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(44,106,138,0.2)', border: '1px solid rgba(44,106,138,0.35)' }}>
+            <Shield className="w-6 h-6 text-cdata-300" />
+          </div>
+
+          {/* Info */}
+          <div className="flex-1">
+            <div className="text-xs text-cdata-500 font-medium mb-0.5">FortiSASE Environment</div>
+            <div className="text-sm font-bold text-white mb-1">{customer.fortisaseUrl}</div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">Admin User:</span>
+              <code className="text-sm font-mono font-bold text-cdata-300 bg-cdata-500/10 border border-cdata-500/20 px-2.5 py-0.5 rounded-md">
+                {customer.fortisaseUser}
+              </code>
+              <button
+                onClick={() => navigator.clipboard?.writeText(customer.fortisaseUser)}
+                className="p-1 rounded hover:bg-white/5 text-slate-500 hover:text-cdata-300 transition-colors"
+                title="העתק יוזר"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Open button */}
+          <a
+            href={customer.fortisaseUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary flex items-center gap-2 text-sm flex-shrink-0"
+          >
+            <ExternalLink className="w-4 h-4" />
+            פתח FortiSASE
+          </a>
+        </div>
+      )}
 
       {/* KPI cards */}
       <div className="grid grid-cols-4 gap-4">

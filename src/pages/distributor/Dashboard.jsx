@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Users, Shield, AlertTriangle, ChevronLeft, CheckCircle, AlertCircle } from 'lucide-react'
+import { Building2, Users, Shield, AlertTriangle, ChevronLeft, CheckCircle, AlertCircle, LayoutDashboard } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
@@ -13,11 +13,14 @@ const totalAlerts = customerEnvironments.reduce((s, e) => s + e.alertsCount, 0)
 export default function DistributorDashboard() {
   const navigate = useNavigate()
 
+  const activeIntegrators = integrators.filter(i => i.status === 'active').length
+
   const kpis = [
     {
       icon: Building2,
       label: 'אינטגרטורים',
       value: integrators.length,
+      sub: `${activeIntegrators} / ${integrators.length} פעילים`,
       badge: '+12% מחודש שעבר',
       alert: false,
     },
@@ -25,6 +28,7 @@ export default function DistributorDashboard() {
       icon: Users,
       label: 'לקוחות',
       value: customers.length,
+      sub: '8 לקוחות מנוהלים',
       badge: '+12% מחודש שעבר',
       alert: false,
     },
@@ -32,6 +36,7 @@ export default function DistributorDashboard() {
       icon: Shield,
       label: 'משתמשים מוגנים',
       value: totalProtectedUsers.toLocaleString(),
+      sub: '1,764 users protected by FortiSASE',
       badge: '+12% מחודש שעבר',
       alert: false,
     },
@@ -39,6 +44,7 @@ export default function DistributorDashboard() {
       icon: AlertTriangle,
       label: 'התראות פעילות',
       value: totalAlerts,
+      sub: `${totalAlerts} open alerts`,
       badge: '+12% מחודש שעבר',
       alert: totalAlerts > 5,
     },
@@ -52,6 +58,24 @@ export default function DistributorDashboard() {
       <div>
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
         <p className="text-slate-500 text-sm mt-0.5">סקירה כללית — Distribution Overview</p>
+      </div>
+
+      {/* Platform Overview Banner */}
+      <div className="rounded-2xl p-4 flex items-center gap-4"
+        style={{ background: 'linear-gradient(135deg, rgba(44,106,138,0.12) 0%, rgba(44,106,138,0.04) 100%)', border: '1px solid rgba(44,106,138,0.2)' }}>
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-10 h-10 rounded-xl bg-cdata-500/15 border border-cdata-500/20 flex items-center justify-center">
+            <LayoutDashboard className="w-5 h-5 text-cdata-300" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-white">C-DATA Distribution Platform</div>
+            <div className="text-xs text-slate-500">FortiSASE Channel Management · {new Date().toLocaleDateString('he-IL')}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-slow" />
+          <span className="text-xs text-emerald-400">כל המערכות פעילות</span>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -68,7 +92,8 @@ export default function DistributorDashboard() {
               <span className="badge-steel text-xs">{kpi.badge}</span>
             </div>
             <div className="text-3xl font-black text-white mb-1">{kpi.value}</div>
-            <div className="text-sm text-slate-500">{kpi.label}</div>
+            <div className="text-sm text-slate-500 mb-1">{kpi.label}</div>
+            {kpi.sub && <div className="text-[10px] text-slate-600">{kpi.sub}</div>}
           </div>
         ))}
       </div>
@@ -139,6 +164,28 @@ export default function DistributorDashboard() {
               )
             })}
           </div>
+        </div>
+      </div>
+
+      {/* FortiSASE Environment Stats */}
+      <div className="glass glow-border rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-white">FortiSASE — סטטיסטיקות סביבה</h3>
+          <span className="badge-blue text-xs">ftntsa.saas.fortinet.com</span>
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { label: 'סביבות פעילות', value: '5', sub: 'Active Tenants', color: 'text-emerald-400' },
+            { label: 'כולל מנוהל FortiSASE', value: '1,764', sub: 'Protected Users', color: 'text-cdata-300' },
+            { label: 'Sites מחוברים', value: '34', sub: 'SD-WAN Sites', color: 'text-blue-400' },
+            { label: 'ציות ממוצע', value: '96%', sub: 'Avg Compliance', color: 'text-emerald-400' },
+          ].map(s => (
+            <div key={s.label} className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/5">
+              <div className={`text-2xl font-black ${s.color} mb-0.5`}>{s.value}</div>
+              <div className="text-xs text-white font-medium">{s.label}</div>
+              <div className="text-[10px] text-slate-600">{s.sub}</div>
+            </div>
+          ))}
         </div>
       </div>
 

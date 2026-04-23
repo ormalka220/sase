@@ -14,7 +14,7 @@ const portals = [
     title: 'Distributor Portal',
     titleHe: 'פורטל מפיץ',
     sub: 'ניהול ערוץ הפצה',
-    features: ['ניהול אינטגרטורים ושותפים', 'סיכום לקוחות וביצועים', 'מדדי צמיחה וכיסוי'],
+    features: ['ניהול ערוץ הפצה של FortiSASE', 'מעקב אחר כל האינטגרטורים', 'מדדי כיסוי ושוק'],
     cta: 'כניסה לפורטל הפצה',
   },
   {
@@ -27,7 +27,7 @@ const portals = [
     title: 'Integrator Portal',
     titleHe: 'פורטל אינטגרטור',
     sub: 'ניהול לקוחות ו-Onboarding',
-    features: ['יצירת לקוחות חדשים', 'מעקב סטטוס Onboarding', 'גישה לסביבות לקוח'],
+    features: ['יצירת סביבות FortiSASE ללקוחות', 'ניהול יוזרים ו-Onboarding', 'גישה ישירה לכל סביבה'],
     cta: 'כניסה לפורטל אינטגרטור',
   },
   {
@@ -40,7 +40,7 @@ const portals = [
     title: 'Customer Portal',
     titleHe: 'פורטל לקוח',
     sub: 'מרכז שליטה אבטחתי',
-    features: ['מצב הגנה בזמן אמת', 'משתמשים, מכשירים ואתרים', 'התראות, פוליסות ורישיונות'],
+    features: ['ניטור Zero Trust ו-SD-WAN', 'ניהול משתמשים, מכשירים ואתרים', 'גישה ישירה לסביבת FortiSASE'],
     cta: 'כניסה לפורטל לקוח',
   },
 ]
@@ -75,6 +75,10 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/5 bg-white/[0.03]">
+            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+            <span className="text-xs text-slate-400 font-medium">Fortinet Partner</span>
+          </div>
           <CDataLogo className="h-5 opacity-60 hover:opacity-100 transition-opacity" />
           <span className="text-slate-700 text-xs">×</span>
           <SpotNetLogo className="h-4 opacity-60 hover:opacity-100 transition-opacity" />
@@ -90,24 +94,35 @@ export default function LandingPage() {
         </div>
 
         <h1 className="text-5xl md:text-6xl font-black mb-5 leading-[1.1] max-w-3xl">
-          <span className="text-white">פלטפורמה אחת.</span>
+          <span className="text-white">ניהול FortiSASE.</span>
           <br />
-          <span className="text-gradient-hero">שלוש רמות ניהול.</span>
+          <span className="text-gradient-hero">בשלוש רמות.</span>
         </h1>
         <p className="text-lg text-slate-400 max-w-2xl mb-3 leading-relaxed">
-          מפיצים, אינטגרטורים ולקוחות — כל אחד רואה את מה שצריך לו, בדיוק כשצריך.
+          פלטפורמה מרכזית לניהול שרשרת הפצה של FortiSASE — ממפיץ, דרך אינטגרטורים, ועד לקוחות קצה.
         </p>
-        <p className="text-sm text-slate-600 mb-12 tracking-widest uppercase">
-          Distribute · Integrate · Protect
+        <p className="text-sm text-slate-600 mb-8 tracking-widest uppercase">
+          FortiSASE · Zero Trust · SD-WAN · SASE
         </p>
 
         {/* Hierarchy indicator */}
-        <div className="flex items-center gap-3 mb-10 text-xs text-slate-600">
+        <div className="flex items-center gap-3 mb-5 text-xs text-slate-600">
           <span className="badge-blue px-3 py-1">Distributor</span>
           <ArrowLeft className="w-3 h-3 rotate-180" />
           <span className="badge-steel px-3 py-1">Integrator</span>
           <ArrowLeft className="w-3 h-3 rotate-180" />
           <span className="px-3 py-1 rounded-full border border-emerald-500/20 text-emerald-500/80 bg-emerald-500/5">Customer</span>
+        </div>
+
+        {/* Powered by Fortinet strip */}
+        <div className="flex items-center gap-3 text-xs text-slate-600 mb-8">
+          <div className="h-px w-12 bg-white/10" />
+          <span>Powered by</span>
+          <span className="text-red-400 font-semibold">Fortinet FortiSASE</span>
+          <span>·</span>
+          <span>Distributed by</span>
+          <span className="text-cdata-400 font-semibold">C-Data</span>
+          <div className="h-px w-12 bg-white/10" />
         </div>
 
         {/* Portal cards */}

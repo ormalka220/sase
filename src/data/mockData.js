@@ -103,6 +103,8 @@ export const customers = [
     startDate: '2023-06-01',
     createdAt: '2023-05-20',
     notes: 'Defense industry — requires data sovereignty compliance.',
+    fortisaseUser: 'admin_elbit',
+    fortisaseUrl: 'https://ftntsa.saas.fortinet.com',
   },
   {
     id: 'c2',
@@ -121,6 +123,8 @@ export const customers = [
     startDate: '2023-09-01',
     createdAt: '2023-08-15',
     notes: 'Financial sector — PCI-DSS and regulatory requirements.',
+    fortisaseUser: 'admin_hapoalim',
+    fortisaseUrl: 'https://ftntsa.saas.fortinet.com',
   },
   {
     id: 'c3',
@@ -139,6 +143,8 @@ export const customers = [
     startDate: '2024-01-10',
     createdAt: '2024-01-05',
     notes: 'Healthcare — HIPAA-equivalent compliance needed.',
+    fortisaseUser: 'admin_clalit',
+    fortisaseUrl: 'https://ftntsa.saas.fortinet.com',
   },
   {
     id: 'c4',
@@ -157,6 +163,8 @@ export const customers = [
     startDate: '2023-07-15',
     createdAt: '2023-07-01',
     notes: 'Air-gapped segments — special routing required.',
+    fortisaseUser: 'admin_rafael',
+    fortisaseUrl: 'https://ftntsa.saas.fortinet.com',
   },
   {
     id: 'c5',
@@ -175,6 +183,8 @@ export const customers = [
     startDate: '2023-10-01',
     createdAt: '2023-09-20',
     notes: '',
+    fortisaseUser: 'admin_malam',
+    fortisaseUrl: 'https://ftntsa.saas.fortinet.com',
   },
   {
     id: 'c6',
@@ -193,6 +203,8 @@ export const customers = [
     startDate: '2023-11-01',
     createdAt: '2023-10-20',
     notes: '',
+    fortisaseUser: 'admin_eci',
+    fortisaseUrl: 'https://ftntsa.saas.fortinet.com',
   },
   {
     id: 'c7',
@@ -211,6 +223,8 @@ export const customers = [
     startDate: '2023-04-01',
     createdAt: '2023-03-25',
     notes: 'Suspended — payment dispute pending.',
+    fortisaseUser: 'admin_amdocs',
+    fortisaseUrl: 'https://ftntsa.saas.fortinet.com',
   },
   {
     id: 'c8',
@@ -229,6 +243,8 @@ export const customers = [
     startDate: '2024-01-15',
     createdAt: '2024-01-10',
     notes: 'New customer — invite sent, awaiting configuration.',
+    fortisaseUser: 'admin_elta',
+    fortisaseUrl: 'https://ftntsa.saas.fortinet.com',
   },
 ]
 

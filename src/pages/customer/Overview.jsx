@@ -1,157 +1,415 @@
 import React from 'react'
 import {
-  Shield, Users, AlertTriangle, CheckCircle, TrendingUp,
-  Globe, Lock, Zap, Activity, ArrowUpRight, Clock
+  Shield, Users, Monitor, Globe2, AlertTriangle, CheckCircle,
+  ExternalLink, Copy, Lock, Globe, Mail, Zap, Clock,
 } from 'lucide-react'
-import { AreaChart, Area, XAxis, ResponsiveContainer, Tooltip } from 'recharts'
+import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  getCustomerEnvironment,
+  getAlertsByCustomer,
+  getSitesByCustomer,
+  threatData,
+} from '../../data/mockData'
 
-const threatData = [
-  { day: 'א', blocked: 12 }, { day: 'ב', blocked: 28 }, { day: 'ג', blocked: 18 },
-  { day: 'ד', blocked: 45 }, { day: 'ה', blocked: 31 }, { day: 'ו', blocked: 22 },
-  { day: 'ש', blocked: 9 },
-]
+const CUSTOMER_ID = 'c1'
+const env = getCustomerEnvironment(CUSTOMER_ID)
+const customer = {
+  companyName: 'Elbit Systems',
+  fortisaseUser: 'admin_elbit',
+  fortisaseUrl: 'https://ftntsa.saas.fortinet.com',
+  packageName: 'Enterprise SASE',
+}
+const openAlerts = getAlertsByCustomer(CUSTOMER_ID).filter(a => a.status === 'open')
+const sites = getSitesByCustomer(CUSTOMER_ID)
+const connectedSites = sites.filter(s => s.status === 'online').length
 
-const recentEvents = [
-  { type: 'phishing', msg: 'נחסמ מייל פישינג — מ: billing@fake-bank.cc', time: 'לפני 4 דקות', severity: 'high' },
-  { type: 'malware', msg: 'קובץ זדוני נחסם בהורדה — idan.cohen@co.il', time: 'לפני 18 דקות', severity: 'high' },
-  { type: 'login', msg: 'כניסה בטוחה מאומתה (MFA) — sarah.levi@co.il', time: 'לפני 32 דקות', severity: 'ok' },
-  { type: 'url', msg: 'קישור זדוני נחסם בדפדפן — dana.mor@co.il', time: 'לפני 1 שעה', severity: 'medium' },
-  { type: 'scan', msg: 'סריקה שבועית הושלמה — 0 איומים פעילים', time: 'לפני 2 שעות', severity: 'ok' },
-]
+const totalBlocked = threatData.reduce((sum, d) => sum + d.blocked, 0)
 
 const severityConfig = {
-  high: { color: '#ef4444', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: AlertTriangle },
+  high:   { color: '#ef4444', bg: 'bg-red-500/10',   border: 'border-red-500/20',   icon: AlertTriangle },
   medium: { color: '#f59e0b', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: AlertTriangle },
-  ok: { color: '#10b981', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: CheckCircle },
+  low:    { color: '#64748b', bg: 'bg-slate-500/10', border: 'border-slate-500/20', icon: AlertTriangle },
+}
+
+function formatAlertTime(isoStr) {
+  const d = new Date(isoStr)
+  return d.toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+// Custom recharts tooltip
+function ThreatTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{
+      background: '#0a1428',
+      border: '1px solid rgba(16,185,129,0.2)',
+      borderRadius: 10,
+      padding: '8px 14px',
+      fontSize: 12,
+    }}>
+      <div style={{ color: '#64748b', marginBottom: 4 }}>{label}</div>
+      <div style={{ color: '#10b981', fontWeight: 700 }}>
+        {payload[0].value.toLocaleString()} <span style={{ fontWeight: 400, color: '#64748b' }}>איומים שנחסמו</span>
+      </div>
+    </div>
+  )
 }
 
 export default function CustomerOverview() {
+  const handleCopyUser = () => {
+    navigator.clipboard.writeText(customer.fortisaseUser).catch(() => {})
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">סקירה כללית</h1>
-        <p className="text-slate-500 text-sm mt-0.5">Overview — TechGlobal Ltd.</p>
+
+      {/* ── 1. Header ─────────────────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">סקירה כללית</h1>
+          <p className="text-slate-500 text-sm mt-0.5">
+            {customer.companyName} · FortiSASE {customer.packageName}
+          </p>
+        </div>
+        <a
+          href={customer.fortisaseUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-primary flex items-center gap-2 text-sm"
+        >
+          <ExternalLink className="w-4 h-4" />
+          FortiSASE Console
+        </a>
       </div>
 
-      {/* Protection Banner */}
-      <div className="rounded-2xl p-5 flex items-center gap-4"
-        style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.05) 100%)', border: '1px solid rgba(16,185,129,0.2)' }}>
-        <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
-          <Shield className="w-7 h-7 text-emerald-400" />
-        </div>
-        <div className="flex-1">
-          <div className="text-lg font-bold text-white mb-0.5">הארגון שלך מוגן ✓</div>
-          <div className="text-sm text-emerald-400">All systems operational · כל המערכות פעילות</div>
-          <div className="text-xs text-slate-500 mt-1">עודכן לאחרונה: היום בשעה 11:42</div>
-        </div>
-        <div className="text-right">
-          <div className="text-3xl font-black text-emerald-400">98%</div>
-          <div className="text-xs text-slate-500">Security Score</div>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        {[
-          { icon: Users, label: 'משתמשים מוגנים', sub: 'Protected Users', value: '247 / 250', change: null, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
-          { icon: Shield, label: 'איומים נחסמו', sub: 'Threats Blocked', value: '1,284', change: 'השבוע', color: 'text-emerald-400', bg: 'bg-emerald-600/15' },
-          { icon: AlertTriangle, label: 'אירועים פעילים', sub: 'Active Incidents', value: '0', change: null, color: 'text-amber-400', bg: 'bg-amber-600/15' },
-          { icon: Zap, label: 'זמן תגובה', sub: 'Avg. Response', value: '< 1ms', change: null, color: 'text-violet-400', bg: 'bg-violet-600/15' },
-        ].map(s => (
-          <div key={s.label} className="stat-card">
-            <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
-              <s.icon className={`w-5 h-5 ${s.color}`} />
-            </div>
-            <div className="text-2xl font-bold text-white mb-1">{s.value}</div>
-            <div className="text-xs font-medium text-slate-300">{s.label}</div>
-            <div className="text-[10px] text-slate-600">{s.sub}</div>
+      {/* ── 2. FortiSASE Environment Banner ───────────────────────────────────── */}
+      <div
+        className="rounded-2xl p-5 flex items-center gap-6"
+        style={{
+          background: 'linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(44,106,138,0.08) 100%)',
+          border: '1px solid rgba(16,185,129,0.2)',
+        }}
+      >
+        {/* Left: Status */}
+        <div className="flex items-center gap-4 flex-1">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center flex-shrink-0">
+            <Shield className="w-7 h-7 text-emerald-400" />
           </div>
-        ))}
+          <div>
+            <div className="text-lg font-bold text-white">הארגון מוגן ופעיל</div>
+            <div className="text-sm text-emerald-400 mt-0.5">All FortiSASE services operational</div>
+            <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              סונכרן לאחרונה: היום בשעה 10:30
+            </div>
+          </div>
+        </div>
+
+        {/* Center: Score */}
+        <div className="text-center px-8 border-r border-l border-white/5">
+          <div className="text-4xl font-black text-emerald-400">98%</div>
+          <div className="text-xs text-slate-400 mt-1 font-medium">Security Posture</div>
+          <div className="text-[10px] text-slate-600 mt-0.5">ציון אבטחה כולל</div>
+        </div>
+
+        {/* Right: FortiSASE access */}
+        <div className="flex flex-col items-end gap-2.5 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500">FortiSASE User:</span>
+            <code className="text-sm font-mono font-bold text-cdata-300 bg-cdata-500/10 px-2.5 py-0.5 rounded border border-cdata-500/20">
+              {customer.fortisaseUser}
+            </code>
+          </div>
+          <a
+            href={customer.fortisaseUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary flex items-center gap-2 text-sm"
+          >
+            <ExternalLink className="w-4 h-4" />
+            פתח FortiSASE Console
+          </a>
+        </div>
       </div>
 
+      {/* ── 3. KPI Row — 6 cards ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-6 gap-3">
+
+        {/* Protected Users */}
+        <div className="stat-card">
+          <div className="w-9 h-9 rounded-xl bg-cdata-500/15 flex items-center justify-center mb-3">
+            <Users className="w-4 h-4 text-cdata-300" />
+          </div>
+          <div className="text-xl font-bold text-white">
+            {env.protectedUsers}
+            <span className="text-sm font-normal text-slate-500"> / {env.licenseTotal}</span>
+          </div>
+          <div className="text-xs font-medium text-slate-300 mt-0.5">משתמשים מוגנים</div>
+          <div className="text-[10px] text-slate-600">Protected Users</div>
+        </div>
+
+        {/* Active Devices */}
+        <div className="stat-card">
+          <div className="w-9 h-9 rounded-xl bg-violet-500/15 flex items-center justify-center mb-3">
+            <Monitor className="w-4 h-4 text-violet-400" />
+          </div>
+          <div className="text-xl font-bold text-white">{env.activeDevices}</div>
+          <div className="text-xs font-medium text-slate-300 mt-0.5">התקנים פעילים</div>
+          <div className="text-[10px] text-slate-600">Active Devices</div>
+        </div>
+
+        {/* Connected Sites */}
+        <div className="stat-card">
+          <div className="w-9 h-9 rounded-xl bg-emerald-600/15 flex items-center justify-center mb-3">
+            <Globe2 className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="text-xl font-bold text-white">{env.connectedSites}</div>
+          <div className="text-xs font-medium text-slate-300 mt-0.5">אתרים מחוברים</div>
+          <div className="text-[10px] text-slate-600">Connected Sites</div>
+        </div>
+
+        {/* Open Alerts */}
+        <div className="stat-card">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${openAlerts.length > 0 ? 'bg-red-600/15' : 'bg-emerald-600/15'}`}>
+            <AlertTriangle className={`w-4 h-4 ${openAlerts.length > 0 ? 'text-red-400' : 'text-emerald-400'}`} />
+          </div>
+          <div className={`text-xl font-bold ${openAlerts.length > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+            {openAlerts.length}
+          </div>
+          <div className="text-xs font-medium text-slate-300 mt-0.5">התראות פתוחות</div>
+          <div className="text-[10px] text-slate-600">Open Alerts</div>
+        </div>
+
+        {/* Compliance Score */}
+        <div className="stat-card">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center mb-3">
+            <CheckCircle className="w-4 h-4 text-amber-400" />
+          </div>
+          <div className="text-xl font-bold text-white">{env.complianceScore}%</div>
+          <div className="text-xs font-medium text-slate-300 mt-0.5">ציות לתקנות</div>
+          <div className="text-[10px] text-slate-600">Compliance Score</div>
+        </div>
+
+        {/* Gateway Health */}
+        <div className="stat-card">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center mb-3">
+            <Zap className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="text-xl font-bold text-emerald-400">{env.gatewayHealth}%</div>
+          <div className="text-xs font-medium text-slate-300 mt-0.5">בריאות Gateway</div>
+          <div className="text-[10px] text-slate-600">Gateway Health</div>
+        </div>
+
+      </div>
+
+      {/* ── 4. Charts Section ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-5">
-        {/* Threat Chart */}
+
+        {/* Threat Area Chart */}
         <div className="col-span-2 glass glow-border rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-5">
             <div>
-              <div className="font-semibold text-white text-sm">פעילות חסימות — 7 ימים אחרונים</div>
-              <div className="text-xs text-slate-500">Threat Blocking Activity</div>
+              <div className="font-semibold text-white text-sm">חסימות איומים — 7 ימים</div>
+              <div className="text-xs text-slate-500 mt-0.5">Threat Blocking Activity</div>
             </div>
-            <span className="badge-green">165 Blocked This Week</span>
+            <span className="badge-green text-xs px-3 py-1">{totalBlocked.toLocaleString()} Blocked This Week</span>
           </div>
-          <ResponsiveContainer width="100%" height={140}>
-            <AreaChart data={threatData}>
+          <ResponsiveContainer width="100%" height={148}>
+            <AreaChart data={threatData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="threatGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                  <stop offset="5%"  stopColor="#10b981" stopOpacity={0.35} />
                   <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="day" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ background: '#0a1428', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8, fontSize: 11 }}
-                formatter={(v) => [v, 'איומים שנחסמו']}
+              <XAxis
+                dataKey="day"
+                tick={{ fill: '#64748b', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
               />
-              <Area type="monotone" dataKey="blocked" stroke="#10b981" strokeWidth={2} fill="url(#threatGrad)" />
+              <Tooltip content={<ThreatTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="blocked"
+                stroke="#10b981"
+                strokeWidth={2}
+                fill="url(#threatGrad)"
+                dot={{ fill: '#10b981', strokeWidth: 0, r: 3 }}
+                activeDot={{ r: 5, fill: '#10b981', stroke: 'rgba(16,185,129,0.3)', strokeWidth: 4 }}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Services Status */}
+        {/* Sites connectivity list */}
+        <div className="glass glow-border rounded-xl p-5 flex flex-col">
+          <div className="font-semibold text-white text-sm mb-0.5">אתרים — קישוריות</div>
+          <div className="text-xs text-slate-500 mb-4">Sites Connectivity Status</div>
+          <div className="space-y-3 flex-1">
+            {sites.map(site => (
+              <div key={site.id}>
+                <div className="flex items-center gap-2 mb-1">
+                  <div
+                    className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      site.status === 'online'
+                        ? 'bg-emerald-400'
+                        : site.status === 'degraded'
+                          ? 'bg-amber-400'
+                          : 'bg-red-400'
+                    }`}
+                  />
+                  <span className="text-xs font-medium text-white flex-1 truncate">{site.name}</span>
+                  <span className="text-[10px] text-slate-500 tabular-nums font-medium">{site.tunnelHealth}%</span>
+                </div>
+                <div className="h-1 bg-white/5 rounded-full ml-4">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: site.tunnelHealth + '%',
+                      background:
+                        site.tunnelHealth >= 90
+                          ? '#10b981'
+                          : site.tunnelHealth >= 70
+                            ? '#f59e0b'
+                            : '#ef4444',
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Summary footer */}
+          <div className="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between">
+            <span className="text-[10px] text-slate-600">Tunnel Health Average</span>
+            <span className="text-xs font-semibold text-emerald-400">
+              {Math.round(sites.reduce((s, x) => s + x.tunnelHealth, 0) / sites.length)}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 5. Bottom Section ─────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-5">
+
+        {/* Security Posture Breakdown */}
         <div className="glass glow-border rounded-xl p-5">
-          <div className="font-semibold text-white text-sm mb-1">שירותים פעילים</div>
-          <div className="text-xs text-slate-500 mb-4">Active Services</div>
-          <div className="space-y-3">
+          <div className="font-semibold text-white text-sm mb-0.5">Security Posture — פירוט</div>
+          <div className="text-xs text-slate-500 mb-4">Service-Level Security Scores</div>
+          <div className="space-y-1 divide-y divide-white/[0.04]">
             {[
-              { name: 'Email Security', sub: 'M365 Integration', ok: true, icon: Lock },
-              { name: 'Browser Protection', sub: 'Chrome Extension', ok: true, icon: Globe },
-              { name: 'Cloud Storage', sub: 'OneDrive / SharePoint', ok: true, icon: Shield },
-              { name: 'Sovereign SASE', sub: 'Network Access', ok: true, icon: Zap },
-              { name: 'Threat Intelligence', sub: 'AI Engine', ok: true, icon: Activity },
-            ].map(s => (
-              <div key={s.name} className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/5 flex items-center justify-center flex-shrink-0">
-                  <s.icon className="w-3.5 h-3.5 text-slate-400" />
+              { label: 'Zero Trust Network Access', score: 99, icon: Lock },
+              { label: 'Secure Web Gateway',        score: 97, icon: Globe },
+              { label: 'Cloud Access Security Broker', score: 96, icon: Shield },
+              { label: 'Email Security',            score: 98, icon: Mail },
+            ].map(item => (
+              <div key={item.label} className="flex items-center gap-3 py-2.5">
+                <div className="w-7 h-7 rounded-lg bg-cdata-500/10 flex items-center justify-center flex-shrink-0">
+                  <item.icon className="w-3.5 h-3.5 text-cdata-300" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-white">{s.name}</div>
-                  <div className="text-[10px] text-slate-600">{s.sub}</div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-slow"></div>
-                  <span className="text-[10px] text-emerald-500">Active</span>
+                <div className="flex-1">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-slate-400">{item.label}</span>
+                    <span className="text-white font-semibold">{item.score}%</span>
+                  </div>
+                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-emerald-500/70 transition-all duration-700"
+                      style={{ width: item.score + '%' }}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Recent Open Alerts */}
+        <div className="glass glow-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="font-semibold text-white text-sm">התראות אחרונות</div>
+              <div className="text-xs text-slate-500 mt-0.5">Recent Open Alerts</div>
+            </div>
+            {openAlerts.length > 0 && (
+              <span className="badge-red">{openAlerts.length} פתוחות</span>
+            )}
+          </div>
+
+          {openAlerts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-emerald-400" />
+              </div>
+              <span className="text-sm text-emerald-400 font-medium">אין התראות פתוחות</span>
+              <span className="text-xs text-slate-600">No open alerts at this time</span>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {openAlerts.slice(0, 4).map(alert => {
+                const cfg = severityConfig[alert.severity] || severityConfig.low
+                return (
+                  <div
+                    key={alert.id}
+                    className={`flex items-start gap-3 p-3 rounded-xl ${cfg.bg} border ${cfg.border}`}
+                  >
+                    <cfg.icon
+                      className="w-4 h-4 flex-shrink-0 mt-0.5"
+                      style={{ color: cfg.color }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-slate-200 leading-snug">{alert.title}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{alert.source}</div>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] text-slate-600 whitespace-nowrap flex-shrink-0 mt-0.5">
+                      <Clock className="w-2.5 h-2.5" />
+                      {formatAlertTime(alert.createdAt)}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Recent Events */}
-      <div className="glass glow-border rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
+      {/* ── 6. FortiSASE Quick Access ─────────────────────────────────────────── */}
+      <div className="glass glow-border rounded-2xl p-5">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <div className="font-semibold text-white text-sm">אירועים אחרונים</div>
-            <div className="text-xs text-slate-500">Recent Security Events</div>
+            <div className="text-sm font-semibold text-white mb-2.5">FortiSASE Quick Access</div>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-500 w-14">Console:</span>
+                <code className="text-xs font-mono text-slate-300 select-all">{customer.fortisaseUrl}</code>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-500 w-14">User:</span>
+                <code className="text-xs font-mono text-cdata-300 font-bold select-all">{customer.fortisaseUser}</code>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleCopyUser}
+              className="btn-ghost flex items-center gap-2 text-sm"
+            >
+              <Copy className="w-4 h-4" />
+              העתק יוזר
+            </button>
+            <a
+              href={customer.fortisaseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary flex items-center gap-2 text-sm"
+            >
+              <ExternalLink className="w-4 h-4" />
+              פתח Console
+            </a>
           </div>
         </div>
-        <div className="space-y-2">
-          {recentEvents.map((ev, i) => {
-            const cfg = severityConfig[ev.severity]
-            return (
-              <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${cfg.bg} border ${cfg.border}`}>
-                <cfg.icon className="w-4 h-4 flex-shrink-0" style={{ color: cfg.color }} />
-                <div className="flex-1 text-sm text-slate-300">{ev.msg}</div>
-                <div className="flex items-center gap-1 text-[10px] text-slate-600 whitespace-nowrap">
-                  <Clock className="w-2.5 h-2.5" />
-                  {ev.time}
-                </div>
-              </div>
-            )
-          })}
-        </div>
       </div>
+
     </div>
   )
 }

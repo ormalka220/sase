@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, Users, CheckCircle, Clock, ChevronRight } from 'lucide-react'
+import { Search, Plus, Users, CheckCircle, Clock, ChevronRight, ExternalLink, Copy } from 'lucide-react'
 import {
   getCustomersByIntegrator,
   getCustomerEnvironment,
@@ -127,12 +127,13 @@ export default function IntegratorCustomersList() {
       {/* Table */}
       <div className="glass glow-border rounded-2xl overflow-hidden">
         {/* Table header */}
-        <div className="grid grid-cols-7 px-5 py-3 border-b border-white/[0.08] text-xs text-slate-500 font-medium">
+        <div className="grid grid-cols-8 px-5 py-3 border-b border-white/[0.08] text-xs text-slate-500 font-medium">
           <div className="col-span-2">לקוח</div>
           <div>משתמשים</div>
           <div>פאקג'</div>
           <div>סטטוס</div>
           <div>Onboarding</div>
+          <div>FortiSASE</div>
           <div>בריאות / פעולות</div>
         </div>
 
@@ -146,7 +147,7 @@ export default function IntegratorCustomersList() {
             return (
               <div
                 key={c.id}
-                className="grid grid-cols-7 px-5 py-4 border-b border-white/[0.04] hover:bg-white/[0.025] cursor-pointer transition-all items-center group"
+                className="grid grid-cols-8 px-5 py-4 border-b border-white/[0.04] hover:bg-white/[0.025] cursor-pointer transition-all items-center group"
                 onClick={() => navigate('/integrator/customers/' + c.id)}
               >
                 {/* Customer */}
@@ -176,6 +177,22 @@ export default function IntegratorCustomersList() {
                   <span className={onboardingBadge(c.onboardingStatus)}>
                     {onboardingLabel(c.onboardingStatus)}
                   </span>
+                </div>
+
+                {/* FortiSASE */}
+                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                  <span className="text-xs font-mono text-cdata-300 bg-cdata-500/10 px-2 py-0.5 rounded">
+                    {c.fortisaseUser}
+                  </span>
+                  <a
+                    href={c.fortisaseUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 rounded hover:bg-white/5 text-slate-500 hover:text-cdata-300 transition-colors"
+                    title="פתח FortiSASE"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
                 </div>
 
                 {/* Health + action */}
