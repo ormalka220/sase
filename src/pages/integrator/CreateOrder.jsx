@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ShieldCheck, Mail, Users, Package, CheckCircle2,
-  ChevronRight, ChevronLeft, Send, ArrowRight
+  ChevronRight, ChevronLeft, Send, Layers
 } from 'lucide-react'
 import { getCustomersByIntegrator } from '../../data/mockData'
 
@@ -22,28 +22,82 @@ const PRODUCTS = [
     licenseTypes: [
       { id: 'users', label: 'Users', labelHe: 'משתמשים', unit: 'user' },
     ],
+    sku: 'FPP-SASE1-US-USxx',
+    monthlyUnitPrice: 6.5,
   },
   {
-    id: 'perception',
-    name: 'Perception Point',
+    id: 'pp-ades',
+    name: 'Advanced Email Security',
     nameHe: 'פרספשן פוינט',
-    description: 'Advanced Email & Collaboration Security',
-    descHe: 'אבטחת מייל מתקדמת, חסימת Phishing ו-Malware',
+    description: 'Perception Point — advanced email protection against phishing, BEC, malware, and malicious URLs.',
+    descHe: 'הגנת מייל מתקדמת נגד פישינג, BEC, קבצים וקישורים זדוניים.',
     color: '#059669',
     gradient: 'linear-gradient(135deg, #059669, #047857)',
     icon: Mail,
     licenseTypes: [
       { id: 'mailboxes', label: 'Mailboxes', labelHe: 'תיבות דואר', unit: 'mailbox' },
     ],
+    sku: 'FPP-ADES1-ST-AExx',
+    monthlyUnitPrice: 3,
+  },
+  {
+    id: 'pp-emsb',
+    name: 'Email & MS Package Security Bundle',
+    nameHe: 'פרספשן פוינט',
+    description: 'Perception Point — email + Microsoft 365 collaboration protection (Teams, SharePoint, OneDrive).',
+    descHe: 'הגנה על אימייל וגם על Microsoft 365 ושיתופיות (Teams/SharePoint/OneDrive).',
+    color: '#10B981',
+    gradient: 'linear-gradient(135deg, #10B981, #059669)',
+    icon: Mail,
+    licenseTypes: [
+      { id: 'mailboxes', label: 'Mailboxes', labelHe: 'תיבות דואר', unit: 'mailbox' },
+    ],
+    sku: 'FPP-EMSB1-BD-BDxx',
+    monthlyUnitPrice: 5,
+  },
+  {
+    id: 'bundle-ades-sase',
+    name: 'Bundle: ADES + SASE',
+    nameHe: 'באנדל פרספשן + SASE',
+    description: 'Advanced Email Security + Forti SASE with 10% bundle discount.',
+    descHe: 'Advanced Email Security + Forti SASE עם 10% הנחה על הבאנדל.',
+    color: '#0EA5E9',
+    gradient: 'linear-gradient(135deg, #0EA5E9, #2563EB)',
+    icon: Layers,
+    licenseTypes: [
+      { id: 'users', label: 'Users', labelHe: 'משתמשים', unit: 'user' },
+    ],
+    sku: 'BND-ADES-SASE-10OFF',
+    monthlyUnitPrice: (3 + 6.5) * 0.9,
+  },
+  {
+    id: 'bundle-emsb-sase',
+    name: 'Bundle: EMSB + SASE',
+    nameHe: 'באנדל פרספשן + SASE',
+    description: 'Email & MS Package Security Bundle + Forti SASE with 10% bundle discount.',
+    descHe: 'EMSB + Forti SASE עם 10% הנחה על הבאנדל.',
+    color: '#0284C7',
+    gradient: 'linear-gradient(135deg, #0284C7, #1D4ED8)',
+    icon: Layers,
+    licenseTypes: [
+      { id: 'users', label: 'Users', labelHe: 'משתמשים', unit: 'user' },
+    ],
+    sku: 'BND-EMSB-SASE-10OFF',
+    monthlyUnitPrice: (5 + 6.5) * 0.9,
   },
 ]
 
 const DURATIONS = [
   { id: 'monthly', label: 'Monthly', labelHe: 'חודשי' },
-  { id: 'yearly',  label: 'Yearly',  labelHe: 'שנתי', badge: 'מומלץ' },
+  { id: 'yearly',  label: 'Yearly',  labelHe: 'שנתי', badge: '10% הנחה' },
 ]
 
 const STEP_LABELS = ['בחירת מוצר', 'פרטי הזמנה', 'סקירה ושליחה']
+const YEARLY_DISCOUNT = 0.1
+
+function formatUsd(amount) {
+  return `$${Number(amount).toFixed(2)}`
+}
 
 export default function CreateOrder() {
   const navigate = useNavigate()
@@ -60,6 +114,11 @@ export default function CreateOrder() {
 
   const selectedProduct = PRODUCTS.find(p => p.id === form.productId)
   const selectedCustomer = customers.find(c => c.id === form.customerId)
+  const quantity = Number(form.quantity) || 0
+  const monthlyUnitPrice = selectedProduct?.monthlyUnitPrice || 0
+  const durationMultiplier = form.duration === 'yearly' ? 1 - YEARLY_DISCOUNT : 1
+  const effectiveUnitPrice = monthlyUnitPrice * durationMultiplier
+  const totalPrice = effectiveUnitPrice * quantity
 
   function next() { setStep(s => Math.min(s + 1, 2)) }
   function back() { setStep(s => Math.max(s - 1, 0)) }
@@ -104,6 +163,14 @@ export default function CreateOrder() {
             <div className="flex justify-between">
               <span className="text-slate-500">תקופה</span>
               <span className="text-white font-semibold">{form.duration === 'yearly' ? 'שנתי' : 'חודשי'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">מחיר ליחידה</span>
+              <span className="text-white font-semibold">{formatUsd(effectiveUnitPrice)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">סה"כ</span>
+              <span className="text-emerald-400 font-semibold">{formatUsd(totalPrice)}</span>
             </div>
           </div>
         </div>
@@ -178,8 +245,12 @@ export default function CreateOrder() {
                         <span className="text-sm font-bold text-white">{product.name}</span>
                         <span className="text-[10px] text-slate-500">{product.nameHe}</span>
                       </div>
+                      <div className="text-[10px] text-slate-500 mb-1.5">SKU: {product.sku}</div>
                       <div className="text-xs text-slate-400">{product.description}</div>
                       <div className="text-[10px] text-slate-600 mt-0.5">{product.descHe}</div>
+                      <div className="text-[11px] text-emerald-400 mt-2 font-semibold">
+                        {formatUsd(product.monthlyUnitPrice)} / {product.licenseTypes[0].unit} / month
+                      </div>
                     </div>
                     <div className={`w-5 h-5 rounded-full border-2 transition-all flex-shrink-0 ${
                       selected ? 'border-transparent' : 'border-slate-700'
@@ -263,12 +334,35 @@ export default function CreateOrder() {
                       ? 'bg-cdata-500 text-white border-transparent'
                       : 'text-slate-400 border-white/10 hover:border-white/20'
                   }`}>
-                  {d.label}
+                  {d.labelHe}
                   {d.badge && (
                     <span className="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/20 text-emerald-400">{d.badge}</span>
                   )}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Pricing */}
+          <div className="glass rounded-xl p-4" style={{ border: `1px solid ${selectedProduct.color}35` }}>
+            <div className="text-xs font-semibold text-slate-300 mb-2">תמחור</div>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500">מחיר חודשי בסיס ליחידה</span>
+                <span className="text-white font-semibold">{formatUsd(monthlyUnitPrice)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">תקופה</span>
+                <span className="text-white font-semibold">{form.duration === 'yearly' ? 'שנתי (10% הנחה)' : 'חודשי'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">מחיר ליחידה לאחר תקופה</span>
+                <span className="text-white font-semibold">{formatUsd(effectiveUnitPrice)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">סה"כ להזמנה ({quantity.toLocaleString()} יח')</span>
+                <span className="text-emerald-400 font-bold">{formatUsd(totalPrice)}</span>
+              </div>
             </div>
           </div>
 
@@ -297,6 +391,8 @@ export default function CreateOrder() {
               { label: 'סוג רישוי', value: form.licenseType === 'mailboxes' ? 'Mailboxes — תיבות דואר' : 'Users — משתמשים' },
               { label: 'כמות',    value: `${Number(form.quantity).toLocaleString()} ${form.licenseType === 'mailboxes' ? 'תיבות' : 'משתמשים'}` },
               { label: 'תקופה',   value: form.duration === 'yearly' ? 'שנתי (Yearly)' : 'חודשי (Monthly)' },
+              { label: 'מחיר ליחידה', value: formatUsd(effectiveUnitPrice) },
+              { label: 'סה"כ', value: formatUsd(totalPrice) },
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center justify-between px-5 py-3">
                 <span className="text-xs text-slate-500">{label}</span>
