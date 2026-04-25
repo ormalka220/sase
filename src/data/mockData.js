@@ -415,6 +415,172 @@ export const licenseData = [
   { month: 'ינו', used: 314, total: 320 },
 ]
 
+// ─── Orders ───────────────────────────────────────────────────────────────────
+export const orders = [
+  {
+    id: 'ord1',
+    orderNumber: 'ORD-2024-001',
+    integratorId: 'i1',
+    distributorId: 'd1',
+    customerId: 'c1',
+    customerName: 'Elbit Systems',
+    product: 'sase',
+    licenseType: 'users',
+    quantity: 50,
+    duration: 'yearly',
+    status: 'provisioned',
+    notes: 'הרחבת ספירת משתמשים למחלקה חדשה',
+    createdAt: '2024-01-05T10:00:00Z',
+    updatedAt: '2024-01-07T14:30:00Z',
+    approvedBy: 'יונתן לוי',
+    rejectionReason: null,
+  },
+  {
+    id: 'ord2',
+    orderNumber: 'ORD-2024-002',
+    integratorId: 'i1',
+    distributorId: 'd1',
+    customerId: 'c2',
+    customerName: 'Bank Hapoalim',
+    product: 'perception',
+    licenseType: 'mailboxes',
+    quantity: 100,
+    duration: 'yearly',
+    status: 'pending',
+    notes: 'Email security for finance department',
+    createdAt: '2024-01-12T09:00:00Z',
+    updatedAt: '2024-01-12T09:00:00Z',
+    approvedBy: null,
+    rejectionReason: null,
+  },
+  {
+    id: 'ord3',
+    orderNumber: 'ORD-2024-003',
+    integratorId: 'i2',
+    distributorId: 'd1',
+    customerId: 'c4',
+    customerName: 'Rafael Advanced Defense',
+    product: 'sase',
+    licenseType: 'users',
+    quantity: 25,
+    duration: 'yearly',
+    status: 'approved',
+    notes: '',
+    createdAt: '2024-01-14T11:00:00Z',
+    updatedAt: '2024-01-15T09:00:00Z',
+    approvedBy: 'יונתן לוי',
+    rejectionReason: null,
+  },
+  {
+    id: 'ord4',
+    orderNumber: 'ORD-2024-004',
+    integratorId: 'i1',
+    distributorId: 'd1',
+    customerId: 'c3',
+    customerName: 'Clalit Health',
+    product: 'perception',
+    licenseType: 'mailboxes',
+    quantity: 120,
+    duration: 'monthly',
+    status: 'rejected',
+    notes: 'Initial Perception Point setup',
+    createdAt: '2024-01-08T14:00:00Z',
+    updatedAt: '2024-01-09T10:00:00Z',
+    approvedBy: null,
+    rejectionReason: 'חסרים מסמכי חוזה לקוח — יש לצרף לפני אישור',
+  },
+  {
+    id: 'ord5',
+    orderNumber: 'ORD-2024-005',
+    integratorId: 'i1',
+    distributorId: 'd1',
+    customerId: 'c1',
+    customerName: 'Elbit Systems',
+    product: 'perception',
+    licenseType: 'mailboxes',
+    quantity: 320,
+    duration: 'yearly',
+    status: 'pending',
+    notes: 'Perception Point לכל הארגון — הגנת מייל מלאה',
+    createdAt: '2024-01-15T08:00:00Z',
+    updatedAt: '2024-01-15T08:00:00Z',
+    approvedBy: null,
+    rejectionReason: null,
+  },
+  {
+    id: 'ord6',
+    orderNumber: 'ORD-2024-006',
+    integratorId: 'i3',
+    distributorId: 'd2',
+    customerId: 'c6',
+    customerName: 'ECI Telecom',
+    product: 'sase',
+    licenseType: 'users',
+    quantity: 210,
+    duration: 'yearly',
+    status: 'provisioned',
+    notes: 'Initial SASE deployment',
+    createdAt: '2023-10-25T10:00:00Z',
+    updatedAt: '2023-10-28T12:00:00Z',
+    approvedBy: 'מיכל שפירא',
+    rejectionReason: null,
+  },
+]
+
+// ─── Perception Point Customer Stats ─────────────────────────────────────────
+export const ppCustomerStats = [
+  {
+    id: 'pp1',
+    customerId: 'c1',
+    emailsScanned: 12450,
+    threatsBlocked: 342,
+    phishingBlocked: 187,
+    malwareBlocked: 89,
+    spamBlocked: 66,
+    safeEmails: 12108,
+    protectedMailboxes: 314,
+    totalMailboxes: 320,
+    lastUpdated: '2024-01-15T10:30:00Z',
+  },
+  {
+    id: 'pp2',
+    customerId: 'c2',
+    emailsScanned: 24870,
+    threatsBlocked: 891,
+    phishingBlocked: 412,
+    malwareBlocked: 234,
+    spamBlocked: 245,
+    safeEmails: 23979,
+    protectedMailboxes: 561,
+    totalMailboxes: 580,
+    lastUpdated: '2024-01-15T09:15:00Z',
+  },
+]
+
+export const ppEmailTrend = [
+  { day: 'א', scanned: 1840, blocked: 42 },
+  { day: 'ב', scanned: 2120, blocked: 67 },
+  { day: 'ג', scanned: 1960, blocked: 38 },
+  { day: 'ד', scanned: 2340, blocked: 89 },
+  { day: 'ה', scanned: 2180, blocked: 54 },
+  { day: 'ו', scanned: 1420, blocked: 31 },
+  { day: 'ש', scanned: 890, blocked: 21 },
+]
+
+export const ppThreatBreakdown = [
+  { category: 'Phishing', count: 187, color: '#ef4444', pct: 55 },
+  { category: 'Malware', count: 89, color: '#f97316', pct: 26 },
+  { category: 'Spam', count: 66, color: '#eab308', pct: 19 },
+]
+
+export const ppRecentThreats = [
+  { id: 'thr1', customerId: 'c1', type: 'Phishing', subject: 'Urgent: Account Verification Required', sender: 'security-alert@fake-bank.com', recipient: 'cfo@elbit.co.il', severity: 'critical', blockedAt: '2024-01-15T10:12:00Z', status: 'blocked' },
+  { id: 'thr2', customerId: 'c1', type: 'Malware', subject: 'Invoice #8821 — Please Review', sender: 'billing@invoice-service.net', recipient: 'finance@elbit.co.il', severity: 'high', blockedAt: '2024-01-15T09:47:00Z', status: 'blocked' },
+  { id: 'thr3', customerId: 'c1', type: 'Phishing', subject: 'Your Microsoft 365 Password Expiring', sender: 'no-reply@microsoft-support.org', recipient: 'it@elbit.co.il', severity: 'high', blockedAt: '2024-01-15T08:33:00Z', status: 'blocked' },
+  { id: 'thr4', customerId: 'c1', type: 'Spam', subject: 'You Won a Prize — Claim Now!', sender: 'promo@deals-unlimited.com', recipient: 'info@elbit.co.il', severity: 'low', blockedAt: '2024-01-14T22:15:00Z', status: 'blocked' },
+  { id: 'thr5', customerId: 'c1', type: 'Malware', subject: 'Contract Amendment — Signed Copy', sender: 'legal@contractsdocs.biz', recipient: 'legal@elbit.co.il', severity: 'critical', blockedAt: '2024-01-14T17:02:00Z', status: 'blocked' },
+]
+
 // ─── Selectors ────────────────────────────────────────────────────────────────
 export const getIntegratorsByDistributor = (distributorId) =>
   integrators.filter((i) => i.distributorId === distributorId)
@@ -446,3 +612,18 @@ export const getPoliciesByCustomer = (customerId) =>
 export const getIntegrator = (id) => integrators.find((i) => i.id === id)
 export const getCustomer = (id) => customers.find((c) => c.id === id)
 export const getDistributor = (id) => distributors.find((d) => d.id === id)
+
+export const getOrdersByIntegrator = (integratorId) =>
+  orders.filter((o) => o.integratorId === integratorId)
+
+export const getOrdersByDistributor = (distributorId) =>
+  orders.filter((o) => o.distributorId === distributorId)
+
+export const getPendingOrders = (distributorId) =>
+  orders.filter((o) => o.distributorId === distributorId && o.status === 'pending')
+
+export const getPPStatsByCustomer = (customerId) =>
+  ppCustomerStats.find((s) => s.customerId === customerId) || null
+
+export const getPPThreatsByCustomer = (customerId) =>
+  ppRecentThreats.filter((t) => t.customerId === customerId)

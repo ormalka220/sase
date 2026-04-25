@@ -2,13 +2,15 @@ import React, { useState } from 'react'
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   LayoutDashboard, Building2, BarChart3, Settings2,
-  ChevronLeft, Bell, LogOut
+  ChevronLeft, Bell, LogOut, ShoppingCart
 } from 'lucide-react'
 import { CDataLogo, CDataMark } from '../components/Logos'
+import ProductSwitch from '../components/ProductSwitch'
 
 const navItems = [
   { icon: LayoutDashboard, labelHe: 'לוח בקרה',   labelEn: 'Dashboard',   path: '/distribution/dashboard' },
   { icon: Building2,       labelHe: 'אינטגרטורים', labelEn: 'Integrators', path: '/distribution/integrators' },
+  { icon: ShoppingCart,    labelHe: 'הזמנות',      labelEn: 'Orders',      path: '/distribution/orders' },
   { icon: BarChart3,       labelHe: 'דוחות',       labelEn: 'Reports',     path: '/distribution/reports' },
   { icon: Settings2,       labelHe: 'הגדרות',      labelEn: 'Settings',    path: '/distribution/settings' },
 ]
@@ -45,7 +47,7 @@ export default function DistributorLayout() {
               </div>
               <div className="min-w-0">
                 <div className="text-xs font-semibold text-white truncate">C-DATA Distribution</div>
-                <div className="text-[10px] text-cdata-500 font-medium badge-blue" style={{ display: 'inline-flex', marginTop: '2px' }}>
+                <div className="badge-blue" style={{ display: 'inline-flex', marginTop: '2px' }}>
                   Distributor
                 </div>
               </div>
@@ -71,7 +73,7 @@ export default function DistributorLayout() {
           })}
         </nav>
 
-        {/* C-Data branding strip */}
+        {/* Branding strip */}
         {sidebarOpen && (
           <div className="mx-3 mb-3 p-2.5 rounded-xl border border-white/5 bg-white/[0.02]">
             <div className="text-[9px] text-slate-600 mb-1.5 text-center">Powered by</div>
@@ -110,6 +112,7 @@ export default function DistributorLayout() {
           </div>
 
           <div className="flex items-center gap-3">
+            <ProductSwitch />
             <button className="relative p-2 rounded-lg hover:bg-white/5 transition-colors text-slate-500 hover:text-white">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-cdata-500 ring-1 ring-navy-900"></span>

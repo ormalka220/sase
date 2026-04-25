@@ -2,13 +2,15 @@ import React, { useState } from 'react'
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   LayoutDashboard, Users, ClipboardList, BarChart3, Settings2,
-  ChevronLeft, Bell, LogOut, PlusCircle
+  ChevronLeft, Bell, LogOut, PlusCircle, ShoppingCart
 } from 'lucide-react'
 import { CDataLogo, CDataMark } from '../components/Logos'
+import ProductSwitch from '../components/ProductSwitch'
 
 const navItems = [
   { icon: LayoutDashboard, labelHe: 'לוח בקרה', labelEn: 'Dashboard',  path: '/integrator/dashboard' },
   { icon: Users,           labelHe: 'לקוחות',   labelEn: 'Customers',  path: '/integrator/customers' },
+  { icon: ShoppingCart,    labelHe: 'הזמנות',    labelEn: 'Orders',     path: '/integrator/orders' },
   { icon: ClipboardList,   labelHe: 'קליטה',    labelEn: 'Onboarding', path: '/integrator/onboarding' },
   { icon: BarChart3,       labelHe: 'דוחות',    labelEn: 'Reports',    path: '/integrator/reports' },
   { icon: Settings2,       labelHe: 'הגדרות',   labelEn: 'Settings',   path: '/integrator/settings' },
@@ -69,29 +71,39 @@ export default function IntegratorLayout() {
             )
           })}
 
-          {/* New Customer CTA */}
-          <div className="pt-2">
+          {/* CTAs */}
+          <div className="pt-2 space-y-1.5">
             {sidebarOpen ? (
-              <button
-                onClick={() => navigate('/integrator/customers/new')}
-                className="btn-primary w-full flex items-center justify-center gap-2 text-xs py-2"
-              >
-                <PlusCircle className="w-4 h-4 flex-shrink-0" />
-                לקוח חדש +
-              </button>
+              <>
+                <button
+                  onClick={() => navigate('/integrator/orders/new')}
+                  className="btn-primary w-full flex items-center justify-center gap-2 text-xs py-2"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5 flex-shrink-0" />
+                  הזמנה חדשה +
+                </button>
+                <button
+                  onClick={() => navigate('/integrator/customers/new')}
+                  className="btn-ghost w-full flex items-center justify-center gap-2 text-xs py-2"
+                >
+                  <PlusCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  לקוח חדש +
+                </button>
+              </>
             ) : (
-              <button
-                onClick={() => navigate('/integrator/customers/new')}
-                className="nav-item w-full justify-center text-cdata-300 hover:text-white"
-                title="לקוח חדש"
-              >
-                <PlusCircle className="w-4 h-4 flex-shrink-0" />
-              </button>
+              <>
+                <button onClick={() => navigate('/integrator/orders/new')} className="nav-item w-full justify-center text-cdata-300 hover:text-white" title="הזמנה חדשה">
+                  <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+                </button>
+                <button onClick={() => navigate('/integrator/customers/new')} className="nav-item w-full justify-center text-cdata-300 hover:text-white" title="לקוח חדש">
+                  <PlusCircle className="w-4 h-4 flex-shrink-0" />
+                </button>
+              </>
             )}
           </div>
         </nav>
 
-        {/* C-Data branding strip */}
+        {/* Branding strip */}
         {sidebarOpen && (
           <div className="mx-3 mb-3 p-2.5 rounded-xl border border-white/5 bg-white/[0.02]">
             <div className="text-[9px] text-slate-600 mb-1.5 text-center">Powered by</div>
@@ -130,6 +142,7 @@ export default function IntegratorLayout() {
           </div>
 
           <div className="flex items-center gap-3">
+            <ProductSwitch />
             <button className="relative p-2 rounded-lg hover:bg-white/5 transition-colors text-slate-500 hover:text-white">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-cdata-500 ring-1 ring-navy-900"></span>
