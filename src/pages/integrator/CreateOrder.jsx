@@ -297,7 +297,16 @@ export default function CreateOrder() {
 
           {/* Customer */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2">לקוח *</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-slate-300">לקוח *</label>
+              <button
+                type="button"
+                onClick={() => navigate('/integrator/customers/new')}
+                className="text-[10px] px-2.5 py-1 rounded-md border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-colors"
+              >
+                צור לקוח
+              </button>
+            </div>
             <select
               value={form.customerId}
               onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))}
