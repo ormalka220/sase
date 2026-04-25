@@ -1,47 +1,53 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Shield, Globe, Lock, Zap, ArrowLeft, Building2 } from 'lucide-react'
+import { Users, Shield, ArrowLeft, Building2, LogIn } from 'lucide-react'
 import { CDataLogo, SpotNetLogo, CDataMark } from '../components/Logos'
 
-const portals = [
+const demoUsers = [
   {
-    key: 'distributor',
+    id: 'demo-distributor',
+    userName: 'Yonatan Levy',
+    role: 'Distributor Admin',
+    roleHe: 'מנהל הפצה',
     route: '/distribution/dashboard',
     icon: Building2,
     color: '#2C6A8A',
     colorRgb: '44,106,138',
     textColor: 'text-cdata-300',
-    title: 'Distributor Portal',
-    titleHe: 'פורטל מפיץ',
-    sub: 'ניהול ערוץ הפצה',
-    features: ['ניהול ערוץ הפצה של FortiSASE', 'מעקב אחר כל האינטגרטורים', 'מדדי כיסוי ושוק'],
-    cta: 'כניסה לפורטל הפצה',
+    portal: 'Distributor Portal',
+    portalHe: 'פורטל מפיץ',
+    email: 'distributor@demo.local',
+    cta: 'התחבר כמפיץ',
   },
   {
-    key: 'integrator',
+    id: 'demo-integrator',
+    userName: 'Alon Cohen',
+    role: 'Integrator Admin',
+    roleHe: 'מנהל אינטגרטור',
     route: '/integrator/dashboard',
     icon: Users,
     color: '#5B9BB8',
     colorRgb: '91,155,184',
     textColor: 'text-cdata-400',
-    title: 'Integrator Portal',
-    titleHe: 'פורטל אינטגרטור',
-    sub: 'ניהול לקוחות ו-Onboarding',
-    features: ['יצירת סביבות FortiSASE ללקוחות', 'ניהול יוזרים ו-Onboarding', 'גישה ישירה לכל סביבה'],
-    cta: 'כניסה לפורטל אינטגרטור',
+    portal: 'Integrator Portal',
+    portalHe: 'פורטל אינטגרטור',
+    email: 'integrator@demo.local',
+    cta: 'התחבר כאינטגרטור',
   },
   {
-    key: 'customer',
+    id: 'demo-customer',
+    userName: 'Dana Levy',
+    role: 'Customer IT Manager',
+    roleHe: 'מנהל IT לקוח',
     route: '/customer/overview',
     icon: Shield,
     color: '#10B981',
     colorRgb: '16,185,129',
     textColor: 'text-emerald-400',
-    title: 'Customer Portal',
-    titleHe: 'פורטל לקוח',
-    sub: 'מרכז שליטה אבטחתי',
-    features: ['ניטור Zero Trust ו-SD-WAN', 'ניהול משתמשים, מכשירים ואתרים', 'גישה ישירה לסביבת FortiSASE'],
-    cta: 'כניסה לפורטל לקוח',
+    portal: 'Customer Portal',
+    portalHe: 'פורטל לקוח',
+    email: 'customer@demo.local',
+    cta: 'התחבר כלקוח',
   },
 ]
 
@@ -94,15 +100,15 @@ export default function LandingPage() {
         </div>
 
         <h1 className="text-5xl md:text-6xl font-black mb-5 leading-[1.1] max-w-3xl">
-          <span className="text-white">ניהול FortiSASE.</span>
+          <span className="text-white">כניסה למערכת.</span>
           <br />
-          <span className="text-gradient-hero">בשלוש רמות.</span>
+          <span className="text-gradient-hero">שלושה משתמשי דמו.</span>
         </h1>
         <p className="text-lg text-slate-400 max-w-2xl mb-3 leading-relaxed">
-          פלטפורמה מרכזית לניהול שרשרת הפצה של FortiSASE — ממפיץ, דרך אינטגרטורים, ועד לקוחות קצה.
+          בחר משתמש דמה אחד כדי להתחבר ישירות לפורטל המתאים.
         </p>
         <p className="text-sm text-slate-600 mb-8 tracking-widest uppercase">
-          FortiSASE · Zero Trust · SD-WAN · SASE
+          Demo Login · Distributor · Integrator · Customer
         </p>
 
         {/* Hierarchy indicator */}
@@ -125,39 +131,35 @@ export default function LandingPage() {
           <div className="h-px w-12 bg-white/10" />
         </div>
 
-        {/* Portal cards */}
+        {/* Login cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full max-w-4xl mb-14">
-          {portals.map((p) => {
-            const Icon = p.icon
+          {demoUsers.map((u) => {
+            const Icon = u.icon
             return (
               <button
-                key={p.key}
-                onClick={() => navigate(p.route)}
+                key={u.id}
+                onClick={() => navigate(u.route)}
                 className="glass rounded-2xl p-6 text-right group transition-all duration-300 hover:scale-[1.02]"
                 style={{
-                  border: `1px solid rgba(${p.colorRgb},0.2)`,
-                  boxShadow: `0 0 40px rgba(${p.colorRgb},0.05)`,
+                  border: `1px solid rgba(${u.colorRgb},0.2)`,
+                  boxShadow: `0 0 40px rgba(${u.colorRgb},0.05)`,
                 }}
-                onMouseEnter={e => e.currentTarget.style.boxShadow = `0 0 60px rgba(${p.colorRgb},0.14)`}
-                onMouseLeave={e => e.currentTarget.style.boxShadow = `0 0 40px rgba(${p.colorRgb},0.05)`}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = `0 0 60px rgba(${u.colorRgb},0.14)`}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = `0 0 40px rgba(${u.colorRgb},0.05)`}
               >
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: `rgba(${p.colorRgb},0.1)`, border: `1px solid rgba(${p.colorRgb},0.22)` }}>
-                  <Icon className="w-6 h-6" style={{ color: p.color }} />
+                  style={{ background: `rgba(${u.colorRgb},0.1)`, border: `1px solid rgba(${u.colorRgb},0.22)` }}>
+                  <Icon className="w-6 h-6" style={{ color: u.color }} />
                 </div>
-                <div className="text-lg font-bold text-white mb-0.5">{p.title}</div>
-                <div className="text-xs text-slate-400 mb-1">{p.titleHe}</div>
-                <div className="text-[11px] text-slate-600 mb-4">{p.sub}</div>
-                <div className="space-y-1.5 mb-5">
-                  {p.features.map(f => (
-                    <div key={f} className="flex items-center gap-2 justify-end">
-                      <span className="text-[11px] text-slate-500">{f}</span>
-                      <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: p.color + '60' }}></div>
-                    </div>
-                  ))}
+                <div className="text-lg font-bold text-white mb-0.5">{u.userName}</div>
+                <div className="text-xs text-slate-400 mb-1">{u.roleHe} · {u.role}</div>
+                <div className="text-[11px] text-slate-600 mb-4">{u.portalHe} · {u.portal}</div>
+                <div className="glass rounded-lg px-3 py-2 mb-5 text-[11px] text-slate-400" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                  {u.email}
                 </div>
-                <div className={`flex items-center justify-end gap-2 text-xs font-semibold group-hover:gap-3 transition-all ${p.textColor}`}>
-                  <span>{p.cta}</span>
+                <div className={`flex items-center justify-end gap-2 text-xs font-semibold group-hover:gap-3 transition-all ${u.textColor}`}>
+                  <span>{u.cta}</span>
+                  <LogIn className="w-3.5 h-3.5" />
                   <ArrowLeft className="w-3.5 h-3.5" />
                 </div>
               </button>
@@ -165,22 +167,8 @@ export default function LandingPage() {
           })}
         </div>
 
-        {/* Products strip */}
-        <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-slate-600">
-          {[
-            { icon: Globe,  label: 'Sovereign SASE',      color: '#2C6A8A' },
-            { icon: Lock,   label: 'Workspace Security',  color: '#2C6A8A' },
-            { icon: Zap,    label: 'Perception Point',    color: '#F57C20' },
-            { icon: Shield, label: 'FortiSASE',           color: '#2C6A8A' },
-          ].map((item, i) => (
-            <React.Fragment key={item.label}>
-              {i > 0 && <div className="w-1 h-1 rounded-full bg-slate-800"></div>}
-              <div className="flex items-center gap-1.5">
-                <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} />
-                <span>{item.label}</span>
-              </div>
-            </React.Fragment>
-          ))}
+        <div className="text-xs text-slate-600">
+          * דמו בלבד: הכניסה מבצעת מעבר ישיר לפורטל ללא סיסמה.
         </div>
       </main>
 

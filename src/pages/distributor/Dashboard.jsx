@@ -1,41 +1,49 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building2, Users, Shield, AlertTriangle, ChevronLeft, CheckCircle, AlertCircle, LayoutDashboard } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
 } from 'recharts'
-import { integrators, customers, customerEnvironments, growthData, getCustomersByIntegrator } from '../../data/mockData'
-
-const totalProtectedUsers = customerEnvironments.reduce((s, e) => s + e.protectedUsers, 0)
-const totalAlerts = customerEnvironments.reduce((s, e) => s + e.alertsCount, 0)
+import { integrators, customers, customerEnvironments, growthData, getCustomersByIntegrator, getOrdersByDistributor } from '../../data/mockData'
+import { useProduct } from '../../context/ProductContext'
 
 export default function DistributorDashboard() {
   const navigate = useNavigate()
+  const { product, config } = useProduct()
+  const distributorOrders = getOrdersByDistributor('d1')
+  const scopedOrders = product === 'all' ? distributorOrders : distributorOrders.filter(o => o.product === product)
+  const scopedCustomerIds = new Set(scopedOrders.map(o => o.customerId))
+  const scopedIntegratorIds = new Set(scopedOrders.map(o => o.integratorId))
+  const scopedCustomers = product === 'all' ? customers : customers.filter(c => scopedCustomerIds.has(c.id))
+  const scopedIntegrators = product === 'all' ? integrators : integrators.filter(i => scopedIntegratorIds.has(i.id))
+  const scopedEnvironments = product === 'all' ? customerEnvironments : customerEnvironments.filter(e => scopedCustomerIds.has(e.customerId))
 
-  const activeIntegrators = integrators.filter(i => i.status === 'active').length
+  const activeIntegrators = scopedIntegrators.filter(i => i.status === 'active').length
+  const scopedProtectedUsers = scopedEnvironments.reduce((s, e) => s + e.protectedUsers, 0)
+  const scopedAlerts = scopedEnvironments.reduce((s, e) => s + e.alertsCount, 0)
 
   const kpis = [
     {
       icon: Building2,
       label: 'אינטגרטורים',
-      value: integrators.length,
-      sub: `${activeIntegrators} / ${integrators.length} פעילים`,
+      value: scopedIntegrators.length,
+      sub: `${activeIntegrators} / ${scopedIntegrators.length} פעילים`,
       badge: '+12% מחודש שעבר',
       alert: false,
     },
     {
       icon: Users,
       label: 'לקוחות',
-      value: customers.length,
-      sub: '8 לקוחות מנוהלים',
+      value: scopedCustomers.length,
+      sub: `${scopedCustomers.length} לקוחות מנוהלים`,
       badge: '+12% מחודש שעבר',
       alert: false,
     },
     {
       icon: Shield,
       label: 'משתמשים מוגנים',
-      value: totalProtectedUsers.toLocaleString(),
+      value: scopedProtectedUsers.toLocaleString(),
       sub: '1,764 users protected by FortiSASE',
       badge: '+12% מחודש שעבר',
       alert: false,
@@ -43,26 +51,26 @@ export default function DistributorDashboard() {
     {
       icon: AlertTriangle,
       label: 'התראות פעילות',
-      value: totalAlerts,
-      sub: `${totalAlerts} open alerts`,
+      value: scopedAlerts,
+      sub: `${scopedAlerts} open alerts`,
       badge: '+12% מחודש שעבר',
-      alert: totalAlerts > 5,
+      alert: scopedAlerts > 5,
     },
   ]
 
-  const alertEnvs = customerEnvironments.filter(e => e.alertsCount > 0)
+  const alertEnvs = scopedEnvironments.filter(e => e.alertsCount > 0)
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-slate-500 text-sm mt-0.5">סקירה כללית — Distribution Overview</p>
+        <p className="text-slate-500 text-sm mt-0.5">סקירה כללית — Distribution Overview · {product === 'all' ? 'All Products' : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
       </div>
 
       {/* Platform Overview Banner */}
       <div className="rounded-2xl p-4 flex items-center gap-4"
-        style={{ background: 'linear-gradient(135deg, rgba(44,106,138,0.12) 0%, rgba(44,106,138,0.04) 100%)', border: '1px solid rgba(44,106,138,0.2)' }}>
+        style={{ background: `linear-gradient(135deg, rgba(${config.glowRgb},0.12) 0%, rgba(${config.glowRgb},0.04) 100%)`, border: `1px solid rgba(${config.glowRgb},0.2)` }}>
         <div className="flex items-center gap-3 flex-1">
           <div className="w-10 h-10 rounded-xl bg-cdata-500/15 border border-cdata-500/20 flex items-center justify-center">
             <LayoutDashboard className="w-5 h-5 text-cdata-300" />
@@ -132,7 +140,7 @@ export default function DistributorDashboard() {
         <div className="glass glow-border rounded-2xl p-5">
           <h3 className="text-sm font-semibold text-white mb-4">ביצועי אינטגרטורים</h3>
           <div className="space-y-3">
-            {integrators.map(integ => {
+            {scopedIntegrators.map(integ => {
               const custCount = getCustomersByIntegrator(integ.id).length
               const isHealthy = integ.status === 'active'
               return (

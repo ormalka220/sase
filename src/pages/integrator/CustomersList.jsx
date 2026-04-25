@@ -4,7 +4,9 @@ import { Search, Plus, Users, CheckCircle, Clock, ChevronRight, ExternalLink, Co
 import {
   getCustomersByIntegrator,
   getCustomerEnvironment,
+  getOrdersByIntegrator,
 } from '../../data/mockData'
+import { useProduct } from '../../context/ProductContext'
 
 const INTEGRATOR_ID = 'i1'
 
@@ -35,12 +37,20 @@ const statusLabel = (status) => {
 
 export default function IntegratorCustomersList() {
   const navigate = useNavigate()
+  const { product, config } = useProduct()
   const allCustomers = getCustomersByIntegrator(INTEGRATOR_ID)
+  const integratorOrders = getOrdersByIntegrator(INTEGRATOR_ID)
+  const scopedCustomerIds = product === 'all'
+    ? null
+    : new Set(integratorOrders.filter(o => o.product === product).map(o => o.customerId))
+  const productCustomers = product === 'all'
+    ? allCustomers
+    : allCustomers.filter(c => scopedCustomerIds.has(c.id))
 
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
 
-  const filtered = allCustomers.filter(c => {
+  const filtered = productCustomers.filter(c => {
     const matchSearch =
       c.companyName.toLowerCase().includes(search.toLowerCase()) ||
       c.domain.toLowerCase().includes(search.toLowerCase())
@@ -52,8 +62,8 @@ export default function IntegratorCustomersList() {
     return matchSearch && matchFilter
   })
 
-  const totalActive = allCustomers.filter(c => c.status === 'active').length
-  const totalOnboarding = allCustomers.filter(c => c.status === 'onboarding').length
+  const totalActive = productCustomers.filter(c => c.status === 'active').length
+  const totalOnboarding = productCustomers.filter(c => c.status === 'onboarding').length
 
   const filters = [
     { key: 'all', label: 'הכל' },
@@ -68,7 +78,7 @@ export default function IntegratorCustomersList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">לקוחות</h1>
-          <p className="text-slate-500 text-sm mt-0.5">רשימת לקוחות</p>
+          <p className="text-slate-500 text-sm mt-0.5">רשימת לקוחות · {product === 'all' ? 'All Products' : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
         </div>
         <button
           className="btn-primary flex items-center gap-2 text-sm"
@@ -81,8 +91,8 @@ export default function IntegratorCustomersList() {
 
       {/* KPI row */}
       <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: 'סה"כ לקוחות', value: allCustomers.length, icon: Users, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
+          {[
+          { label: 'סה"כ לקוחות', value: productCustomers.length, icon: Users, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
           { label: 'לקוחות פעילים', value: totalActive, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-600/15' },
           { label: 'בתהליך קליטה', value: totalOnboarding, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-600/15' },
         ].map(s => (
@@ -104,7 +114,8 @@ export default function IntegratorCustomersList() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="חיפוש לקוח..."
-            className="w-full bg-white/[0.04] border border-white/10 rounded-lg pr-9 pl-4 py-2 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-cdata-500/30"
+            className="w-full bg-white/[0.04] border border-white/10 rounded-lg pr-9 pl-4 py-2 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none"
+            style={{ borderColor: 'rgba(255,255,255,0.1)' }}
           />
         </div>
         <div className="flex items-center gap-1.5">
@@ -114,9 +125,10 @@ export default function IntegratorCustomersList() {
               onClick={() => setFilter(f.key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 filter === f.key
-                  ? 'bg-cdata-500/20 text-cdata-300 border border-cdata-500/30'
+                  ? 'text-cdata-300 border'
                   : 'text-slate-500 hover:text-slate-300 border border-transparent'
               }`}
+              style={filter === f.key ? { background: `${config.primaryColor}24`, borderColor: `${config.primaryColor}4d` } : {}}
             >
               {f.label}
             </button>

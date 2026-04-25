@@ -24,7 +24,6 @@ const saseNavItems = [
 const ppNavItems = [
   { icon: Home,        label: 'Overview',    labelHe: 'סקירה כללית', path: '/customer/overview' },
   { icon: ShieldOff,   label: 'Threats',     labelHe: 'איומים',      path: '/customer/threats' },
-  { icon: Mail,        label: 'Email Scan',  labelHe: 'סריקת מייל',  path: '/customer/email-scan' },
   { icon: FileText,    label: 'Reports',     labelHe: 'דוחות',       path: '/customer/reports' },
   { icon: Settings2,   label: 'Settings',    labelHe: 'הגדרות',      path: '/customer/settings' },
 ]

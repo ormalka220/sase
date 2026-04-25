@@ -44,9 +44,24 @@ const CustomerSettings  = lazy(() => import('./pages/customer/Settings'))
 const PerceptionOverview = lazy(() => import('./pages/customer/PerceptionOverview'))
 const PerceptionThreats  = lazy(() => import('./pages/customer/PerceptionThreats'))
 
+function AllProductsOverview() {
+  return (
+    <div className="space-y-6">
+      <div className="glass rounded-xl p-4" style={{ border: '1px solid rgba(124,58,237,0.25)' }}>
+        <div className="text-sm font-semibold text-white">All Products Overview</div>
+        <div className="text-xs text-slate-500 mt-1">תצוגה מאוחדת של Forti SASE ו-Perception Point</div>
+      </div>
+      <CustomerOverview />
+      <PerceptionOverview />
+    </div>
+  )
+}
+
 function CustomerOverviewRouter() {
   const { product } = useProduct()
-  return product === 'perception' ? <PerceptionOverview /> : <CustomerOverview />
+  if (product === 'perception') return <PerceptionOverview />
+  if (product === 'all') return <AllProductsOverview />
+  return <CustomerOverview />
 }
 
 function SaseOnlyRoute({ children }) {

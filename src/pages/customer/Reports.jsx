@@ -1,6 +1,7 @@
 import React from 'react'
 import { FileText, Download, Calendar, Shield, BarChart3, TrendingUp, CheckCircle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
+import { useProduct } from '../../context/ProductContext'
 
 const monthlyData = [
   { month: 'יוני', blocked: 245, phishing: 98, malware: 67, bec: 80 },
@@ -27,20 +28,28 @@ const typeColors = {
 }
 
 export default function CustomerReports() {
+  const { product, config } = useProduct()
+  const reportTitle = product === 'perception' ? 'דוחות Perception Point' : product === 'all' ? 'דוחות מאוחדים' : 'דוחות Forti SASE'
+  const blockedLabel = product === 'sase' ? 'אירועים נחסמו ב-30 יום' : 'איומי מייל נחסמו ב-30 יום'
+  const primaryScoreLabel = product === 'perception' ? 'Email Security Score' : 'Security Score'
+  const chartBars = product === 'sase'
+    ? [{ key: 'blocked', color: config.primaryColor, label: 'Blocked' }]
+    : [{ key: 'phishing', color: '#5B9BB8', label: 'Phishing' }, { key: 'malware', color: '#ef4444', label: 'Malware' }, { key: 'bec', color: '#f59e0b', label: 'BEC' }]
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">דוחות</h1>
-        <p className="text-slate-500 text-sm mt-0.5">Reports & Analytics</p>
+        <p className="text-slate-500 text-sm mt-0.5">{reportTitle} · Reports & Analytics</p>
       </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'נחסמו ב-30 יום', value: '356', icon: Shield, color: 'text-emerald-400', bg: 'bg-emerald-600/15' },
+          { label: blockedLabel, value: '356', icon: Shield, color: 'text-emerald-400', bg: 'bg-emerald-600/15' },
           { label: 'Phishing שנחסמו', value: '140', icon: BarChart3, color: 'text-red-400', bg: 'bg-red-600/15' },
           { label: 'Malware שנחסמו', value: '91', icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-600/15' },
-          { label: 'Security Score', value: '98%', icon: CheckCircle, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
+          { label: primaryScoreLabel, value: '98%', icon: CheckCircle, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
         ].map(s => (
           <div key={s.label} className="stat-card">
             <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
@@ -60,7 +69,7 @@ export default function CustomerReports() {
             <div className="text-xs text-slate-500">Threat Blocking Trends</div>
           </div>
           <div className="flex gap-3 text-[10px]">
-            {[{ color: '#5B9BB8', label: 'Phishing' }, { color: '#ef4444', label: 'Malware' }, { color: '#f59e0b', label: 'BEC' }].map(l => (
+            {chartBars.map(l => (
               <div key={l.label} className="flex items-center gap-1 text-slate-500">
                 <div className="w-2 h-2 rounded-full" style={{ background: l.color }}></div>
                 {l.label}
@@ -76,9 +85,9 @@ export default function CustomerReports() {
             <Tooltip
               contentStyle={{ background: '#0a1428', border: '1px solid rgba(44,106,138,0.2)', borderRadius: 8, fontSize: 11 }}
             />
-            <Bar dataKey="phishing" fill="#5B9BB8" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="malware" fill="#ef4444" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="bec" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+            {chartBars.map((bar) => (
+              <Bar key={bar.key} dataKey={bar.key} fill={bar.color} radius={[3, 3, 0, 0]} />
+            ))}
           </BarChart>
         </ResponsiveContainer>
       </div>

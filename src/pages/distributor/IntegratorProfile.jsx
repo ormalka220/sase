@@ -216,8 +216,7 @@ export default function IntegratorProfile() {
             return (
               <div
                 key={c.id}
-                className="grid grid-cols-5 items-center px-5 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] cursor-pointer transition-colors"
-                onClick={() => navigate('/integrator/customers/' + c.id)}
+                className="grid grid-cols-5 items-center px-5 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
               >
                 {/* Customer name */}
                 <div className="col-span-2 flex items-center gap-3 min-w-0">

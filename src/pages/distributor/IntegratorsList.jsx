@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Plus, Eye, MoreHorizontal, Building2, Shield } from 'lucide-react'
-import { integrators, getCustomersByIntegrator } from '../../data/mockData'
+import { integrators, getCustomersByIntegrator, getOrdersByDistributor } from '../../data/mockData'
+import { useProduct } from '../../context/ProductContext'
 
 const STATUS_TABS = ['הכל', 'active', 'onboarding', 'suspended']
 const STATUS_LABELS = { הכל: 'הכל', active: 'פעיל', onboarding: 'Onboarding', suspended: 'מושהה' }
@@ -21,10 +22,18 @@ function formatDate(str) {
 
 export default function IntegratorsList() {
   const navigate = useNavigate()
+  const { product, config } = useProduct()
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState('הכל')
+  const distributorOrders = getOrdersByDistributor('d1')
+  const scopedIntegratorIds = product === 'all'
+    ? null
+    : new Set(distributorOrders.filter(o => o.product === product).map(o => o.integratorId))
+  const scopedIntegrators = product === 'all'
+    ? integrators
+    : integrators.filter(i => scopedIntegratorIds.has(i.id))
 
-  const filtered = integrators.filter(item => {
+  const filtered = scopedIntegrators.filter(item => {
     const matchSearch =
       item.companyName.toLowerCase().includes(search.toLowerCase()) ||
       item.contactEmail.toLowerCase().includes(search.toLowerCase())
@@ -32,9 +41,9 @@ export default function IntegratorsList() {
     return matchSearch && matchStatus
   })
 
-  const totalCount = integrators.length
-  const activeCount = integrators.filter(i => i.status === 'active').length
-  const onboardingCount = integrators.filter(i => i.status === 'onboarding').length
+  const totalCount = scopedIntegrators.length
+  const activeCount = scopedIntegrators.filter(i => i.status === 'active').length
+  const onboardingCount = scopedIntegrators.filter(i => i.status === 'onboarding').length
 
   return (
     <div className="space-y-6">
@@ -42,7 +51,7 @@ export default function IntegratorsList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Integrators</h1>
-          <p className="text-slate-500 text-sm mt-0.5">ניהול אינטגרטורים</p>
+          <p className="text-slate-500 text-sm mt-0.5">ניהול אינטגרטורים · {product === 'all' ? 'All Products' : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
         </div>
         <button
           className="btn-primary flex items-center gap-2 text-sm"
@@ -55,11 +64,11 @@ export default function IntegratorsList() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: 'סה"כ אינטגרטורים', value: totalCount, icon: Building2, color: 'text-cdata-300', bg: 'rgba(44,106,138,0.12)' },
+          {[
+          { label: 'סה"כ אינטגרטורים', value: totalCount, icon: Building2, color: 'text-cdata-300', bg: `rgba(${config.glowRgb},0.12)` },
           { label: 'פעילים', value: activeCount, icon: Building2, color: 'text-emerald-400', bg: 'rgba(16,185,129,0.10)' },
           { label: 'Onboarding', value: onboardingCount, icon: Building2, color: 'text-amber-400', bg: 'rgba(245,158,11,0.10)' },
-          { label: 'FortiSASE Environments', value: '5', icon: Shield, color: 'text-cdata-300', bg: 'rgba(44,106,138,0.15)' },
+          { label: product === 'perception' ? 'Perception פעילות' : 'FortiSASE Environments', value: String(distributorOrders.filter(o => product === 'all' || o.product === product).length), icon: Shield, color: 'text-cdata-300', bg: `rgba(${config.glowRgb},0.15)` },
         ].map((s, i) => (
           <div key={i} className="stat-card">
             <div className="flex items-center justify-between mb-3">
@@ -82,7 +91,8 @@ export default function IntegratorsList() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="חיפוש אינטגרטור..."
-            className="w-full bg-white/[0.04] border border-white/8 rounded-lg pr-9 pl-4 py-2 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-cdata-500/30"
+            className="w-full bg-white/[0.04] border border-white/8 rounded-lg pr-9 pl-4 py-2 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none"
+            style={{ borderColor: 'rgba(255,255,255,0.08)' }}
           />
         </div>
         {/* Status filter buttons */}
@@ -93,9 +103,10 @@ export default function IntegratorsList() {
               onClick={() => setActiveTab(tab)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 activeTab === tab
-                  ? 'bg-cdata-500/20 text-cdata-300 border border-cdata-500/30'
+                  ? 'text-cdata-300 border'
                   : 'text-slate-500 hover:text-white hover:bg-white/[0.04] border border-transparent'
               }`}
+              style={activeTab === tab ? { background: `${config.primaryColor}24`, borderColor: `${config.primaryColor}4d` } : {}}
             >
               {STATUS_LABELS[tab]}
             </button>

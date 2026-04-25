@@ -41,6 +41,7 @@ export default function CreateCustomer() {
 
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
+  const [createdCustomerId, setCreatedCustomerId] = useState('')
   const [form, setForm] = useState({
     companyName: '',
     domain: '',
@@ -358,6 +359,8 @@ export default function CreateCustomer() {
   }
 
   const handleSubmit = () => {
+    const generatedId = `new-${(form.companyName || 'customer').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16)}`
+    setCreatedCustomerId(generatedId)
     setSubmitted(true)
   }
 
@@ -374,6 +377,7 @@ export default function CreateCustomer() {
     })
     setStep(0)
     setSubmitted(false)
+    setCreatedCustomerId('')
   }
 
   // Success state
@@ -402,7 +406,7 @@ export default function CreateCustomer() {
           <div className="flex items-center justify-center gap-3">
             <button
               className="btn-primary"
-              onClick={() => navigate('/integrator/customers/c1')}
+              onClick={() => navigate(`/integrator/customers/${createdCustomerId || 'c1'}`)}
             >
               פתח פרופיל לקוח
             </button>

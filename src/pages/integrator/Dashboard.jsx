@@ -11,7 +11,9 @@ import {
   getCustomersByIntegrator,
   getCustomerEnvironment,
   growthData,
+  getOrdersByIntegrator,
 } from '../../data/mockData'
+import { useProduct } from '../../context/ProductContext'
 
 const INTEGRATOR_ID = 'i1'
 const myCustomers = getCustomersByIntegrator(INTEGRATOR_ID)
@@ -33,10 +35,18 @@ const onboardingLabel = (status) => {
 
 export default function IntegratorDashboard() {
   const navigate = useNavigate()
+  const { product, config } = useProduct()
+  const integratorOrders = getOrdersByIntegrator(INTEGRATOR_ID)
+  const scopedCustomerIds = product === 'all'
+    ? null
+    : new Set(integratorOrders.filter(o => o.product === product).map(o => o.customerId))
+  const scopedCustomers = product === 'all'
+    ? myCustomers
+    : myCustomers.filter(c => scopedCustomerIds.has(c.id))
 
-  const activeCustomers = myCustomers.filter(c => c.status === 'active')
-  const pendingOnboarding = myCustomers.filter(c => c.onboardingStatus !== 'active')
-  const openAlerts = myCustomers.reduce((sum, c) => {
+  const activeCustomers = scopedCustomers.filter(c => c.status === 'active')
+  const pendingOnboarding = scopedCustomers.filter(c => c.onboardingStatus !== 'active')
+  const openAlerts = scopedCustomers.reduce((sum, c) => {
     const env = getCustomerEnvironment(c.id)
     return sum + (env?.alertsCount || 0)
   }, 0)
@@ -44,7 +54,7 @@ export default function IntegratorDashboard() {
   const kpis = [
     {
       label: 'סה"כ לקוחות',
-      value: myCustomers.length,
+      value: scopedCustomers.length,
       icon: Users,
       color: 'text-cdata-300',
       bg: 'bg-cdata-500/15',
@@ -72,14 +82,14 @@ export default function IntegratorDashboard() {
     },
   ]
 
-  const recentCustomers = [...myCustomers].slice(-3).reverse()
+  const recentCustomers = [...scopedCustomers].slice(-3).reverse()
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">לוח בקרה</h1>
-        <p className="text-slate-500 text-sm mt-0.5">NetSec Solutions — Integrator Dashboard</p>
+        <p className="text-slate-500 text-sm mt-0.5">NetSec Solutions — Integrator Dashboard · {product === 'all' ? 'All Products' : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
       </div>
 
       {/* KPI Row */}
@@ -136,7 +146,7 @@ export default function IntegratorDashboard() {
         <div className="glass glow-border rounded-2xl p-5">
           <div className="text-sm font-semibold text-white mb-4">בריאות לקוחות</div>
           <div className="space-y-3">
-            {myCustomers.map(c => {
+            {scopedCustomers.map(c => {
               const env = getCustomerEnvironment(c.id)
               const score = env?.complianceScore ?? 0
               const barColor = score >= 90 ? '#10b981' : score >= 70 ? '#f59e0b' : '#ef4444'
@@ -201,7 +211,8 @@ export default function IntegratorDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div className="text-sm font-semibold text-white">לקוחות אחרונים</div>
             <button
-              className="text-xs text-cdata-300 hover:text-cdata-300/80 transition-colors flex items-center gap-1"
+              className="text-xs transition-colors flex items-center gap-1"
+              style={{ color: config.navActiveColor }}
               onClick={() => navigate('/integrator/customers')}
             >
               הכל <ChevronRight className="w-3 h-3" />

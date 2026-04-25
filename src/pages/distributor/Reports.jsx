@@ -1,15 +1,11 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { FileText, Download, TrendingUp, BarChart as BarChartIcon, Calendar } from 'lucide-react'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
 } from 'recharts'
-import { growthData, integrators, getCustomersByIntegrator } from '../../data/mockData'
-
-const integratorBarData = integrators.map(integ => ({
-  name: integ.companyName.split(' ')[0],
-  customers: getCustomersByIntegrator(integ.id).length,
-}))
+import { growthData, integrators, getCustomersByIntegrator, getOrdersByDistributor } from '../../data/mockData'
+import { useProduct } from '../../context/ProductContext'
 
 const reportsList = [
   {
@@ -33,13 +29,23 @@ const reportsList = [
 ]
 
 export default function Reports() {
+  const { product, config } = useProduct()
+  const distributorOrders = getOrdersByDistributor('d1')
+  const scopedOrders = product === 'all' ? distributorOrders : distributorOrders.filter(o => o.product === product)
+  const scopedIntegratorIds = product === 'all' ? null : new Set(scopedOrders.map(o => o.integratorId))
+  const scopedIntegrators = product === 'all' ? integrators : integrators.filter(i => scopedIntegratorIds.has(i.id))
+  const integratorBarData = scopedIntegrators.map(integ => ({
+    name: integ.companyName.split(' ')[0],
+    customers: getCustomersByIntegrator(integ.id).length,
+  }))
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">דוחות</h1>
-          <p className="text-slate-500 text-sm mt-0.5">ניהול דוחות מפיץ</p>
+          <p className="text-slate-500 text-sm mt-0.5">ניהול דוחות מפיץ · {product === 'all' ? 'All Products' : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="badge-steel text-xs flex items-center gap-1.5">
@@ -58,7 +64,7 @@ export default function Reports() {
               <h3 className="text-sm font-semibold text-white">צמיחת לקוחות</h3>
               <p className="text-xs text-slate-500 mt-0.5">Customer Growth — 6 חודשים אחרונים</p>
             </div>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(44,106,138,0.12)' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `rgba(${config.glowRgb},0.12)` }}>
               <TrendingUp className="w-4 h-4 text-cdata-300" />
             </div>
           </div>
@@ -66,17 +72,17 @@ export default function Reports() {
             <AreaChart data={growthData}>
               <defs>
                 <linearGradient id="reportsGrad1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#2C6A8A" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#2C6A8A" stopOpacity={0} />
+                  <stop offset="5%"  stopColor={config.primaryColor} stopOpacity={0.35} />
+                  <stop offset="95%" stopColor={config.primaryColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
               <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis hide />
               <Tooltip
-                contentStyle={{ background: '#0B1929', border: '1px solid rgba(44,106,138,0.25)', borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ background: '#0B1929', border: `1px solid rgba(${config.glowRgb},0.25)`, borderRadius: 8, fontSize: 12 }}
               />
-              <Area type="monotone" dataKey="customers" stroke="#2C6A8A" strokeWidth={2.5} fill="url(#reportsGrad1)" />
+              <Area type="monotone" dataKey="customers" stroke={config.primaryColor} strokeWidth={2.5} fill="url(#reportsGrad1)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -88,7 +94,7 @@ export default function Reports() {
               <h3 className="text-sm font-semibold text-white">לקוחות לפי אינטגרטור</h3>
               <p className="text-xs text-slate-500 mt-0.5">Customers per Integrator</p>
             </div>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(44,106,138,0.12)' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `rgba(${config.glowRgb},0.12)` }}>
               <BarChartIcon className="w-4 h-4 text-cdata-300" />
             </div>
           </div>
@@ -98,10 +104,10 @@ export default function Reports() {
               <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis hide />
               <Tooltip
-                contentStyle={{ background: '#0B1929', border: '1px solid rgba(44,106,138,0.25)', borderRadius: 8, fontSize: 12 }}
-                cursor={{ fill: 'rgba(44,106,138,0.08)' }}
+                contentStyle={{ background: '#0B1929', border: `1px solid rgba(${config.glowRgb},0.25)`, borderRadius: 8, fontSize: 12 }}
+                cursor={{ fill: `rgba(${config.glowRgb},0.08)` }}
               />
-              <Bar dataKey="customers" fill="#2C6A8A" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="customers" fill={config.primaryColor} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
