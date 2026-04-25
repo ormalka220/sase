@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { CDataLogo, CDataMark } from '../components/Logos'
 import ProductSwitch from '../components/ProductSwitch'
+import { useProduct } from '../context/ProductContext'
 
 const navItems = [
   { icon: LayoutDashboard, labelHe: 'לוח בקרה', labelEn: 'Dashboard',  path: '/integrator/dashboard' },
@@ -20,21 +21,23 @@ export default function IntegratorLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const { product, config } = useProduct()
+  const productLabel = product === 'perception' ? 'Perception Point' : 'Forti SASE'
 
   return (
     <div className="min-h-screen bg-navy-900 flex" style={{ background: 'linear-gradient(160deg,#07111E 0%,#0B1929 100%)' }}>
       {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? 'w-60' : 'w-16'} flex-shrink-0 flex flex-col transition-all duration-300 relative z-20 sidebar-cdata`}
-        style={{ background: 'rgba(7,17,30,0.95)', backdropFilter: 'blur(20px)' }}
+        style={{ background: 'rgba(7,17,30,0.95)', backdropFilter: 'blur(20px)', borderLeft: `1px solid ${config.primaryColor}20` }}
       >
         {/* Logo block */}
         <div className="px-4 py-4 flex items-center gap-3 border-b border-white/5">
           <CDataMark className={sidebarOpen ? 'w-8 h-8 flex-shrink-0' : 'w-8 h-8'} />
           {sidebarOpen && (
             <div className="min-w-0 leading-tight">
-              <div className="font-black text-white text-sm tracking-tight">Integrator<span className="text-cdata-300"> Hub</span></div>
-              <div className="text-[10px] text-cdata-500 font-medium">Integrator Portal</div>
+              <div className="font-black text-white text-sm tracking-tight">Integrator<span style={{ color: config.navActiveColor }}> Hub</span></div>
+              <div className="text-[10px] font-medium" style={{ color: config.primaryColor }}>Integrator Portal · {productLabel}</div>
             </div>
           )}
         </div>
@@ -43,12 +46,20 @@ export default function IntegratorLayout() {
         {sidebarOpen && (
           <div className="mx-3 mt-3 mb-1 p-3 rounded-xl bg-white/[0.03] border border-white/5">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
-                <Users className="w-3.5 h-3.5 text-slate-400" />
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: `${config.primaryColor}24`, border: `1px solid ${config.primaryColor}33` }}
+              >
+                <Users className="w-3.5 h-3.5" style={{ color: config.navActiveColor }} />
               </div>
               <div className="min-w-0">
                 <div className="text-xs font-semibold text-white truncate">NetSec Solutions</div>
-                <span className="badge-steel" style={{ marginTop: '2px' }}>Integrator</span>
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full inline-flex mt-0.5"
+                  style={{ color: config.navActiveColor, background: `${config.primaryColor}1f`, border: `1px solid ${config.primaryColor}33` }}
+                >
+                  Integrator
+                </span>
               </div>
             </div>
           </div>
@@ -59,7 +70,12 @@ export default function IntegratorLayout() {
           {navItems.map(item => {
             const active = location.pathname.startsWith(item.path)
             return (
-              <Link key={item.path} to={item.path} className={`nav-item ${active ? 'active' : ''}`}>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`nav-item ${active ? 'active' : ''}`}
+                style={active ? { color: config.navActiveColor, background: config.navActiveBg, borderRight: `2px solid ${config.navActiveBorder}` } : {}}
+              >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
                 {sidebarOpen && (
                   <div className="min-w-0">
@@ -77,7 +93,8 @@ export default function IntegratorLayout() {
               <>
                 <button
                   onClick={() => navigate('/integrator/orders/new')}
-                  className="btn-primary w-full flex items-center justify-center gap-2 text-xs py-2"
+                  className="w-full flex items-center justify-center gap-2 text-xs py-2 rounded-lg font-semibold text-white transition-all duration-200"
+                  style={{ background: config.gradient, boxShadow: `0 4px 15px rgba(${config.glowRgb},0.3)` }}
                 >
                   <ShoppingCart className="w-3.5 h-3.5 flex-shrink-0" />
                   הזמנה חדשה +
@@ -92,10 +109,10 @@ export default function IntegratorLayout() {
               </>
             ) : (
               <>
-                <button onClick={() => navigate('/integrator/orders/new')} className="nav-item w-full justify-center text-cdata-300 hover:text-white" title="הזמנה חדשה">
+                <button onClick={() => navigate('/integrator/orders/new')} className="nav-item w-full justify-center hover:text-white" style={{ color: config.navActiveColor }} title="הזמנה חדשה">
                   <ShoppingCart className="w-4 h-4 flex-shrink-0" />
                 </button>
-                <button onClick={() => navigate('/integrator/customers/new')} className="nav-item w-full justify-center text-cdata-300 hover:text-white" title="לקוח חדש">
+                <button onClick={() => navigate('/integrator/customers/new')} className="nav-item w-full justify-center hover:text-white" style={{ color: config.navActiveColor }} title="לקוח חדש">
                   <PlusCircle className="w-4 h-4 flex-shrink-0" />
                 </button>
               </>
@@ -139,25 +156,31 @@ export default function IntegratorLayout() {
           <div>
             <div className="text-xs text-slate-500">Integrator Portal</div>
             <div className="text-sm font-semibold text-white">NetSec Solutions</div>
+            <div className="text-[10px] mt-0.5" style={{ color: config.navActiveColor }}>Customer Operations · Orders & Onboarding</div>
           </div>
 
           <div className="flex items-center gap-3">
             <ProductSwitch />
             <button className="relative p-2 rounded-lg hover:bg-white/5 transition-colors text-slate-500 hover:text-white">
               <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-cdata-500 ring-1 ring-navy-900"></span>
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full ring-1 ring-navy-900" style={{ background: config.primaryColor }}></span>
             </button>
             <div className="flex items-center gap-2.5 pr-3 border-r border-white/5">
               <div className="text-right">
                 <div className="flex items-center justify-end gap-1.5">
                   <div className="text-xs font-medium text-white">אלון כהן</div>
-                  <span className="badge-blue text-[9px] px-1.5 py-0.5">CDATA</span>
+                  <span
+                    className="text-[9px] px-1.5 py-0.5 rounded-full"
+                    style={{ color: config.navActiveColor, background: `${config.primaryColor}1f`, border: `1px solid ${config.primaryColor}33` }}
+                  >
+                    CDATA
+                  </span>
                 </div>
                 <div className="text-[10px] text-slate-500">Integrator Admin</div>
               </div>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
-                style={{ background: 'linear-gradient(135deg,#2C6A8A,#1F3A54)', border: '1px solid rgba(44,106,138,0.4)' }}
+                style={{ background: `linear-gradient(135deg,${config.primaryColor},${config.darkColor})`, border: `1px solid ${config.primaryColor}66` }}
               >
                 אכ
               </div>

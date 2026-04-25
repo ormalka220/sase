@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import {
   ShoppingCart, CheckCircle2, XCircle, Clock, PackageCheck,
-  ShieldCheck, Mail, AlertTriangle, ChevronDown, Search
+  ShieldCheck, Mail, AlertTriangle, Search, Filter, RotateCcw
 } from 'lucide-react'
 import { getOrdersByDistributor } from '../../data/mockData'
+import { useProduct } from '../../context/ProductContext'
 
 const DISTRIBUTOR_ID = 'd1'
 const initialOrders = getOrdersByDistributor(DISTRIBUTOR_ID)
@@ -36,9 +37,11 @@ function fmt(dt) {
 }
 
 export default function OrdersApproval() {
+  const { config } = useProduct()
   const [orders, setOrders] = useState(initialOrders)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
+  const [productFilter, setProductFilter] = useState('all')
   const [rejectTarget, setRejectTarget] = useState(null)
   const [rejectReason, setRejectReason] = useState('')
 
@@ -66,10 +69,14 @@ export default function OrdersApproval() {
       o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
       o.customerName.toLowerCase().includes(search.toLowerCase())
     const matchFilter = filter === 'all' || o.status === filter
-    return matchSearch && matchFilter
+    const matchProduct = productFilter === 'all' || o.product === productFilter
+    return matchSearch && matchFilter && matchProduct
   })
 
   const pendingCount = orders.filter(o => o.status === 'pending').length
+  const approvalRate = orders.length ? Math.round((orders.filter(o => o.status === 'approved' || o.status === 'provisioned').length / orders.length) * 100) : 0
+  const monthlyCount = filtered.filter(o => o.duration === 'monthly').length
+  const yearlyCount = filtered.filter(o => o.duration === 'yearly').length
 
   return (
     <div className="space-y-5">
@@ -77,8 +84,8 @@ export default function OrdersApproval() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <ShoppingCart className="w-5 h-5 text-cdata-300" />
-            <h1 className="text-xl font-black text-white">אישור <span className="text-cdata-300">הזמנות</span></h1>
+            <ShoppingCart className="w-5 h-5" style={{ color: config.navActiveColor }} />
+            <h1 className="text-xl font-black text-white">אישור <span style={{ color: config.navActiveColor }}>הזמנות</span></h1>
           </div>
           <p className="text-xs text-slate-500">Orders Approval — C-DATA Distribution</p>
         </div>
@@ -91,8 +98,28 @@ export default function OrdersApproval() {
         )}
       </div>
 
+      {/* Quick KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="glass rounded-xl p-4" style={{ border: '1px solid rgba(44,106,138,0.15)' }}>
+          <div className="text-[10px] text-slate-500 mb-1">סה"כ הזמנות מסוננות</div>
+          <div className="text-xl font-black text-white">{filtered.length}</div>
+        </div>
+        <div className="glass rounded-xl p-4" style={{ border: '1px solid rgba(44,106,138,0.15)' }}>
+          <div className="text-[10px] text-slate-500 mb-1">יחס אישור כולל</div>
+          <div className="text-xl font-black text-emerald-400">{approvalRate}%</div>
+        </div>
+        <div className="glass rounded-xl p-4" style={{ border: '1px solid rgba(44,106,138,0.15)' }}>
+          <div className="text-[10px] text-slate-500 mb-1">חודשי / שנתי</div>
+          <div className="text-xl font-black text-white">
+            <span className="text-slate-300">{monthlyCount}</span>
+            <span className="text-slate-600 mx-1">/</span>
+            <span style={{ color: config.navActiveColor }}>{yearlyCount}</span>
+          </div>
+        </div>
+      </div>
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {['pending', 'approved', 'rejected', 'provisioned'].map(status => {
           const cfg = statusConfig[status]
           const count = orders.filter(o => o.status === status).length
@@ -110,16 +137,38 @@ export default function OrdersApproval() {
         })}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-72">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="חיפוש לפי מספר / לקוח..."
-          className="w-full bg-white/[0.03] border border-white/10 rounded-lg pr-9 pl-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cdata-500/40"
-        />
+      {/* Filters */}
+      <div className="glass rounded-xl p-3 md:p-4 flex flex-wrap items-center gap-2 md:gap-3" style={{ border: '1px solid rgba(44,106,138,0.12)' }}>
+        <div className="relative w-full md:w-72">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="חיפוש לפי מספר / לקוח..."
+            className="w-full bg-white/[0.03] border border-white/10 rounded-lg pr-9 pl-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none"
+            style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+          />
+        </div>
+        <div className="relative w-full md:w-56">
+          <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+          <select
+            value={productFilter}
+            onChange={e => setProductFilter(e.target.value)}
+            className="w-full bg-white/[0.03] border border-white/10 rounded-lg pr-9 pl-3 py-2 text-xs text-white focus:outline-none appearance-none"
+          >
+            <option value="all">כל המוצרים</option>
+            <option value="sase">Forti SASE</option>
+            <option value="perception">Perception Point</option>
+          </select>
+        </div>
+        <button
+          onClick={() => { setSearch(''); setFilter('all'); setProductFilter('all') }}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 border border-white/10 hover:text-white hover:border-white/20 transition-colors"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          נקה פילטרים
+        </button>
       </div>
 
       {/* Orders */}
