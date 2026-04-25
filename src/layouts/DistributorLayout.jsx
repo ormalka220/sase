@@ -22,13 +22,18 @@ export default function DistributorLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { product, config } = useProduct()
   const productLabel = product === 'perception' ? 'Perception Point' : 'Forti SASE'
+  const appBackground = `
+    radial-gradient(circle at 10% 22%, rgba(${config.glowRgb},0.17) 0%, transparent 34%),
+    radial-gradient(circle at 86% 80%, rgba(${config.glowRgb},0.11) 0%, transparent 30%),
+    linear-gradient(160deg,#07111E 0%,#0B1929 100%)
+  `
 
   return (
-    <div className="min-h-screen bg-navy-900 flex" style={{ background: 'linear-gradient(160deg,#07111E 0%,#0B1929 100%)' }}>
+    <div className="min-h-screen bg-navy-900 flex" style={{ background: appBackground }}>
       {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? 'w-60' : 'w-16'} flex-shrink-0 flex flex-col transition-all duration-300 relative z-20 sidebar-cdata`}
-        style={{ background: 'rgba(7,17,30,0.95)', backdropFilter: 'blur(20px)', borderLeft: `1px solid ${config.primaryColor}20` }}
+        style={{ background: 'rgba(7,17,30,0.9)', backdropFilter: 'blur(20px)', borderLeft: `1px solid ${config.primaryColor}20` }}
       >
         {/* Logo block */}
         <div className="px-4 py-4 flex items-center gap-3 border-b border-white/5">
@@ -116,7 +121,7 @@ export default function DistributorLayout() {
         {/* Topbar */}
         <header
           className="px-6 py-3 flex items-center justify-between flex-shrink-0 border-b border-white/[0.06]"
-          style={{ background: 'rgba(7,17,30,0.8)', backdropFilter: 'blur(16px)' }}
+          style={{ background: `linear-gradient(90deg, rgba(7,17,30,0.82), rgba(${config.glowRgb},0.08))`, backdropFilter: 'blur(16px)' }}
         >
           <div>
             <div className="text-xs text-slate-500">Distribution Portal</div>
