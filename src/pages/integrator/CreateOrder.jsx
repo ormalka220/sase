@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ShieldCheck, Mail, Users, Package, CheckCircle2,
   ChevronRight, ChevronLeft, Send, Layers
 } from 'lucide-react'
 import { getCustomersByIntegrator } from '../../data/mockData'
+import { useProduct } from '../../context/ProductContext'
 
 const INTEGRATOR_ID = 'i1'
 const customers = getCustomersByIntegrator(INTEGRATOR_ID).filter(c => c.status === 'active' || c.status === 'onboarding')
@@ -24,6 +25,7 @@ const PRODUCTS = [
     ],
     sku: 'FPP-SASE1-US-USxx',
     monthlyUnitPrice: 6.5,
+    family: 'sase',
   },
   {
     id: 'pp-ades',
@@ -39,6 +41,7 @@ const PRODUCTS = [
     ],
     sku: 'FPP-ADES1-ST-AExx',
     monthlyUnitPrice: 3,
+    family: 'perception',
   },
   {
     id: 'pp-emsb',
@@ -54,6 +57,7 @@ const PRODUCTS = [
     ],
     sku: 'FPP-EMSB1-BD-BDxx',
     monthlyUnitPrice: 5,
+    family: 'perception',
   },
   {
     id: 'bundle-ades-sase',
@@ -69,6 +73,7 @@ const PRODUCTS = [
     ],
     sku: 'BND-ADES-SASE-10OFF',
     monthlyUnitPrice: (3 + 6.5) * 0.9,
+    family: 'all',
   },
   {
     id: 'bundle-emsb-sase',
@@ -84,6 +89,7 @@ const PRODUCTS = [
     ],
     sku: 'BND-EMSB-SASE-10OFF',
     monthlyUnitPrice: (5 + 6.5) * 0.9,
+    family: 'all',
   },
 ]
 
@@ -101,6 +107,7 @@ function formatUsd(amount) {
 
 export default function CreateOrder() {
   const navigate = useNavigate()
+  const { product: selectedMode } = useProduct()
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
   const [form, setForm] = useState({
@@ -112,13 +119,24 @@ export default function CreateOrder() {
     notes: '',
   })
 
-  const selectedProduct = PRODUCTS.find(p => p.id === form.productId)
+  const availableProducts = PRODUCTS.filter(p => {
+    if (selectedMode === 'all') return true
+    return p.family === selectedMode
+  })
+  const selectedProduct = availableProducts.find(p => p.id === form.productId)
   const selectedCustomer = customers.find(c => c.id === form.customerId)
   const quantity = Number(form.quantity) || 0
   const monthlyUnitPrice = selectedProduct?.monthlyUnitPrice || 0
   const durationMultiplier = form.duration === 'yearly' ? 1 - YEARLY_DISCOUNT : 1
   const effectiveUnitPrice = monthlyUnitPrice * durationMultiplier
   const totalPrice = effectiveUnitPrice * quantity
+
+  useEffect(() => {
+    if (form.productId && !availableProducts.some(p => p.id === form.productId)) {
+      setForm(f => ({ ...f, productId: '', licenseType: '' }))
+      setStep(0)
+    }
+  }, [selectedMode, form.productId, availableProducts])
 
   function next() { setStep(s => Math.min(s + 1, 2)) }
   function back() { setStep(s => Math.max(s - 1, 0)) }
@@ -221,7 +239,7 @@ export default function CreateOrder() {
         <div className="space-y-3">
           <div className="text-sm font-bold text-white">בחר מוצר</div>
           <div className="grid grid-cols-1 gap-3">
-            {PRODUCTS.map(product => {
+            {availableProducts.map(product => {
               const Icon = product.icon
               const selected = form.productId === product.id
               return (

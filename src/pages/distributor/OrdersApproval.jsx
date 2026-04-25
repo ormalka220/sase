@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   ShoppingCart, CheckCircle2, XCircle, Clock, PackageCheck,
   ShieldCheck, Mail, AlertTriangle, Search, Filter, RotateCcw
@@ -37,11 +37,11 @@ function fmt(dt) {
 }
 
 export default function OrdersApproval() {
-  const { config } = useProduct()
+  const { product, config } = useProduct()
   const [orders, setOrders] = useState(initialOrders)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
-  const [productFilter, setProductFilter] = useState('all')
+  const [productFilter, setProductFilter] = useState(product === 'all' ? 'all' : product)
   const [rejectTarget, setRejectTarget] = useState(null)
   const [rejectReason, setRejectReason] = useState('')
 
@@ -64,17 +64,24 @@ export default function OrdersApproval() {
     setRejectReason('')
   }
 
+  useEffect(() => {
+    setProductFilter(product === 'all' ? 'all' : product)
+  }, [product])
+
+  const scopedOrders = product === 'all' ? orders : orders.filter(o => o.product === product)
+
   const filtered = orders.filter(o => {
     const matchSearch = !search ||
       o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
       o.customerName.toLowerCase().includes(search.toLowerCase())
     const matchFilter = filter === 'all' || o.status === filter
     const matchProduct = productFilter === 'all' || o.product === productFilter
-    return matchSearch && matchFilter && matchProduct
+    const matchScope = product === 'all' || o.product === product
+    return matchSearch && matchFilter && matchProduct && matchScope
   })
 
-  const pendingCount = orders.filter(o => o.status === 'pending').length
-  const approvalRate = orders.length ? Math.round((orders.filter(o => o.status === 'approved' || o.status === 'provisioned').length / orders.length) * 100) : 0
+  const pendingCount = scopedOrders.filter(o => o.status === 'pending').length
+  const approvalRate = scopedOrders.length ? Math.round((scopedOrders.filter(o => o.status === 'approved' || o.status === 'provisioned').length / scopedOrders.length) * 100) : 0
   const monthlyCount = filtered.filter(o => o.duration === 'monthly').length
   const yearlyCount = filtered.filter(o => o.duration === 'yearly').length
 
@@ -122,7 +129,7 @@ export default function OrdersApproval() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {['pending', 'approved', 'rejected', 'provisioned'].map(status => {
           const cfg = statusConfig[status]
-          const count = orders.filter(o => o.status === status).length
+          const count = scopedOrders.filter(o => o.status === status).length
           return (
             <button key={status} onClick={() => setFilter(filter === status ? 'all' : status)}
               className={`glass rounded-xl p-4 text-center transition-all hover:scale-[1.02] ${filter === status ? 'scale-[1.02]' : 'opacity-75 hover:opacity-100'}`}
@@ -150,20 +157,22 @@ export default function OrdersApproval() {
             style={{ borderColor: 'rgba(255,255,255,0.1)' }}
           />
         </div>
-        <div className="relative w-full md:w-56">
-          <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-          <select
-            value={productFilter}
-            onChange={e => setProductFilter(e.target.value)}
-            className="w-full bg-white/[0.03] border border-white/10 rounded-lg pr-9 pl-3 py-2 text-xs text-white focus:outline-none appearance-none"
-          >
-            <option value="all">כל המוצרים</option>
-            <option value="sase">Forti SASE</option>
-            <option value="perception">Perception Point</option>
-          </select>
-        </div>
+        {product === 'all' && (
+          <div className="relative w-full md:w-56">
+            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+            <select
+              value={productFilter}
+              onChange={e => setProductFilter(e.target.value)}
+              className="w-full bg-white/[0.03] border border-white/10 rounded-lg pr-9 pl-3 py-2 text-xs text-white focus:outline-none appearance-none"
+            >
+              <option value="all">כל המוצרים</option>
+              <option value="sase">Forti SASE</option>
+              <option value="perception">Perception Point</option>
+            </select>
+          </div>
+        )}
         <button
-          onClick={() => { setSearch(''); setFilter('all'); setProductFilter('all') }}
+          onClick={() => { setSearch(''); setFilter('all'); setProductFilter(product === 'all' ? 'all' : product) }}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 border border-white/10 hover:text-white hover:border-white/20 transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />

@@ -1,6 +1,20 @@
 import React, { createContext, useContext, useState } from 'react'
 
 export const PRODUCTS = {
+  all: {
+    id: 'all',
+    name: 'All Products',
+    nameHe: 'כל המוצרים',
+    primaryColor: '#7C3AED',
+    accentColor: '#A78BFA',
+    lightColor: '#C4B5FD',
+    darkColor: '#4C1D95',
+    glowRgb: '124, 58, 237',
+    gradient: 'linear-gradient(135deg, #7C3AED, #4C1D95)',
+    navActiveColor: '#C4B5FD',
+    navActiveBg: 'rgba(124, 58, 237, 0.14)',
+    navActiveBorder: '#A78BFA',
+  },
   sase: {
     id: 'sase',
     name: 'Forti SASE',
@@ -34,9 +48,9 @@ export const PRODUCTS = {
 const ProductContext = createContext(null)
 
 export function ProductProvider({ children }) {
-  const [product, setProduct] = useState('sase')
+  const [product, setProduct] = useState('all')
   return (
-    <ProductContext.Provider value={{ product, setProduct, config: PRODUCTS[product] }}>
+    <ProductContext.Provider value={{ product, setProduct, config: PRODUCTS[product] || PRODUCTS.all }}>
       {children}
     </ProductContext.Provider>
   )

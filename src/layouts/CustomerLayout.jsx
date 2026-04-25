@@ -29,19 +29,33 @@ const ppNavItems = [
   { icon: Settings2,   label: 'Settings',    labelHe: 'הגדרות',      path: '/customer/settings' },
 ]
 
+const allNavItems = [
+  { icon: Home,          label: 'Overview',  labelHe: 'סקירה כללית', path: '/customer/overview' },
+  { icon: Users,         label: 'Users',     labelHe: 'משתמשים',     path: '/customer/users' },
+  { icon: Monitor,       label: 'Devices',   labelHe: 'התקנים',      path: '/customer/devices' },
+  { icon: Globe2,        label: 'Sites',     labelHe: 'אתרים',       path: '/customer/sites' },
+  { icon: ShieldCheck,   label: 'Policies',  labelHe: 'מדיניות',     path: '/customer/policies' },
+  { icon: AlertTriangle, label: 'Alerts',    labelHe: 'התראות',      path: '/customer/alerts' },
+  { icon: Key,           label: 'Licenses',  labelHe: 'רישיונות',    path: '/customer/licenses' },
+  { icon: ShieldOff,     label: 'Threats',   labelHe: 'איומים',      path: '/customer/threats' },
+  { icon: Mail,          label: 'Email Scan',labelHe: 'סריקת מייל',  path: '/customer/email-scan' },
+  { icon: FileText,      label: 'Reports',   labelHe: 'דוחות',       path: '/customer/reports' },
+  { icon: Settings2,     label: 'Settings',  labelHe: 'הגדרות',      path: '/customer/settings' },
+]
+
 export default function CustomerLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { product, config } = useProduct()
 
-  const navItems = product === 'perception' ? ppNavItems : saseNavItems
+  const navItems = product === 'all' ? allNavItems : (product === 'perception' ? ppNavItems : saseNavItems)
   const activeColor = config.navActiveColor
   const activeBg = config.navActiveBg
   const activeBorder = config.navActiveBorder
 
-  const productLabel = product === 'perception' ? 'Perception Point' : 'Forti SASE'
-  const statusLabel = product === 'perception' ? 'Protected Email' : 'Protected'
-  const statusColor = product === 'perception' ? '#34D399' : '#10B981'
+  const productLabel = product === 'all' ? 'All Products' : (product === 'perception' ? 'Perception Point' : 'Forti SASE')
+  const statusLabel = product === 'all' ? 'Unified Security' : (product === 'perception' ? 'Protected Email' : 'Protected')
+  const statusColor = product === 'all' ? '#A78BFA' : (product === 'perception' ? '#34D399' : '#10B981')
 
   return (
     <div className="min-h-screen flex" style={{ background: 'linear-gradient(160deg,#07111E 0%,#0B1929 100%)' }}>

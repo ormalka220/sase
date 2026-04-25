@@ -5,6 +5,7 @@ import {
   PackageCheck, FileText, Search, ShieldCheck, Mail
 } from 'lucide-react'
 import { getOrdersByIntegrator } from '../../data/mockData'
+import { useProduct } from '../../context/ProductContext'
 
 const INTEGRATOR_ID = 'i1'
 const orders = getOrdersByIntegrator(INTEGRATOR_ID)
@@ -52,10 +53,12 @@ function fmt(dt) {
 
 export default function OrdersList() {
   const navigate = useNavigate()
+  const { product } = useProduct()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const productOrders = product === 'all' ? orders : orders.filter(o => o.product === product)
 
-  const filtered = orders.filter(o => {
+  const filtered = productOrders.filter(o => {
     const matchSearch = !search ||
       o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
       o.customerName.toLowerCase().includes(search.toLowerCase())
@@ -64,7 +67,7 @@ export default function OrdersList() {
   })
 
   const statusCounts = Object.keys(statusConfig).reduce((acc, k) => {
-    acc[k] = orders.filter(o => o.status === k).length
+    acc[k] = productOrders.filter(o => o.status === k).length
     return acc
   }, {})
 

@@ -21,7 +21,7 @@ export default function DistributorLayout() {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { product, config } = useProduct()
-  const productLabel = product === 'perception' ? 'Perception Point' : 'Forti SASE'
+  const productLabel = product === 'all' ? 'All Products' : (product === 'perception' ? 'Perception Point' : 'Forti SASE')
   const appBackground = `
     radial-gradient(circle at 10% 22%, rgba(${config.glowRgb},0.17) 0%, transparent 34%),
     radial-gradient(circle at 86% 80%, rgba(${config.glowRgb},0.11) 0%, transparent 30%),

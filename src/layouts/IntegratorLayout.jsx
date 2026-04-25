@@ -22,7 +22,7 @@ export default function IntegratorLayout() {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { product, config } = useProduct()
-  const productLabel = product === 'perception' ? 'Perception Point' : 'Forti SASE'
+  const productLabel = product === 'all' ? 'All Products' : (product === 'perception' ? 'Perception Point' : 'Forti SASE')
   const appBackground = `
     radial-gradient(circle at 12% 18%, rgba(${config.glowRgb},0.18) 0%, transparent 34%),
     radial-gradient(circle at 88% 82%, rgba(${config.glowRgb},0.12) 0%, transparent 32%),

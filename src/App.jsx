@@ -49,6 +49,16 @@ function CustomerOverviewRouter() {
   return product === 'perception' ? <PerceptionOverview /> : <CustomerOverview />
 }
 
+function SaseOnlyRoute({ children }) {
+  const { product } = useProduct()
+  return product === 'perception' ? <Navigate to="/customer/overview" replace /> : children
+}
+
+function PerceptionOnlyRoute({ children }) {
+  const { product } = useProduct()
+  return product === 'sase' ? <Navigate to="/customer/overview" replace /> : children
+}
+
 export default function App() {
   return (
     <ProductProvider>
@@ -86,14 +96,14 @@ export default function App() {
           <Route path="/customer" element={<CustomerLayout />}>
             <Route index element={<Navigate to="/customer/overview" replace />} />
             <Route path="overview"   element={<CustomerOverviewRouter />} />
-            <Route path="users"      element={<CustomerUsers />} />
-            <Route path="devices"    element={<CustomerDevices />} />
-            <Route path="sites"      element={<CustomerSites />} />
-            <Route path="policies"   element={<CustomerPolicies />} />
-            <Route path="alerts"     element={<CustomerAlerts />} />
-            <Route path="licenses"   element={<CustomerLicenses />} />
-            <Route path="threats"    element={<PerceptionThreats />} />
-            <Route path="email-scan" element={<PerceptionOverview />} />
+            <Route path="users"      element={<SaseOnlyRoute><CustomerUsers /></SaseOnlyRoute>} />
+            <Route path="devices"    element={<SaseOnlyRoute><CustomerDevices /></SaseOnlyRoute>} />
+            <Route path="sites"      element={<SaseOnlyRoute><CustomerSites /></SaseOnlyRoute>} />
+            <Route path="policies"   element={<SaseOnlyRoute><CustomerPolicies /></SaseOnlyRoute>} />
+            <Route path="alerts"     element={<SaseOnlyRoute><CustomerAlerts /></SaseOnlyRoute>} />
+            <Route path="licenses"   element={<SaseOnlyRoute><CustomerLicenses /></SaseOnlyRoute>} />
+            <Route path="threats"    element={<PerceptionOnlyRoute><PerceptionThreats /></PerceptionOnlyRoute>} />
+            <Route path="email-scan" element={<PerceptionOnlyRoute><PerceptionOverview /></PerceptionOnlyRoute>} />
             <Route path="reports"    element={<CustomerReports />} />
             <Route path="settings"   element={<CustomerSettings />} />
           </Route>
