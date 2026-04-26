@@ -3,18 +3,22 @@ import {
   ShoppingCart, CheckCircle2, XCircle, Clock, PackageCheck,
   ShieldCheck, Mail, AlertTriangle, Search, Filter, RotateCcw
 } from 'lucide-react'
-import { getOrdersByDistributor } from '../../data/mockData'
 import { useProduct } from '../../context/ProductContext'
+import { workspaceApi } from '../../api/workspaceApi'
 
 const DISTRIBUTOR_ID = 'd1'
-const initialOrders = getOrdersByDistributor(DISTRIBUTOR_ID)
 
 const statusConfig = {
-  draft:       { label: 'טיוטה',  color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
-  pending:     { label: 'ממתין',  color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  approved:    { label: 'אושר',   color: '#2C6A8A', bg: 'rgba(44,106,138,0.12)' },
-  rejected:    { label: 'נדחה',   color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  provisioned: { label: 'הופעל', color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
+  DRAFT: { label: 'Draft', color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+  PAYMENT_PENDING: { label: 'Payment Pending', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  PENDING_DISTRIBUTOR_APPROVAL: { label: 'Pending Approval', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  APPROVED: { label: 'Approved', color: '#2C6A8A', bg: 'rgba(44,106,138,0.12)' },
+  PROVISIONING: { label: 'Provisioning', color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+  PROVISIONED: { label: 'Provisioned', color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
+  ONBOARDING_PENDING: { label: 'Onboarding Pending', color: '#06b6d4', bg: 'rgba(6,182,212,0.12)' },
+  ACTIVE: { label: 'Active', color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
+  REJECTED: { label: 'Rejected', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+  FAILED: { label: 'Failed', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
 }
 
 const productConfig = {
@@ -23,7 +27,7 @@ const productConfig = {
 }
 
 function StatusBadge({ status }) {
-  const cfg = statusConfig[status] || statusConfig.draft
+  const cfg = statusConfig[status] || statusConfig.DRAFT
   return (
     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold"
       style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}30` }}>
@@ -38,28 +42,46 @@ function fmt(dt) {
 
 export default function OrdersApproval() {
   const { product, config } = useProduct()
-  const [orders, setOrders] = useState(initialOrders)
+  const [orders, setOrders] = useState([])
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [productFilter, setProductFilter] = useState(product === 'all' ? 'all' : product)
   const [rejectTarget, setRejectTarget] = useState(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [error, setError] = useState('')
 
-  function approveOrder(orderId) {
-    setOrders(prev => prev.map(o =>
-      o.id === orderId
-        ? { ...o, status: 'approved', approvedBy: 'יונתן לוי', updatedAt: new Date().toISOString() }
-        : o
-    ))
+  async function loadOrders() {
+    try {
+      setError('')
+      const apiOrders = await workspaceApi.getOrders({ distributorId: DISTRIBUTOR_ID, role: 'distributor' })
+      const normalized = apiOrders.map(o => ({
+        ...o,
+        orderNumber: o.id.slice(0, 8).toUpperCase(),
+        product: o.productType === 'WORKSPACE_SECURITY' ? 'perception' : 'sase',
+        quantity: o.seats,
+        duration: o.billingType === 'MONTHLY_INVOICE' ? 'monthly' : 'yearly',
+        customerName: o.customerId,
+        createdAt: o.createdAt,
+      }))
+      setOrders(normalized)
+    } catch (loadError) {
+      setError(loadError.message)
+    }
   }
 
-  function rejectOrder(orderId) {
+  useEffect(() => {
+    loadOrders()
+  }, [])
+
+  async function approveOrder(orderId) {
+    await workspaceApi.approveOrder(orderId)
+    await loadOrders()
+  }
+
+  async function rejectOrder(orderId) {
     if (!rejectReason.trim()) return
-    setOrders(prev => prev.map(o =>
-      o.id === orderId
-        ? { ...o, status: 'rejected', rejectionReason: rejectReason, updatedAt: new Date().toISOString() }
-        : o
-    ))
+    await workspaceApi.rejectOrder(orderId, rejectReason)
+    await loadOrders()
     setRejectTarget(null)
     setRejectReason('')
   }
@@ -80,8 +102,8 @@ export default function OrdersApproval() {
     return matchSearch && matchFilter && matchProduct && matchScope
   })
 
-  const pendingCount = scopedOrders.filter(o => o.status === 'pending').length
-  const approvalRate = scopedOrders.length ? Math.round((scopedOrders.filter(o => o.status === 'approved' || o.status === 'provisioned').length / scopedOrders.length) * 100) : 0
+  const pendingCount = scopedOrders.filter(o => o.status === 'PENDING_DISTRIBUTOR_APPROVAL').length
+  const approvalRate = scopedOrders.length ? Math.round((scopedOrders.filter(o => ['APPROVED', 'PROVISIONED', 'ACTIVE', 'ONBOARDING_PENDING'].includes(o.status)).length / scopedOrders.length) * 100) : 0
   const monthlyCount = filtered.filter(o => o.duration === 'monthly').length
   const yearlyCount = filtered.filter(o => o.duration === 'yearly').length
 
@@ -95,6 +117,7 @@ export default function OrdersApproval() {
             <h1 className="text-xl font-black text-white">אישור <span style={{ color: config.navActiveColor }}>הזמנות</span></h1>
           </div>
           <p className="text-xs text-slate-500">Orders Approval — C-DATA Distribution</p>
+          {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
         </div>
         {pendingCount > 0 && (
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl"
@@ -127,7 +150,7 @@ export default function OrdersApproval() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {['pending', 'approved', 'rejected', 'provisioned'].map(status => {
+        {['PENDING_DISTRIBUTOR_APPROVAL', 'APPROVED', 'REJECTED', 'PROVISIONED'].map(status => {
           const cfg = statusConfig[status]
           const count = scopedOrders.filter(o => o.status === status).length
           return (
@@ -192,7 +215,7 @@ export default function OrdersApproval() {
         {filtered.map(order => {
           const prodCfg = productConfig[order.product] || productConfig.sase
           const ProdIcon = prodCfg.icon
-          const isPending = order.status === 'pending'
+          const isPending = order.status === 'PENDING_DISTRIBUTOR_APPROVAL'
 
           return (
             <div key={order.id}
@@ -237,10 +260,10 @@ export default function OrdersApproval() {
                           סיבת דחייה: {order.rejectionReason}
                         </div>
                       )}
-                      {order.approvedBy && order.status !== 'rejected' && (
+                      {order.approvalStatus === 'APPROVED' && order.status !== 'REJECTED' && (
                         <div className="flex items-center gap-1 text-[10px] text-emerald-400 mt-1.5">
                           <CheckCircle2 className="w-3 h-3" />
-                          אושר ע"י: {order.approvedBy}
+                          Approved
                         </div>
                       )}
                     </div>
@@ -266,10 +289,13 @@ export default function OrdersApproval() {
                     </div>
                   )}
 
-                  {order.status === 'approved' && (
+                  {order.status === 'APPROVED' && (
                     <div className="flex-shrink-0">
                       <button
-                        onClick={() => setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'provisioned', updatedAt: new Date().toISOString() } : o))}
+                        onClick={async () => {
+                          await workspaceApi.provisionOrder(order.id)
+                          await loadOrders()
+                        }}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105"
                         style={{ background: 'linear-gradient(135deg, #2C6A8A, #1F5070)', boxShadow: '0 2px 8px rgba(44,106,138,0.3)' }}>
                         <PackageCheck className="w-3.5 h-3.5" />

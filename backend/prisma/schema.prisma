@@ -1,0 +1,195 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductType {
+  FORTISASE
+  WORKSPACE_SECURITY
+}
+
+enum BillingType {
+  CREDIT_CARD
+  MONTHLY_INVOICE
+}
+
+enum OrderStatus {
+  DRAFT
+  PAYMENT_PENDING
+  PENDING_DISTRIBUTOR_APPROVAL
+  APPROVED
+  PROVISIONING
+  PROVISIONED
+  ONBOARDING_PENDING
+  INTEGRATION_IN_PROGRESS
+  ACTIVE
+  REJECTED
+  FAILED
+}
+
+enum PaymentStatus {
+  NOT_REQUIRED
+  PENDING
+  PAID
+  FAILED
+}
+
+enum ApprovalStatus {
+  NOT_REQUIRED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CustomerStatus {
+  ACTIVE
+  ONBOARDING
+  SUSPENDED
+}
+
+enum OrganizationStatus {
+  ORGANIZATION_NOT_CREATED
+  ORGANIZATION_CREATED
+}
+
+enum AdminStatus {
+  ADMIN_NOT_INVITED
+  ADMIN_INVITED
+  ADMIN_ACTIVE
+}
+
+enum EmailServiceStatus {
+  EMAIL_SERVICE_NOT_CONNECTED
+  EMAIL_SERVICE_CONFIGURATION_STARTED
+}
+
+enum MicrosoftConsentStatus {
+  MICROSOFT_CONSENT_PENDING
+  MICROSOFT_CONSENT_COMPLETED
+}
+
+enum DnsMailFlowStatus {
+  DNS_MAIL_FLOW_PENDING
+  DNS_MAIL_FLOW_COMPLETED
+}
+
+enum ProtectionStatus {
+  INTEGRATION_IN_PROGRESS
+  PROTECTION_ACTIVE
+}
+
+enum LogStatus {
+  STARTED
+  SUCCESS
+  FAILED
+}
+
+enum IntegrationStatusSource {
+  API
+  MANUAL
+  SYSTEM
+}
+
+model Order {
+  id             String         @id @default(cuid())
+  distributorId  String
+  integratorId   String
+  customerId     String
+  productType    ProductType
+  seats          Int
+  billingType    BillingType
+  amount         Float
+  currency       String         @default("USD")
+  status         OrderStatus    @default(DRAFT)
+  paymentStatus  PaymentStatus  @default(PENDING)
+  approvalStatus ApprovalStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  approvedAt     DateTime?
+  provisionedAt  DateTime?
+  rejectedAt     DateTime?
+  failureReason  String?
+
+  customer           Customer               @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  provisioningLogs   ProvisioningLog[]
+  integrationEntries IntegrationStatusLog[]
+}
+
+model Customer {
+  id            String         @id @default(cuid())
+  integratorId  String
+  distributorId String
+  companyName   String
+  domain        String
+  adminName     String
+  adminEmail    String
+  adminPhone    String
+  status        CustomerStatus @default(ONBOARDING)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  orders               Order[]
+  workspaceTenant      WorkspaceSecurityTenant?
+  integrationStatusLog IntegrationStatusLog[]
+}
+
+model WorkspaceSecurityTenant {
+  id                      String                @id @default(cuid())
+  customerId              String                @unique
+  ppOrgId                 String?               @unique
+  ppOrgName               String?
+  ppRegion                String?
+  ppAdminUserId           String?
+  seats                   Int
+  organizationStatus      OrganizationStatus    @default(ORGANIZATION_NOT_CREATED)
+  adminStatus             AdminStatus           @default(ADMIN_NOT_INVITED)
+  emailServiceStatus      EmailServiceStatus    @default(EMAIL_SERVICE_NOT_CONNECTED)
+  microsoftConsentStatus  MicrosoftConsentStatus @default(MICROSOFT_CONSENT_PENDING)
+  dnsMailFlowStatus       DnsMailFlowStatus     @default(DNS_MAIL_FLOW_PENDING)
+  protectionStatus        ProtectionStatus      @default(INTEGRATION_IN_PROGRESS)
+  lastHealthCheckAt       DateTime?
+  lastSuccessfulScanAt    DateTime?
+  manualCompletedBy       String?
+  manualCompletedAt       DateTime?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model ProvisioningLog {
+  id              String    @id @default(cuid())
+  orderId         String
+  customerId      String
+  step            String
+  status          LogStatus
+  requestPayload  String?
+  responsePayload String?
+  errorMessage    String?
+  createdAt       DateTime  @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model IntegrationStatusLog {
+  id         String                  @id @default(cuid())
+  orderId    String?
+  customerId String
+  status     String
+  source     IntegrationStatusSource
+  details    String?
+  createdBy  String?
+  createdAt  DateTime                @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order    Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+}

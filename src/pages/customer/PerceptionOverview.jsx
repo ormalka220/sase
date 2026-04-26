@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Mail, ShieldOff, Bug, AlertTriangle, CheckCircle2,
   TrendingUp, TrendingDown, Clock, Eye, ExternalLink
@@ -7,6 +7,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
 import { ppCustomerStats, ppEmailTrend, ppThreatBreakdown, ppRecentThreats } from '../../data/mockData'
+import { workspaceApi } from '../../api/workspaceApi'
 
 const stats = ppCustomerStats.find(s => s.customerId === 'c1')
 const threats = ppRecentThreats.filter(t => t.customerId === 'c1')
@@ -69,8 +70,48 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export default function PerceptionOverview() {
+  const customerId = 'c1'
   const [activeTab, setActiveTab] = useState('all')
+  const [onboarding, setOnboarding] = useState(null)
+  const [integrationStatus, setIntegrationStatus] = useState(null)
+  const [checkLoading, setCheckLoading] = useState(false)
   const blockRate = stats ? ((stats.threatsBlocked / stats.emailsScanned) * 100).toFixed(1) : 0
+
+  useEffect(() => {
+    workspaceApi.getOnboarding(customerId, 'customer').then(setOnboarding).catch(() => {})
+    workspaceApi.getIntegrationStatus(customerId, 'customer').then(setIntegrationStatus).catch(() => {})
+  }, [])
+
+  async function checkConnection() {
+    setCheckLoading(true)
+    try {
+      const status = await workspaceApi.getIntegrationStatus(customerId, 'customer')
+      setIntegrationStatus(status)
+      const onboardingData = await workspaceApi.getOnboarding(customerId, 'customer')
+      setOnboarding(onboardingData)
+    } finally {
+      setCheckLoading(false)
+    }
+  }
+
+  if (integrationStatus && integrationStatus.state !== 'active') {
+    return (
+      <div className="space-y-4">
+        <div className="glass rounded-xl p-5 border border-indigo-500/20">
+          <h1 className="text-xl font-black text-white mb-2">Connect Microsoft 365 to activate Workspace Security</h1>
+          <p className="text-xs text-slate-400">{integrationStatus.message}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a href={onboarding?.deepLinkUrl || onboarding?.portalUrl || 'https://app.perception-point.io'} target="_blank" rel="noreferrer" className="btn-primary text-xs">
+              Open Email Service Configuration
+            </a>
+            <button className="btn-ghost text-xs" onClick={checkConnection}>
+              {checkLoading ? 'Checking...' : 'Check connection'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

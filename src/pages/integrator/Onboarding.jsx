@@ -1,175 +1,138 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import { CheckCircle, Clock, ChevronRight } from 'lucide-react'
-import { getCustomersByIntegrator } from '../../data/mockData'
+import React, { useEffect, useMemo, useState } from 'react'
+import { ExternalLink, RefreshCcw, CheckCircle2 } from 'lucide-react'
+import { workspaceApi } from '../../api/workspaceApi'
 
 const INTEGRATOR_ID = 'i1'
 
-const ONBOARDING_STEP_KEYS = ['created', 'invited', 'configured', 'active']
-const ONBOARDING_STEP_LABELS = ['נוצר', 'הוזמן', 'מוגדר', 'פעיל']
-
-const getStepIndex = (status) => {
-  const idx = ONBOARDING_STEP_KEYS.indexOf(status)
-  return idx === -1 ? 0 : idx
-}
-
-const onboardingBadge = (status) => {
-  const map = { active: 'badge-green', configured: 'badge-blue', invited: 'badge-amber', created: 'badge-steel' }
-  return map[status] || 'badge-steel'
-}
-const onboardingLabel = (status) => {
-  const map = { active: 'פעיל', configured: 'מוגדר', invited: 'הוזמן', created: 'חדש' }
-  return map[status] || status
-}
-
-const daysSince = (dateStr) => {
-  if (!dateStr) return '—'
-  const then = new Date(dateStr)
-  const now = new Date()
-  const diff = Math.floor((now - then) / (1000 * 60 * 60 * 24))
-  return diff
-}
+const steps = [
+  'Organization created',
+  'Admin user invited',
+  'Licenses assigned',
+  'Email service not connected',
+  'Microsoft 365 consent pending',
+  'DNS / mail flow pending',
+  'Protection active',
+]
 
 export default function IntegratorOnboarding() {
-  const navigate = useNavigate()
-  const allCustomers = getCustomersByIntegrator(INTEGRATOR_ID)
-  const onboarding = allCustomers.filter(c => c.onboardingStatus !== 'active')
+  const [customers, setCustomers] = useState([])
+  const [selectedCustomerId, setSelectedCustomerId] = useState('')
+  const [onboarding, setOnboarding] = useState(null)
+  const [status, setStatus] = useState(null)
+  const [error, setError] = useState('')
+  const [checking, setChecking] = useState(false)
 
-  const invitedCount = onboarding.filter(c => c.onboardingStatus === 'invited').length
-  const configuredCount = onboarding.filter(c => c.onboardingStatus === 'configured').length
+  const selectedCustomer = useMemo(
+    () => customers.find(c => c.id === selectedCustomerId) || null,
+    [customers, selectedCustomerId]
+  )
+
+  useEffect(() => {
+    workspaceApi.getCustomers(INTEGRATOR_ID).then(data => {
+      setCustomers(data)
+      if (data.length) setSelectedCustomerId(data[0].id)
+    }).catch((e) => setError(e.message))
+  }, [])
+
+  useEffect(() => {
+    if (!selectedCustomerId) return
+    workspaceApi.getOnboarding(selectedCustomerId).then(setOnboarding).catch((e) => setError(e.message))
+  }, [selectedCustomerId])
+
+  useEffect(() => {
+    if (!selectedCustomerId) return
+    const timer = setInterval(() => {
+      workspaceApi.getIntegrationStatus(selectedCustomerId)
+        .then(setStatus)
+        .catch(() => {})
+    }, 15000)
+    return () => clearInterval(timer)
+  }, [selectedCustomerId])
+
+  async function checkConnection() {
+    if (!selectedCustomerId) return
+    setChecking(true)
+    try {
+      const result = await workspaceApi.getIntegrationStatus(selectedCustomerId)
+      setStatus(result)
+      const fresh = await workspaceApi.getOnboarding(selectedCustomerId)
+      setOnboarding(fresh)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  async function markComplete() {
+    if (!selectedCustomerId) return
+    await workspaceApi.markIntegrationComplete(selectedCustomerId)
+    await checkConnection()
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-white">קליטה</h1>
-        <p className="text-slate-500 text-sm mt-0.5">לקוחות בתהליך קליטה</p>
+        <h1 className="text-xl font-black text-white">Connect Microsoft 365 to activate Workspace Security</h1>
+        <p className="text-xs text-slate-500 mt-1">
+          Your organization has been created. To start protecting email traffic, complete the Email Service Configuration wizard in the FortiMail Workspace Security portal.
+        </p>
+        {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
       </div>
 
-      {/* KPI row */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          {
-            label: 'בתהליך קליטה',
-            value: onboarding.length,
-            icon: Clock,
-            color: 'text-amber-400',
-            bg: 'bg-amber-600/15',
-          },
-          {
-            label: 'הוזמנו',
-            value: invitedCount,
-            icon: ChevronRight,
-            color: 'text-cdata-300',
-            bg: 'bg-cdata-500/15',
-          },
-          {
-            label: 'מוגדרים',
-            value: configuredCount,
-            icon: CheckCircle,
-            color: 'text-emerald-400',
-            bg: 'bg-emerald-600/15',
-          },
-        ].map(k => (
-          <div key={k.label} className="stat-card">
-            <div className={`w-9 h-9 rounded-xl ${k.bg} flex items-center justify-center mb-3`}>
-              <k.icon className={`w-4 h-4 ${k.color}`} />
+      <div className="glass rounded-xl p-4 border border-white/10">
+        <label className="text-xs text-slate-400 block mb-2">Customer</label>
+        <select
+          value={selectedCustomerId}
+          onChange={(e) => setSelectedCustomerId(e.target.value)}
+          className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+        >
+          {customers.map(c => <option key={c.id} value={c.id}>{c.companyName}</option>)}
+        </select>
+      </div>
+
+      {selectedCustomer && onboarding && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="glass rounded-xl p-4 border border-indigo-500/30">
+            <div className="text-sm font-semibold text-white mb-2">Status checklist</div>
+            <div className="space-y-2">
+              {steps.map((item, idx) => (
+                <div key={item} className="flex items-center gap-2 text-xs text-slate-300">
+                  <CheckCircle2 className={`w-3.5 h-3.5 ${idx < 3 ? 'text-emerald-400' : 'text-slate-500'}`} />
+                  <span>{item}</span>
+                </div>
+              ))}
             </div>
-            <div className="text-xl font-bold text-white">{k.value}</div>
-            <div className="text-xs text-slate-500 mt-0.5">{k.label}</div>
+            <div className="mt-4 text-xs text-cyan-300">{status?.message || onboarding?.message}</div>
           </div>
-        ))}
-      </div>
 
-      {/* Onboarding customer cards or empty state */}
-      {onboarding.length === 0 ? (
-        <div className="glass glow-border rounded-2xl p-14 flex flex-col items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-emerald-400" />
+          <div className="glass rounded-xl p-4 border border-white/10 space-y-3">
+            <div className="text-sm font-semibold text-white">Steps to complete in FortiMail Workspace Security</div>
+            <ol className="list-decimal list-inside text-xs text-slate-300 space-y-1">
+              <li>Click "+ Email Service Configuration"</li>
+              <li>Select "Microsoft 365"</li>
+              <li>Keep connection method as "Inline"</li>
+              <li>Click "Next"</li>
+              <li>Follow the Perception Point wizard</li>
+              <li>Approve Microsoft 365 Admin Consent</li>
+              <li>Complete DNS / domain / mail-flow steps if requested</li>
+              <li>Finish the integration</li>
+              <li>Return here and click "Check connection"</li>
+            </ol>
+            <div className="flex flex-wrap gap-2 pt-2">
+              <a href={onboarding.deepLinkUrl || onboarding.portalUrl} target="_blank" rel="noreferrer" className="btn-primary text-xs inline-flex items-center gap-1">
+                <ExternalLink className="w-3.5 h-3.5" />
+                Open Email Service Configuration
+              </a>
+              <button onClick={checkConnection} className="btn-ghost text-xs inline-flex items-center gap-1" disabled={checking}>
+                <RefreshCcw className="w-3.5 h-3.5" />
+                {checking ? 'Checking...' : 'Check connection'}
+              </button>
+              {status?.manualCompletionAvailable && (
+                <button onClick={markComplete} className="btn-ghost text-xs">Mark integration as completed</button>
+              )}
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-base font-semibold text-white">כל הלקוחות פעילים!</div>
-            <p className="text-slate-500 text-sm mt-1">אין לקוחות בתהליך קליטה כרגע.</p>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {onboarding.map(c => {
-            const currentStep = getStepIndex(c.onboardingStatus)
-            const days = daysSince(c.createdAt)
-            return (
-              <div key={c.id} className="glass glow-border rounded-xl p-5">
-                <div className="flex items-start justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-cdata-500/15 border border-cdata-500/15 flex items-center justify-center text-cdata-300 font-bold text-sm flex-shrink-0">
-                      {c.companyName.slice(0, 2)}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-white text-sm">{c.companyName}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">{c.domain}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={onboardingBadge(c.onboardingStatus)}>
-                      {onboardingLabel(c.onboardingStatus)}
-                    </span>
-                    <span className="text-[10px] text-slate-500">{days} ימים</span>
-                  </div>
-                </div>
-
-                {/* Steps visualization */}
-                <div className="flex items-center mb-5">
-                  {ONBOARDING_STEP_LABELS.map((label, i) => {
-                    const isCompleted = i <= currentStep
-                    const isCurrent = i === currentStep
-                    return (
-                      <React.Fragment key={label}>
-                        <div className="flex flex-col items-center gap-1.5">
-                          <div
-                            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                              isCompleted
-                                ? 'bg-cdata-500 text-white'
-                                : 'bg-slate-700 text-slate-500'
-                            } ${isCurrent ? 'ring-2 ring-cdata-300/30' : ''}`}
-                          >
-                            {isCompleted && i < currentStep ? (
-                              <CheckCircle className="w-3.5 h-3.5" />
-                            ) : (
-                              <span className="text-[10px] font-bold">{i + 1}</span>
-                            )}
-                          </div>
-                          <span className={`text-[9px] whitespace-nowrap ${
-                            isCompleted ? (isCurrent ? 'text-cdata-300' : 'text-slate-400') : 'text-slate-600'
-                          }`}>
-                            {label}
-                          </span>
-                        </div>
-                        {i < ONBOARDING_STEP_LABELS.length - 1 && (
-                          <div className={`flex-1 h-px mx-1 mb-4 ${
-                            i < currentStep ? 'bg-cdata-500/50' : 'bg-white/[0.06]'
-                          }`} />
-                        )}
-                      </React.Fragment>
-                    )
-                  })}
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-                  <div className="text-[10px] text-slate-500">
-                    {c.numberOfUsers} משתמשים · {c.packageName}
-                  </div>
-                  <button
-                    className="btn-ghost text-xs flex items-center gap-1.5 py-1.5 px-3"
-                    onClick={() => navigate(`/integrator/customers/${c.id}`)}
-                  >
-                    המשך תהליך
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            )
-          })}
         </div>
       )}
     </div>

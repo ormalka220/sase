@@ -4,11 +4,11 @@ import {
   ShieldCheck, Mail, Users, Package, CheckCircle2,
   ChevronRight, ChevronLeft, Send, Layers
 } from 'lucide-react'
-import { getCustomersByIntegrator } from '../../data/mockData'
 import { useProduct } from '../../context/ProductContext'
+import { workspaceApi } from '../../api/workspaceApi'
 
 const INTEGRATOR_ID = 'i1'
-const customers = getCustomersByIntegrator(INTEGRATOR_ID).filter(c => c.status === 'active' || c.status === 'onboarding')
+const DISTRIBUTOR_ID = 'd1'
 
 const PRODUCTS = [
   {
@@ -98,6 +98,11 @@ const DURATIONS = [
   { id: 'yearly',  label: 'Yearly',  labelHe: 'שנתי', badge: '10% הנחה' },
 ]
 
+const BILLING_TYPES = [
+  { id: 'CREDIT_CARD', label: 'Credit Card' },
+  { id: 'MONTHLY_INVOICE', label: 'Monthly Invoice' },
+]
+
 const STEP_LABELS = ['בחירת מוצר', 'פרטי הזמנה', 'סקירה ושליחה']
 const YEARLY_DISCOUNT = 0.1
 
@@ -108,14 +113,19 @@ function formatUsd(amount) {
 export default function CreateOrder() {
   const navigate = useNavigate()
   const { product: selectedMode } = useProduct()
+  const [customers, setCustomers] = useState([])
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [createdOrder, setCreatedOrder] = useState(null)
   const [form, setForm] = useState({
     productId: '',
     customerId: '',
     licenseType: '',
     quantity: '',
     duration: 'yearly',
+    billingType: 'CREDIT_CARD',
     notes: '',
   })
 
@@ -130,6 +140,13 @@ export default function CreateOrder() {
   const durationMultiplier = form.duration === 'yearly' ? 1 - YEARLY_DISCOUNT : 1
   const effectiveUnitPrice = monthlyUnitPrice * durationMultiplier
   const totalPrice = effectiveUnitPrice * quantity
+
+  useEffect(() => {
+    workspaceApi
+      .getCustomers(INTEGRATOR_ID)
+      .then(setCustomers)
+      .catch(() => setError('Failed loading customers from backend. Make sure backend is running.'))
+  }, [])
 
   useEffect(() => {
     if (form.productId && !availableProducts.some(p => p.id === form.productId)) {
@@ -147,8 +164,32 @@ export default function CreateOrder() {
     return true
   }
 
-  function handleSubmit() {
-    setSubmitted(true)
+  async function handleSubmit() {
+    try {
+      setLoading(true)
+      setError('')
+      const created = await workspaceApi.createOrder({
+        distributorId: DISTRIBUTOR_ID,
+        integratorId: INTEGRATOR_ID,
+        customerId: form.customerId,
+        productType: selectedProduct?.family === 'perception' ? 'WORKSPACE_SECURITY' : 'FORTISASE',
+        seats: Number(form.quantity),
+        billingType: form.billingType,
+        amount: Number(totalPrice.toFixed(2)),
+        currency: 'USD',
+      })
+
+      let finalOrder = created
+      if (form.billingType === 'CREDIT_CARD') {
+        finalOrder = await workspaceApi.payOrder(created.id)
+      }
+      setCreatedOrder(finalOrder)
+      setSubmitted(true)
+    } catch (submitError) {
+      setError(submitError.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (submitted) {
@@ -159,9 +200,13 @@ export default function CreateOrder() {
           <CheckCircle2 className="w-10 h-10 text-emerald-400" />
         </div>
         <div className="text-center">
-          <h2 className="text-xl font-black text-white mb-2">הזמנה נשלחה לאישור!</h2>
+          <h2 className="text-xl font-black text-white mb-2">
+            {form.billingType === 'CREDIT_CARD' ? 'Order paid and provisioned' : 'Order sent for distributor approval'}
+          </h2>
           <p className="text-xs text-slate-500 max-w-xs">
-            ההזמנה נשלחה להפצה לאישור. תקבל עדכון לאחר האישור והרישויים יוקצו ללקוח.
+            {form.billingType === 'CREDIT_CARD'
+              ? 'Provisioning has started and customer onboarding is now available.'
+              : 'The order is pending distributor approval before provisioning starts.'}
           </p>
         </div>
         <div className="glass rounded-xl p-5 w-full max-w-sm" style={{ border: '1px solid rgba(16,185,129,0.15)' }}>
@@ -190,13 +235,17 @@ export default function CreateOrder() {
               <span className="text-slate-500">סה"כ</span>
               <span className="text-emerald-400 font-semibold">{formatUsd(totalPrice)}</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">סטטוס</span>
+              <span className="text-white font-semibold">{createdOrder?.status || 'N/A'}</span>
+            </div>
           </div>
         </div>
         <div className="flex gap-3">
           <button onClick={() => navigate('/integrator/orders')} className="btn-primary text-xs">
             לרשימת הזמנות
           </button>
-          <button onClick={() => { setSubmitted(false); setStep(0); setForm({ productId: '', customerId: '', licenseType: '', quantity: '', duration: 'yearly', notes: '' }) }}
+          <button onClick={() => { setSubmitted(false); setStep(0); setCreatedOrder(null); setForm({ productId: '', customerId: '', licenseType: '', quantity: '', duration: 'yearly', billingType: 'CREDIT_CARD', notes: '' }) }}
             className="btn-ghost text-xs">
             הזמנה נוספת
           </button>
@@ -211,6 +260,7 @@ export default function CreateOrder() {
       <div>
         <h1 className="text-xl font-black text-white mb-1">הזמנת <span className="text-cdata-300">רישויים חדשה</span></h1>
         <p className="text-xs text-slate-500">New License Order — יישלח להפצה לאישור</p>
+        {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
       </div>
 
       {/* Stepper */}
@@ -314,7 +364,7 @@ export default function CreateOrder() {
             >
               <option value="">בחר לקוח...</option>
               {customers.map(c => (
-                <option key={c.id} value={c.id}>{c.companyName} ({c.numberOfUsers} users)</option>
+                <option key={c.id} value={c.id}>{c.companyName} ({c.domain})</option>
               ))}
             </select>
           </div>
@@ -371,6 +421,27 @@ export default function CreateOrder() {
           </div>
 
           {/* Pricing */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-2">Billing Type *</label>
+            <div className="grid grid-cols-2 gap-2">
+              {BILLING_TYPES.map(bt => (
+                <button
+                  key={bt.id}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, billingType: bt.id }))}
+                  className={`py-2 rounded-lg border text-xs font-semibold transition-all ${
+                    form.billingType === bt.id
+                      ? 'bg-cdata-500 text-white border-transparent'
+                      : 'text-slate-400 border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  {bt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Pricing */}
           <div className="glass rounded-xl p-4" style={{ border: `1px solid ${selectedProduct.color}35` }}>
             <div className="text-xs font-semibold text-slate-300 mb-2">תמחור</div>
             <div className="space-y-1.5 text-xs">
@@ -420,6 +491,7 @@ export default function CreateOrder() {
               { label: 'תקופה',   value: form.duration === 'yearly' ? 'שנתי (Yearly)' : 'חודשי (Monthly)' },
               { label: 'מחיר ליחידה', value: formatUsd(effectiveUnitPrice) },
               { label: 'סה"כ', value: formatUsd(totalPrice) },
+              { label: 'Billing', value: form.billingType === 'CREDIT_CARD' ? 'Credit Card' : 'Monthly Invoice' },
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center justify-between px-5 py-3">
                 <span className="text-xs text-slate-500">{label}</span>
@@ -440,7 +512,7 @@ export default function CreateOrder() {
               <div>
                 <div className="text-xs font-semibold text-amber-400 mb-1">שליחה לאישור הפצה</div>
                 <div className="text-[10px] text-slate-500 leading-relaxed">
-                  לאחר השליחה, ההזמנה תועבר לאישור ההפצה. לאחר האישור, הרישויים יוקצו אוטומטית ללקוח הנבחר.
+                  Credit Card orders are provisioned automatically after payment. Monthly invoice orders wait for distributor approval.
                 </div>
               </div>
             </div>
@@ -463,11 +535,11 @@ export default function CreateOrder() {
             <ChevronLeft className="w-4 h-4" />
           </button>
         ) : (
-          <button onClick={handleSubmit}
+          <button onClick={handleSubmit} disabled={loading}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold text-white transition-all"
             style={{ background: 'linear-gradient(135deg, #059669, #047857)', boxShadow: '0 4px 15px rgba(5,150,105,0.3)' }}>
             <Send className="w-4 h-4" />
-            שלח לאישור הפצה
+            {loading ? 'Processing...' : 'Submit order'}
           </button>
         )}
       </div>

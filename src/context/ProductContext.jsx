@@ -17,38 +17,38 @@ export const PRODUCTS = {
   },
   sase: {
     id: 'sase',
-    name: 'Forti SASE',
+    name: 'FortiSASE',
     nameHe: 'פורטי SASE',
-    primaryColor: '#2C6A8A',
-    accentColor: '#5B9BB8',
-    lightColor: '#87BFDA',
-    darkColor: '#1F3A54',
-    glowRgb: '44, 106, 138',
-    gradient: 'linear-gradient(135deg, #2C6A8A, #1F5070)',
-    navActiveColor: '#87BFDA',
-    navActiveBg: 'rgba(44, 106, 138, 0.1)',
-    navActiveBorder: '#5B9BB8',
+    primaryColor: '#DC2626',
+    accentColor: '#F97316',
+    lightColor: '#FDBA74',
+    darkColor: '#7F1D1D',
+    glowRgb: '220, 38, 38',
+    gradient: 'linear-gradient(135deg, #DC2626, #F97316)',
+    navActiveColor: '#FDBA74',
+    navActiveBg: 'rgba(220, 38, 38, 0.12)',
+    navActiveBorder: '#F97316',
   },
   perception: {
     id: 'perception',
-    name: 'Perception Point',
-    nameHe: 'פרספשן פוינט',
-    primaryColor: '#059669',
-    accentColor: '#10B981',
-    lightColor: '#34D399',
-    darkColor: '#064E3B',
-    glowRgb: '5, 150, 105',
-    gradient: 'linear-gradient(135deg, #059669, #047857)',
-    navActiveColor: '#34D399',
-    navActiveBg: 'rgba(5, 150, 105, 0.1)',
-    navActiveBorder: '#10B981',
+    name: 'Workspace Security',
+    nameHe: 'FortiMail Workspace Security',
+    primaryColor: '#2563EB',
+    accentColor: '#7C3AED',
+    lightColor: '#A5B4FC',
+    darkColor: '#1E1B4B',
+    glowRgb: '37, 99, 235',
+    gradient: 'linear-gradient(135deg, #2563EB, #7C3AED)',
+    navActiveColor: '#A5B4FC',
+    navActiveBg: 'rgba(37, 99, 235, 0.12)',
+    navActiveBorder: '#7C3AED',
   },
 }
 
 const ProductContext = createContext(null)
 
 export function ProductProvider({ children }) {
-  const [product, setProduct] = useState('all')
+  const [product, setProduct] = useState('sase')
   return (
     <ProductContext.Provider value={{ product, setProduct, config: PRODUCTS[product] || PRODUCTS.all }}>
       {children}
