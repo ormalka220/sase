@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building2, Users, Shield, AlertTriangle, ChevronLeft, CheckCircle, AlertCircle, LayoutDashboard } from 'lucide-react'
 import {
@@ -7,10 +7,73 @@ import {
 } from 'recharts'
 import { integrators, customers, customerEnvironments, growthData, getCustomersByIntegrator, getOrdersByDistributor } from '../../data/mockData'
 import { useProduct } from '../../context/ProductContext'
+import { workspaceApi } from '../../api/workspaceApi'
 
 export default function DistributorDashboard() {
   const navigate = useNavigate()
   const { product, config } = useProduct()
+  const [ppOverview, setPpOverview] = useState(null)
+  const [ppError, setPpError] = useState('')
+  const [ppLoading, setPpLoading] = useState(false)
+
+  useEffect(() => {
+    if (product === 'sase') return
+    async function loadPp() {
+      try {
+        setPpLoading(true)
+        setPpError('')
+        const data = await workspaceApi.getPpOverview({ distributorId: 'd1', role: 'distributor' })
+        setPpOverview(data)
+      } catch (e) {
+        setPpError(e.message)
+      } finally {
+        setPpLoading(false)
+      }
+    }
+    loadPp()
+  }, [product])
+
+  if (product !== 'sase') {
+    return (
+      <div className="space-y-5">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Distributor Overview · Perception Point</p>
+          {ppError && <p className="text-xs text-red-400 mt-1">{ppError}</p>}
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            ['לקוחות', ppOverview?.kpis?.totalCustomers || 0],
+            ['לקוחות פעילים', ppOverview?.kpis?.activeCustomers || 0],
+            ['בתהליך קליטה', ppOverview?.kpis?.pendingOnboarding || 0],
+            ['התראות פתוחות', ppOverview?.kpis?.openAlerts || 0],
+          ].map(([label, value]) => (
+            <div key={label} className="stat-card">
+              <div className="text-xl font-bold text-white">{value}</div>
+              <div className="text-xs text-slate-500">{label}</div>
+            </div>
+          ))}
+        </div>
+        <div className="glass glow-border rounded-2xl p-5">
+          <div className="text-sm font-semibold text-white mb-3">צמיחת לקוחות Perception Point</div>
+          {ppLoading ? (
+            <div className="text-xs text-slate-500">טוען נתונים...</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={ppOverview?.growthData || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip contentStyle={{ background: '#0B1929', border: '1px solid rgba(44,106,138,0.25)', borderRadius: 8, fontSize: 12 }} />
+                <Area type="monotone" dataKey="customers" stroke="#2C6A8A" strokeWidth={2.5} fill="url(#grad1)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   const distributorOrders = getOrdersByDistributor('d1')
   const scopedOrders = product === 'all' ? distributorOrders : distributorOrders.filter(o => o.product === product)
   const scopedCustomerIds = new Set(scopedOrders.map(o => o.customerId))

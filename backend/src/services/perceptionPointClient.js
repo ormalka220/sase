@@ -28,7 +28,7 @@ class PerceptionPointClient {
     return response.json()
   }
 
-  async createOrganization({ companyName, domain, seats }) {
+  async createOrganization({ companyName, domain, seats, adminEmail }) {
     if (!this.apiEnabled) {
       return {
         orgId: `pp-org-${Date.now()}`,
@@ -42,8 +42,9 @@ class PerceptionPointClient {
       name: companyName,
       active: true,
       number_of_seats: seats,
-      origins: ['office365'],
-      email_report_recipients: null,
+      origins: { office365: true },
+      email_report_recipients: adminEmail,
+      client_alert_admin_email_addresses: adminEmail,
     }
 
     const result = await this.request('/api/organizations/', {

@@ -1,100 +1,89 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Users, CheckCircle, Clock, AlertTriangle, Plus, FileText, ListChecks,
-  ChevronRight,
+  Users, CheckCircle, Clock, AlertTriangle, Plus, FileText, ListChecks, ChevronRight,
 } from 'lucide-react'
-import {
-  AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Area,
-} from 'recharts'
-import {
-  getCustomersByIntegrator,
-  getCustomerEnvironment,
-  growthData,
-  getOrdersByIntegrator,
-} from '../../data/mockData'
+import { AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Area } from 'recharts'
 import { useProduct } from '../../context/ProductContext'
+import { workspaceApi } from '../../api/workspaceApi'
 
 const INTEGRATOR_ID = 'i1'
-const myCustomers = getCustomersByIntegrator(INTEGRATOR_ID)
-
-const onboardingBadge = (status) => {
-  const map = {
-    active: 'badge-green',
-    configured: 'badge-blue',
-    invited: 'badge-amber',
-    created: 'badge-steel',
-  }
-  return map[status] || 'badge-steel'
-}
-
-const onboardingLabel = (status) => {
-  const map = { active: 'פעיל', configured: 'מוגדר', invited: 'הוזמן', created: 'חדש' }
-  return map[status] || status
-}
 
 export default function IntegratorDashboard() {
   const navigate = useNavigate()
   const { product, config } = useProduct()
-  const integratorOrders = getOrdersByIntegrator(INTEGRATOR_ID)
-  const scopedCustomerIds = product === 'all'
-    ? null
-    : new Set(integratorOrders.filter(o => o.product === product).map(o => o.customerId))
-  const scopedCustomers = product === 'all'
-    ? myCustomers
-    : myCustomers.filter(c => scopedCustomerIds.has(c.id))
+  const showOnboarding = product === 'perception' || product === 'all'
+  const [overview, setOverview] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const activeCustomers = scopedCustomers.filter(c => c.status === 'active')
-  const pendingOnboarding = scopedCustomers.filter(c => c.onboardingStatus !== 'active')
-  const openAlerts = scopedCustomers.reduce((sum, c) => {
-    const env = getCustomerEnvironment(c.id)
-    return sum + (env?.alertsCount || 0)
-  }, 0)
+  useEffect(() => {
+    if (product === 'sase') {
+      setLoading(false)
+      return
+    }
+    async function load() {
+      try {
+        setLoading(true)
+        setError('')
+        const data = await workspaceApi.getPpOverview({ integratorId: INTEGRATOR_ID, role: 'integrator' })
+        setOverview(data)
+      } catch (e) {
+        setError(e.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [product])
 
-  const kpis = [
+  if (product === 'sase') {
+    return <div className="glass rounded-xl p-5 border border-white/10 text-slate-300 text-sm">ב־FortiSASE המסך הזה נשאר כרגע על נתוני דמו עד ש-API ייעודי יהיה זמין.</div>
+  }
+
+  const kpis = overview?.kpis || { totalCustomers: 0, activeCustomers: 0, pendingOnboarding: 0, openAlerts: 0 }
+
+  const cards = [
     {
       label: 'סה"כ לקוחות',
-      value: scopedCustomers.length,
+      value: kpis.totalCustomers,
       icon: Users,
       color: 'text-cdata-300',
       bg: 'bg-cdata-500/15',
     },
     {
       label: 'לקוחות פעילים',
-      value: activeCustomers.length,
+      value: kpis.activeCustomers,
       icon: CheckCircle,
       color: 'text-emerald-400',
       bg: 'bg-emerald-600/15',
     },
     {
       label: 'בתהליך קליטה',
-      value: pendingOnboarding.length,
+      value: kpis.pendingOnboarding,
       icon: Clock,
       color: 'text-amber-400',
       bg: 'bg-amber-600/15',
     },
     {
       label: 'התראות פתוחות',
-      value: openAlerts,
+      value: kpis.openAlerts,
       icon: AlertTriangle,
-      color: openAlerts > 0 ? 'text-red-400' : 'text-emerald-400',
-      bg: openAlerts > 0 ? 'bg-red-600/15' : 'bg-emerald-600/15',
+      color: kpis.openAlerts > 0 ? 'text-red-400' : 'text-emerald-400',
+      bg: kpis.openAlerts > 0 ? 'bg-red-600/15' : 'bg-emerald-600/15',
     },
   ]
 
-  const recentCustomers = [...scopedCustomers].slice(-3).reverse()
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">לוח בקרה</h1>
-        <p className="text-slate-500 text-sm mt-0.5">NetSec Solutions — Integrator Dashboard · {product === 'all' ? 'All Products' : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
+        <p className="text-slate-500 text-sm mt-0.5">NetSec Solutions — לוח בקרה אינטגרטור · Perception Point</p>
+        {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
       </div>
 
-      {/* KPI Row */}
       <div className="grid grid-cols-4 gap-4">
-        {kpis.map(k => (
+        {cards.map(k => (
           <div key={k.label} className="stat-card">
             <div className={`w-9 h-9 rounded-xl ${k.bg} flex items-center justify-center mb-3`}>
               <k.icon className={`w-4 h-4 ${k.color}`} />
@@ -105,9 +94,7 @@ export default function IntegratorDashboard() {
         ))}
       </div>
 
-      {/* Charts + Customer Health */}
       <div className="grid grid-cols-3 gap-4">
-        {/* Area Chart */}
         <div className="glass glow-border rounded-2xl p-5 col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -116,7 +103,7 @@ export default function IntegratorDashboard() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={growthData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+            <AreaChart data={overview?.growthData || []} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
               <defs>
                 <linearGradient id="cgGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#2C6A8A" stopOpacity={0.35} />
@@ -142,20 +129,18 @@ export default function IntegratorDashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Customer Health List */}
         <div className="glass glow-border rounded-2xl p-5">
           <div className="text-sm font-semibold text-white mb-4">בריאות לקוחות</div>
           <div className="space-y-3">
-            {scopedCustomers.map(c => {
-              const env = getCustomerEnvironment(c.id)
-              const score = env?.complianceScore ?? 0
+            {(overview?.customerHealth || []).map(c => {
+              const score = c.complianceScore ?? 0
               const barColor = score >= 90 ? '#10b981' : score >= 70 ? '#f59e0b' : '#ef4444'
               return (
-                <div key={c.id} className="space-y-1">
+                <div key={c.customerId} className="space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-300 truncate max-w-[120px]">{c.companyName}</span>
-                    <span className={`${onboardingBadge(c.onboardingStatus)} text-[10px] px-1.5 py-0.5`}>
-                      {onboardingLabel(c.onboardingStatus)}
+                    <span className="badge-steel text-[10px] px-1.5 py-0.5">
+                      {c.onboardingStatus}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -176,9 +161,7 @@ export default function IntegratorDashboard() {
         </div>
       </div>
 
-      {/* Quick Actions + Recent Customers */}
       <div className="grid grid-cols-3 gap-4">
-        {/* Quick Actions */}
         <div className="glass glow-border rounded-2xl p-5">
           <div className="text-sm font-semibold text-white mb-4">פעולות מהירות</div>
           <div className="space-y-2.5">
@@ -192,6 +175,7 @@ export default function IntegratorDashboard() {
             <button
               className="btn-ghost w-full flex items-center justify-center gap-2 text-sm"
               onClick={() => navigate('/integrator/onboarding')}
+              style={{ display: showOnboarding ? 'flex' : 'none' }}
             >
               <ListChecks className="w-4 h-4" />
               תור קליטה
@@ -206,7 +190,6 @@ export default function IntegratorDashboard() {
           </div>
         </div>
 
-        {/* Recent Customers */}
         <div className="glass glow-border rounded-2xl p-5 col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div className="text-sm font-semibold text-white">לקוחות אחרונים</div>
@@ -219,8 +202,9 @@ export default function IntegratorDashboard() {
             </button>
           </div>
           <div className="space-y-1">
-            {recentCustomers.map(c => {
-              const env = getCustomerEnvironment(c.id)
+            {loading ? (
+              <div className="text-xs text-slate-500">טוען נתונים...</div>
+            ) : (overview?.recentCustomers || []).map(c => {
               return (
                 <div
                   key={c.id}
@@ -235,12 +219,10 @@ export default function IntegratorDashboard() {
                     <div className="text-[10px] text-slate-500">{c.domain}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`${onboardingBadge(c.onboardingStatus)} text-[10px]`}>
-                      {onboardingLabel(c.onboardingStatus)}
+                    <span className="badge-steel text-[10px]">
+                      {c.onboardingStatus}
                     </span>
-                    {env && (
-                      <span className="text-xs text-slate-500">{env.complianceScore > 0 ? `${env.complianceScore}%` : '—'}</span>
-                    )}
+                    <span className="text-xs text-slate-500">{c.complianceScore > 0 ? `${c.complianceScore}%` : '—'}</span>
                     <ChevronRight className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </div>

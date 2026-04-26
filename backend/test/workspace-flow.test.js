@@ -2,6 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const request = require('supertest')
 const { execSync } = require('node:child_process')
+process.env.PP_API_ENABLED = 'false'
 const { app } = require('../src/app')
 
 function auth(role, userId = 'test-user') {

@@ -42,6 +42,7 @@ async function provisionWorkspaceOrder(order) {
       companyName: customer.companyName,
       domain: customer.domain,
       seats: order.seats,
+      adminEmail: customer.adminEmail,
     })
     await logProvision(order.id, customer.id, 'create-organization', 'SUCCESS', { companyName: customer.companyName }, org)
 

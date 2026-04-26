@@ -95,8 +95,8 @@ export default function IntegratorSettings() {
     setTimeout(() => setSystemSaved(false), 2500)
   }
 
-  const maskedApiKey = 'sk-ns-••••••••••••••••••••••••••••••2f9a'
-  const realApiKey = 'sk-ns-4d2e8f91a0b3c7e56d2e8f91a0b3c72f9a'
+  const maskedApiKey = '************'
+  const realApiKey = 'ערך מוסתר לצורכי אבטחה'
 
   return (
     <div className="space-y-6">

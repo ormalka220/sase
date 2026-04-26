@@ -1,5 +1,5 @@
 import React from 'react'
-import { ShieldCheck, Mail } from 'lucide-react'
+import { ShieldCheck, Mail, Layers } from 'lucide-react'
 import { useProduct } from '../context/ProductContext'
 
 export default function ProductSwitch({ className = '' }) {
@@ -10,6 +10,20 @@ export default function ProductSwitch({ className = '' }) {
       className={`flex items-center gap-0.5 p-1 rounded-xl ${className}`}
       style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
     >
+      <button
+        onClick={() => setProduct('all')}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+          product === 'all' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+        }`}
+        style={
+          product === 'all'
+            ? { background: 'linear-gradient(135deg, #7C3AED, #4C1D95)', boxShadow: '0 2px 8px rgba(124,58,237,0.4)' }
+            : {}
+        }
+      >
+        <Layers className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">הכל</span>
+      </button>
       <button
         onClick={() => setProduct('sase')}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
@@ -36,7 +50,7 @@ export default function ProductSwitch({ className = '' }) {
         }
       >
         <Mail className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Workspace Security</span>
+        <span className="hidden sm:inline">Perception Point</span>
       </button>
     </div>
   )

@@ -96,7 +96,7 @@ export default function LandingPage() {
 
         <div className="badge-blue mb-8 px-4 py-1.5 text-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-cdata-300 animate-pulse-slow inline-block ml-2"></span>
-          Sovereign SASE · Workspace Security · B2B Channel Platform
+          Sovereign SASE · Perception Point · B2B Channel Platform
         </div>
 
         <h1 className="text-5xl md:text-6xl font-black mb-5 leading-[1.1] max-w-3xl">

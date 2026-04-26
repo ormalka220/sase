@@ -5,7 +5,7 @@ const ppClient = new PerceptionPointClient()
 
 function mapState(tenant) {
   if (tenant.protectionStatus === 'PROTECTION_ACTIVE') {
-    return { state: 'active', message: 'Microsoft 365 is connected and Workspace Security is active.' }
+    return { state: 'active', message: 'Microsoft 365 is connected and Perception Point is active.' }
   }
   if (tenant.microsoftConsentStatus === 'MICROSOFT_CONSENT_COMPLETED' && tenant.dnsMailFlowStatus === 'DNS_MAIL_FLOW_PENDING') {
     return { state: 'dns_mail_flow_pending', message: 'Microsoft 365 consent may be completed, but DNS or mail-flow setup still appears incomplete.' }

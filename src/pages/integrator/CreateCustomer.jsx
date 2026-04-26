@@ -1,36 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, CheckCircle, Globe, Shield, Lock, ChevronRight,
+  ArrowLeft, CheckCircle, ChevronRight,
 } from 'lucide-react'
+import { workspaceApi } from '../../api/workspaceApi'
 
-const STEPS = ['פרטי חברה', 'איש קשר', 'פאקג׳', 'אישור']
-
-const packages = [
-  {
-    id: 'sase',
-    icon: Globe,
-    title: 'Sovereign SASE',
-    desc: 'Zero-trust network access, SWG, CASB',
-  },
-  {
-    id: 'workspace',
-    icon: Shield,
-    title: 'Workspace Security',
-    desc: 'Email, browser, cloud storage protection',
-  },
-  {
-    id: 'both',
-    icon: Lock,
-    title: 'Full Stack',
-    desc: 'Complete SASE + Workspace Security bundle',
-  },
-]
-
-const packageLabel = (id) => {
-  const map = { sase: 'Sovereign SASE', workspace: 'Workspace Security', both: 'Full Stack' }
-  return map[id] || id
-}
+const STEPS = ['פרטי חברה', 'איש קשר', 'אישור']
 
 const inputClass =
   'w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-cdata-500/40 transition-colors'
@@ -38,22 +13,21 @@ const labelClass = 'text-xs text-slate-400 mb-1.5 block'
 
 export default function CreateCustomer() {
   const navigate = useNavigate()
+  const INTEGRATOR_ID = 'i1'
+  const DISTRIBUTOR_ID = 'd1'
 
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
   const [createdCustomerId, setCreatedCustomerId] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     companyName: '',
     domain: '',
     country: 'Israel',
-    numberOfUsers: '',
-    fortisaseUser: '',
     adminEmail: '',
     phone: '',
     contactName: '',
-    package: 'sase',
-    deploymentType: 'cloud',
-    bandwidthPerUser: '2',
     requiresStaticIp: false,
     notes: '',
   })
@@ -133,45 +107,6 @@ export default function CreateCustomer() {
           <option>Other</option>
         </select>
       </div>
-      <div className="col-span-2">
-        <label className={labelClass}>מספר משתמשים</label>
-        <input
-          className={inputClass}
-          type="number"
-          placeholder="250"
-          min="1"
-          value={form.numberOfUsers}
-          onChange={e => set('numberOfUsers', e.target.value)}
-        />
-      </div>
-      {/* Bandwidth per user */}
-      <div>
-        <label className={labelClass}>רוחב פס פר משתמש</label>
-        <select
-          className={inputClass}
-          value={form.bandwidthPerUser}
-          onChange={e => set('bandwidthPerUser', e.target.value)}
-        >
-          <option value="1">1 Mbps</option>
-          <option value="2">2 Mbps</option>
-          <option value="5">5 Mbps</option>
-          <option value="10">10 Mbps</option>
-          <option value="20">20 Mbps</option>
-        </select>
-      </div>
-      <div className="flex flex-col justify-end">
-        {form.numberOfUsers && (
-          <div className="h-full flex items-end pb-0.5">
-            <div className="w-full bg-cdata-500/10 border border-cdata-500/20 rounded-lg px-3 py-2.5 text-xs">
-              <span className="text-slate-500">סה"כ נדרש: </span>
-              <span className="text-cdata-300 font-semibold">
-                {form.bandwidthPerUser} Mbps × {form.numberOfUsers} = <strong>{(parseInt(form.bandwidthPerUser, 10) * parseInt(form.numberOfUsers, 10)).toLocaleString()} Mbps</strong>
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Static IP */}
       <div className="col-span-2">
         <button
@@ -199,28 +134,6 @@ export default function CreateCustomer() {
         </button>
       </div>
 
-      <div className="col-span-2 mt-2">
-        <label className={labelClass}>
-          FortiSASE Username
-          <span className="text-slate-600 font-normal mr-1">(שם משתמש בסביבת FortiSASE)</span>
-        </label>
-        <div className="flex gap-2">
-          <input
-            className={inputClass + " font-mono"}
-            placeholder="admin_companyname"
-            value={form.fortisaseUser}
-            onChange={e => set('fortisaseUser', e.target.value)}
-          />
-          <button
-            type="button"
-            onClick={() => set('fortisaseUser', 'admin_' + (form.companyName || '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '').slice(0, 20))}
-            className="btn-ghost text-xs px-3 whitespace-nowrap"
-          >
-            הצע אוטומטי
-          </button>
-        </div>
-        <p className="text-[10px] text-slate-600 mt-1">דוגמא: admin_elbit · admin_hapoalim · admin_2bsecure</p>
-      </div>
     </div>
   )
 
@@ -259,75 +172,13 @@ export default function CreateCustomer() {
     </div>
   )
 
-  // Step 2: Package
-  const Step2 = () => (
-    <div className="space-y-5">
-      <div>
-        <label className={labelClass + ' mb-3'}>בחר פאקג'</label>
-        <div className="grid grid-cols-1 gap-3">
-          {packages.map(pkg => {
-            const selected = form.package === pkg.id
-            return (
-              <button
-                key={pkg.id}
-                type="button"
-                onClick={() => set('package', pkg.id)}
-                className={`flex items-center gap-4 p-4 rounded-xl border text-left transition-all ${
-                  selected
-                    ? 'border-cdata-500/50 bg-cdata-500/10 ring-1 ring-cdata-500/30'
-                    : 'border-white/10 hover:border-white/20 bg-white/[0.02]'
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                  selected ? 'bg-cdata-500/25' : 'bg-white/5'
-                }`}>
-                  <pkg.icon className={`w-5 h-5 ${selected ? 'text-cdata-300' : 'text-slate-500'}`} />
-                </div>
-                <div>
-                  <div className={`text-sm font-semibold ${selected ? 'text-white' : 'text-slate-300'}`}>
-                    {pkg.title}
-                  </div>
-                  <div className="text-xs text-slate-500 mt-0.5">{pkg.desc}</div>
-                </div>
-                {selected && (
-                  <CheckCircle className="w-4 h-4 text-cdata-300 ml-auto flex-shrink-0" />
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div>
-        <label className={labelClass}>סוג פריסה</label>
-        <select
-          className={inputClass}
-          value={form.deploymentType}
-          onChange={e => set('deploymentType', e.target.value)}
-        >
-          <option value="cloud">Cloud-Native</option>
-          <option value="hybrid">Hybrid</option>
-          <option value="onprem">On-Premise</option>
-        </select>
-      </div>
-    </div>
-  )
-
-  // Step 3: Confirmation
-  const Step3 = () => {
-    const deployLabel = { cloud: 'Cloud-Native', hybrid: 'Hybrid', onprem: 'On-Premise' }
-    const totalBw = form.numberOfUsers && form.bandwidthPerUser
-      ? `${form.bandwidthPerUser} Mbps × ${form.numberOfUsers} = ${(parseInt(form.bandwidthPerUser, 10) * parseInt(form.numberOfUsers, 10)).toLocaleString()} Mbps`
-      : '—'
+  // Step 2: Confirmation
+  const Step2 = () => {
     const rows = [
       { label: 'Company', value: form.companyName || '—' },
       { label: 'Domain', value: form.domain || '—' },
-      { label: 'Users', value: form.numberOfUsers || '—' },
       { label: 'Admin', value: form.adminEmail || '—' },
-      { label: 'Package', value: packageLabel(form.package) },
       { label: 'Country', value: form.country },
-      { label: 'Deployment', value: deployLabel[form.deploymentType] || form.deploymentType },
-      { label: 'Bandwidth', value: totalBw },
       { label: 'Static IP', value: form.requiresStaticIp ? 'כן — נדרשת IP קבועה' : 'לא' },
     ]
     return (
@@ -339,10 +190,6 @@ export default function CreateCustomer() {
               <span className="text-sm text-white font-medium">{r.value}</span>
             </div>
           ))}
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-500">FortiSASE User:</span>
-            <code className="text-cdata-300 font-mono">{form.fortisaseUser || '—'}</code>
-          </div>
         </div>
 
         <div>
@@ -358,20 +205,33 @@ export default function CreateCustomer() {
     )
   }
 
-  const handleSubmit = () => {
-    const generatedId = `new-${(form.companyName || 'customer').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16)}`
-    setCreatedCustomerId(generatedId)
-    setSubmitted(true)
+  const handleSubmit = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      const payload = {
+        integratorId: INTEGRATOR_ID,
+        distributorId: DISTRIBUTOR_ID,
+        companyName: form.companyName.trim(),
+        domain: form.domain.trim(),
+        adminName: form.contactName.trim() || form.companyName.trim(),
+        adminEmail: form.adminEmail.trim(),
+        adminPhone: form.phone.trim(),
+      }
+      const customer = await workspaceApi.createCustomer(payload)
+      setCreatedCustomerId(customer.id)
+      setSubmitted(true)
+    } catch (submitError) {
+      setError(submitError.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const resetForm = () => {
     setForm({
-      companyName: '', domain: '', country: 'Israel', numberOfUsers: '',
-      fortisaseUser: '',
+      companyName: '', domain: '', country: 'Israel',
       adminEmail: '', phone: '', contactName: '',
-      package: 'sase',
-      deploymentType: 'cloud',
-      bandwidthPerUser: '2',
       requiresStaticIp: false,
       notes: '',
     })
@@ -394,6 +254,7 @@ export default function CreateCustomer() {
           <div>
             <h1 className="text-2xl font-bold text-white">לקוח חדש</h1>
             <p className="text-slate-500 text-sm mt-0.5">רישום לקוח חדש</p>
+            {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
           </div>
         </div>
 
@@ -422,7 +283,11 @@ export default function CreateCustomer() {
     )
   }
 
-  const stepContent = [<Step0 />, <Step1 />, <Step2 />, <Step3 />]
+  const renderStepContent = () => {
+    if (step === 0) return Step0()
+    if (step === 1) return Step1()
+    return Step2()
+  }
 
   return (
     <div className="space-y-6">
@@ -452,7 +317,7 @@ export default function CreateCustomer() {
           <div className="text-xs text-slate-500 mt-0.5">שלב {step + 1} מתוך {STEPS.length}</div>
         </div>
 
-        {stepContent[step]}
+        {renderStepContent()}
 
         {/* Navigation */}
         <div className="flex items-center justify-between mt-8 pt-5 border-t border-white/8">
@@ -463,12 +328,12 @@ export default function CreateCustomer() {
                 onClick={() => setStep(s => s - 1)}
               >
                 <ArrowLeft className="w-4 h-4" />
-                {step === 3 ? 'ערוך' : 'חזור'}
+                {step === 2 ? 'ערוך' : 'חזור'}
               </button>
             )}
           </div>
           <div>
-            {step < 3 ? (
+            {step < 2 ? (
               <button
                 className="btn-primary flex items-center gap-2"
                 onClick={() => setStep(s => s + 1)}
@@ -480,9 +345,10 @@ export default function CreateCustomer() {
               <button
                 className="btn-primary flex items-center gap-2"
                 onClick={handleSubmit}
+                disabled={loading}
               >
                 <CheckCircle className="w-4 h-4" />
-                צור לקוח
+                {loading ? 'יוצר לקוח...' : 'צור לקוח'}
               </button>
             )}
           </div>

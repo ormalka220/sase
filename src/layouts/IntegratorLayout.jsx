@@ -9,12 +9,12 @@ import ProductSwitch from '../components/ProductSwitch'
 import { useProduct } from '../context/ProductContext'
 
 const navItems = [
-  { icon: LayoutDashboard, labelHe: 'לוח בקרה', labelEn: 'Dashboard',  path: '/integrator/dashboard' },
-  { icon: Users,           labelHe: 'לקוחות',   labelEn: 'Customers',  path: '/integrator/customers' },
-  { icon: ShoppingCart,    labelHe: 'הזמנות',    labelEn: 'Orders',     path: '/integrator/orders' },
-  { icon: ClipboardList,   labelHe: 'קליטה',    labelEn: 'Onboarding', path: '/integrator/onboarding' },
-  { icon: BarChart3,       labelHe: 'דוחות',    labelEn: 'Reports',    path: '/integrator/reports' },
-  { icon: Settings2,       labelHe: 'הגדרות',   labelEn: 'Settings',   path: '/integrator/settings' },
+  { icon: LayoutDashboard, labelHe: 'לוח בקרה', path: '/integrator/dashboard' },
+  { icon: Users, labelHe: 'לקוחות', path: '/integrator/customers' },
+  { icon: ShoppingCart, labelHe: 'הזמנות', path: '/integrator/orders' },
+  { icon: ClipboardList, labelHe: 'קליטה', path: '/integrator/onboarding' },
+  { icon: BarChart3, labelHe: 'דוחות', path: '/integrator/reports' },
+  { icon: Settings2, labelHe: 'הגדרות', path: '/integrator/settings' },
 ]
 
 export default function IntegratorLayout() {
@@ -22,7 +22,8 @@ export default function IntegratorLayout() {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { product, config } = useProduct()
-  const productLabel = product === 'all' ? 'All Products' : (product === 'perception' ? 'Perception Point' : 'Forti SASE')
+  const showOnboarding = product === 'perception' || product === 'all'
+  const productLabel = product === 'all' ? 'כל המוצרים' : (product === 'perception' ? 'Perception Point' : 'FortiSASE')
   const appBackground = `
     radial-gradient(circle at 12% 18%, rgba(${config.glowRgb},0.18) 0%, transparent 34%),
     radial-gradient(circle at 88% 82%, rgba(${config.glowRgb},0.12) 0%, transparent 32%),
@@ -41,8 +42,8 @@ export default function IntegratorLayout() {
           <CDataMark className={sidebarOpen ? 'w-8 h-8 flex-shrink-0' : 'w-8 h-8'} />
           {sidebarOpen && (
             <div className="min-w-0 leading-tight">
-              <div className="font-black text-white text-sm tracking-tight">Integrator<span style={{ color: config.navActiveColor }}> Hub</span></div>
-              <div className="text-[10px] font-medium" style={{ color: config.primaryColor }}>Integrator Portal · {productLabel}</div>
+              <div className="font-black text-white text-sm tracking-tight">מרכז <span style={{ color: config.navActiveColor }}>אינטגרטור</span></div>
+              <div className="text-[10px] font-medium" style={{ color: config.primaryColor }}>פורטל אינטגרטור · {productLabel}</div>
             </div>
           )}
         </div>
@@ -63,7 +64,7 @@ export default function IntegratorLayout() {
                   className="text-[10px] px-2 py-0.5 rounded-full inline-flex mt-0.5"
                   style={{ color: config.navActiveColor, background: `${config.primaryColor}1f`, border: `1px solid ${config.primaryColor}33` }}
                 >
-                  Integrator
+                  אינטגרטור
                 </span>
               </div>
             </div>
@@ -72,7 +73,7 @@ export default function IntegratorLayout() {
 
         {/* Nav */}
         <nav className="flex-1 px-2 py-3 space-y-0.5">
-          {navItems.map(item => {
+          {navItems.filter(item => showOnboarding || item.path !== '/integrator/onboarding').map(item => {
             const active = location.pathname.startsWith(item.path)
             return (
               <Link
@@ -84,8 +85,7 @@ export default function IntegratorLayout() {
                 <item.icon className="w-4 h-4 flex-shrink-0" />
                 {sidebarOpen && (
                   <div className="min-w-0">
-                    <div className="text-xs">{item.labelEn}</div>
-                    <div className="text-[10px] text-slate-600">{item.labelHe}</div>
+                    <div className="text-xs">{item.labelHe}</div>
                   </div>
                 )}
               </Link>
@@ -128,7 +128,7 @@ export default function IntegratorLayout() {
         {/* Branding strip */}
         {sidebarOpen && (
           <div className="mx-3 mb-3 p-2.5 rounded-xl border border-white/5 bg-white/[0.02]">
-            <div className="text-[9px] text-slate-600 mb-1.5 text-center">Powered by</div>
+            <div className="text-[9px] text-slate-600 mb-1.5 text-center">מופעל על ידי</div>
             <CDataLogo className="h-5 mx-auto" />
           </div>
         )}
@@ -159,9 +159,9 @@ export default function IntegratorLayout() {
           style={{ background: `linear-gradient(90deg, rgba(7,17,30,0.82), rgba(${config.glowRgb},0.08))`, backdropFilter: 'blur(16px)' }}
         >
           <div>
-            <div className="text-xs text-slate-500">Integrator Portal</div>
+            <div className="text-xs text-slate-500">פורטל אינטגרטור</div>
             <div className="text-sm font-semibold text-white">NetSec Solutions</div>
-            <div className="text-[10px] mt-0.5" style={{ color: config.navActiveColor }}>Customer Operations · Orders & Onboarding</div>
+            <div className="text-[10px] mt-0.5" style={{ color: config.navActiveColor }}>ניהול לקוחות · הזמנות ואונבורדינג</div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -181,7 +181,7 @@ export default function IntegratorLayout() {
                     CDATA
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-500">Integrator Admin</div>
+                <div className="text-[10px] text-slate-500">מנהל אינטגרטור</div>
               </div>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"

@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Edit2, Users, Shield, BarChart2, Mail, Phone, MapPin, Calendar, Hash, Building2 } from 'lucide-react'
 import { getIntegrator, getCustomersByIntegrator, getCustomerEnvironment } from '../../data/mockData'
+import { workspaceApi } from '../../api/workspaceApi'
 
 function statusBadge(status) {
   if (status === 'active') return 'badge-green'
@@ -26,6 +27,61 @@ function formatDate(str) {
 export default function IntegratorProfile() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [realOrders, setRealOrders] = useState([])
+  const [realCustomers, setRealCustomers] = useState([])
+  const [realError, setRealError] = useState('')
+
+  useEffect(() => {
+    async function loadReal() {
+      try {
+        setRealError('')
+        const [orders, customers] = await Promise.all([
+          workspaceApi.getOrders({ distributorId: 'd1', role: 'distributor' }),
+          workspaceApi.getCustomers(undefined, 'distributor'),
+        ])
+        setRealOrders((orders || []).filter((o) => o.integratorId === id && o.productType === 'WORKSPACE_SECURITY'))
+        setRealCustomers((customers || []).filter((c) => c.integratorId === id))
+      } catch (e) {
+        setRealError(e.message)
+      }
+    }
+    loadReal()
+  }, [id])
+
+  const realView = useMemo(() => {
+    if (!realOrders.length && !realCustomers.length) return null
+    return {
+      id,
+      companyName: `Integrator ${id}`,
+      contactName: '—',
+      contactEmail: '—',
+      customers: realCustomers.length,
+      seats: realOrders.reduce((sum, o) => sum + o.seats, 0),
+      createdAt: realCustomers[0]?.createdAt || realOrders[0]?.createdAt,
+    }
+  }, [id, realCustomers, realOrders])
+
+  if (realView) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/distribution/integrators')} className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/[0.06] transition-colors text-slate-400 hover:text-white" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">{realView.companyName}</h1>
+            <p className="text-slate-500 text-sm mt-0.5">Perception Point integrator profile</p>
+            {realError && <p className="text-xs text-red-400 mt-1">{realError}</p>}
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="stat-card"><div className="text-xl font-bold text-white">{realView.customers}</div><div className="text-xs text-slate-500">לקוחות</div></div>
+          <div className="stat-card"><div className="text-xl font-bold text-white">{realView.seats}</div><div className="text-xs text-slate-500">סה\"כ Seats</div></div>
+          <div className="stat-card"><div className="text-xl font-bold text-white">{formatDate(realView.createdAt)}</div><div className="text-xs text-slate-500">יצירה ראשונה</div></div>
+        </div>
+      </div>
+    )
+  }
 
   const integrator = getIntegrator(id)
 

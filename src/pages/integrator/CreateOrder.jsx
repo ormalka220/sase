@@ -99,9 +99,10 @@ const DURATIONS = [
 ]
 
 const BILLING_TYPES = [
-  { id: 'CREDIT_CARD', label: 'Credit Card' },
-  { id: 'MONTHLY_INVOICE', label: 'Monthly Invoice' },
+  { id: 'CREDIT_CARD', label: 'כרטיס אשראי' },
+  { id: 'MONTHLY_INVOICE', label: 'חשבונית חודשית' },
 ]
+const BANDWIDTH_OPTIONS = ['1', '2', '5', '10', '20']
 
 const STEP_LABELS = ['בחירת מוצר', 'פרטי הזמנה', 'סקירה ושליחה']
 const YEARLY_DISCOUNT = 0.1
@@ -126,6 +127,8 @@ export default function CreateOrder() {
     quantity: '',
     duration: 'yearly',
     billingType: 'CREDIT_CARD',
+    fortisaseUsername: '',
+    bandwidthPerUser: '5',
     notes: '',
   })
 
@@ -140,6 +143,9 @@ export default function CreateOrder() {
   const durationMultiplier = form.duration === 'yearly' ? 1 - YEARLY_DISCOUNT : 1
   const effectiveUnitPrice = monthlyUnitPrice * durationMultiplier
   const totalPrice = effectiveUnitPrice * quantity
+  const isSaseOrder = selectedProduct?.family === 'sase'
+  const requiresFortiSaseUsername = isSaseOrder
+  const totalBandwidth = quantity > 0 ? Number(form.bandwidthPerUser) * quantity : 0
 
   useEffect(() => {
     workspaceApi
@@ -160,7 +166,13 @@ export default function CreateOrder() {
 
   function canNext() {
     if (step === 0) return !!form.productId
-    if (step === 1) return !!form.customerId && !!form.licenseType && !!form.quantity && Number(form.quantity) > 0
+    if (step === 1) {
+      const basicValid = !!form.customerId && !!form.licenseType && !!form.quantity && Number(form.quantity) > 0
+      if (!basicValid) return false
+      if (requiresFortiSaseUsername && !form.fortisaseUsername.trim()) return false
+      if (isSaseOrder && !form.bandwidthPerUser) return false
+      return true
+    }
     return true
   }
 
@@ -237,7 +249,7 @@ export default function CreateOrder() {
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">סטטוס</span>
-              <span className="text-white font-semibold">{createdOrder?.status || 'N/A'}</span>
+              <span className="text-white font-semibold">{createdOrder?.status || 'לא זמין'}</span>
             </div>
           </div>
         </div>
@@ -245,7 +257,7 @@ export default function CreateOrder() {
           <button onClick={() => navigate('/integrator/orders')} className="btn-primary text-xs">
             לרשימת הזמנות
           </button>
-          <button onClick={() => { setSubmitted(false); setStep(0); setCreatedOrder(null); setForm({ productId: '', customerId: '', licenseType: '', quantity: '', duration: 'yearly', billingType: 'CREDIT_CARD', notes: '' }) }}
+          <button onClick={() => { setSubmitted(false); setStep(0); setCreatedOrder(null); setForm({ productId: '', customerId: '', licenseType: '', quantity: '', duration: 'yearly', billingType: 'CREDIT_CARD', fortisaseUsername: '', bandwidthPerUser: '5', notes: '' }) }}
             className="btn-ghost text-xs">
             הזמנה נוספת
           </button>
@@ -259,7 +271,7 @@ export default function CreateOrder() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-black text-white mb-1">הזמנת <span className="text-cdata-300">רישויים חדשה</span></h1>
-        <p className="text-xs text-slate-500">New License Order — יישלח להפצה לאישור</p>
+        <p className="text-xs text-slate-500">הזמנת רישוי חדשה — תישלח להפצה לאישור</p>
         {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
       </div>
 
@@ -387,18 +399,65 @@ export default function CreateOrder() {
             </div>
           </div>
 
-          {/* Quantity */}
+          {/* Quantity / Users */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2">כמות *</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-2">{isSaseOrder ? 'מספר משתמשים *' : 'כמות *'}</label>
             <input
               type="number"
               min="1"
               value={form.quantity}
               onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))}
-              placeholder="לדוגמה: 100"
+              placeholder={isSaseOrder ? 'לדוגמה: 250' : 'לדוגמה: 100'}
               className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cdata-500/40"
             />
           </div>
+
+          {requiresFortiSaseUsername && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-2">
+                FortiSASE Username *
+              </label>
+              <div className="flex gap-2">
+                <input
+                  value={form.fortisaseUsername}
+                  onChange={e => setForm(f => ({ ...f, fortisaseUsername: e.target.value }))}
+                  placeholder="admin_companyname"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cdata-500/40 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const suggested = `admin_${(selectedCustomer?.companyName || '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '').slice(0, 20)}`
+                    setForm(f => ({ ...f, fortisaseUsername: suggested }))
+                  }}
+                  className="btn-ghost text-xs px-3 whitespace-nowrap"
+                >
+                  הצע אוטומטי
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-600 mt-1">דוגמא: admin_elbit · admin_hapoalim · admin_2bsecure</p>
+            </div>
+          )}
+
+          {isSaseOrder && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-2">רוחב פס פר משתמש *</label>
+              <select
+                value={form.bandwidthPerUser}
+                onChange={e => setForm(f => ({ ...f, bandwidthPerUser: e.target.value }))}
+                className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cdata-500/40"
+              >
+                {BANDWIDTH_OPTIONS.map((bw) => (
+                  <option key={bw} value={bw}>{bw} Mbps</option>
+                ))}
+              </select>
+              {quantity > 0 && (
+                <p className="text-[10px] text-cdata-300 mt-1.5">
+                  סה"כ רוחב פס נדרש: {form.bandwidthPerUser} Mbps × {quantity.toLocaleString()} = {totalBandwidth.toLocaleString()} Mbps
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Duration */}
           <div>
@@ -422,7 +481,7 @@ export default function CreateOrder() {
 
           {/* Pricing */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2">Billing Type *</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-2">סוג חיוב *</label>
             <div className="grid grid-cols-2 gap-2">
               {BILLING_TYPES.map(bt => (
                 <button
@@ -491,7 +550,10 @@ export default function CreateOrder() {
               { label: 'תקופה',   value: form.duration === 'yearly' ? 'שנתי (Yearly)' : 'חודשי (Monthly)' },
               { label: 'מחיר ליחידה', value: formatUsd(effectiveUnitPrice) },
               { label: 'סה"כ', value: formatUsd(totalPrice) },
-              { label: 'Billing', value: form.billingType === 'CREDIT_CARD' ? 'Credit Card' : 'Monthly Invoice' },
+              { label: 'סוג חיוב', value: form.billingType === 'CREDIT_CARD' ? 'כרטיס אשראי' : 'חשבונית חודשית' },
+              ...(requiresFortiSaseUsername ? [{ label: 'FortiSASE Username', value: form.fortisaseUsername || '—' }] : []),
+              ...(isSaseOrder ? [{ label: 'רוחב פס למשתמש', value: `${form.bandwidthPerUser} Mbps` }] : []),
+              ...(isSaseOrder ? [{ label: 'רוחב פס כולל', value: `${totalBandwidth.toLocaleString()} Mbps` }] : []),
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center justify-between px-5 py-3">
                 <span className="text-xs text-slate-500">{label}</span>
@@ -512,7 +574,7 @@ export default function CreateOrder() {
               <div>
                 <div className="text-xs font-semibold text-amber-400 mb-1">שליחה לאישור הפצה</div>
                 <div className="text-[10px] text-slate-500 leading-relaxed">
-                  Credit Card orders are provisioned automatically after payment. Monthly invoice orders wait for distributor approval.
+                  הזמנות בכרטיס אשראי מוקמות אוטומטית לאחר תשלום. הזמנות בחשבונית חודשית ממתינות לאישור מפיץ.
                 </div>
               </div>
             </div>
@@ -539,7 +601,7 @@ export default function CreateOrder() {
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold text-white transition-all"
             style={{ background: 'linear-gradient(135deg, #059669, #047857)', boxShadow: '0 4px 15px rgba(5,150,105,0.3)' }}>
             <Send className="w-4 h-4" />
-            {loading ? 'Processing...' : 'Submit order'}
+            {loading ? 'מעבד...' : 'שלח הזמנה'}
           </button>
         )}
       </div>

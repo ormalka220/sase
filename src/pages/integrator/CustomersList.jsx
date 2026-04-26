@@ -1,74 +1,66 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, Users, CheckCircle, Clock, ChevronRight, ExternalLink, Copy } from 'lucide-react'
-import {
-  getCustomersByIntegrator,
-  getCustomerEnvironment,
-  getOrdersByIntegrator,
-} from '../../data/mockData'
+import { Search, Plus, Users, CheckCircle, Clock, ChevronRight } from 'lucide-react'
 import { useProduct } from '../../context/ProductContext'
+import { workspaceApi } from '../../api/workspaceApi'
 
 const INTEGRATOR_ID = 'i1'
-
-const onboardingLabel = (status) => {
-  const map = { active: 'פעיל', configured: 'מוגדר', invited: 'הוזמן', created: 'חדש' }
-  return map[status] || status
-}
-
-const onboardingBadge = (status) => {
-  const map = {
-    active: 'badge-green',
-    configured: 'badge-blue',
-    invited: 'badge-amber',
-    created: 'badge-steel',
-  }
-  return map[status] || 'badge-steel'
-}
-
-const statusBadge = (status) => {
-  const map = { active: 'badge-green', onboarding: 'badge-amber', suspended: 'badge-red' }
-  return map[status] || 'badge-steel'
-}
-
-const statusLabel = (status) => {
-  const map = { active: 'פעיל', onboarding: 'קליטה', suspended: 'מושהה' }
-  return map[status] || status
-}
 
 export default function IntegratorCustomersList() {
   const navigate = useNavigate()
   const { product, config } = useProduct()
-  const allCustomers = getCustomersByIntegrator(INTEGRATOR_ID)
-  const integratorOrders = getOrdersByIntegrator(INTEGRATOR_ID)
-  const scopedCustomerIds = product === 'all'
-    ? null
-    : new Set(integratorOrders.filter(o => o.product === product).map(o => o.customerId))
-  const productCustomers = product === 'all'
-    ? allCustomers
-    : allCustomers.filter(c => scopedCustomerIds.has(c.id))
+  const [customers, setCustomers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
 
+  useEffect(() => {
+    if (product === 'sase') {
+      setLoading(false)
+      setCustomers([])
+      return
+    }
+    async function loadCustomers() {
+      try {
+        setLoading(true)
+        setError('')
+        const data = await workspaceApi.getPpCustomersList({ integratorId: INTEGRATOR_ID, role: 'integrator' })
+        setCustomers(data)
+      } catch (e) {
+        setError(e.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadCustomers()
+  }, [product])
+
+  if (product === 'sase') {
+    return <div className="glass rounded-xl p-5 border border-white/10 text-sm text-slate-300">רשימת לקוחות אמיתית זמינה כרגע רק עבור Perception Point.</div>
+  }
+
+  const productCustomers = customers
   const filtered = productCustomers.filter(c => {
     const matchSearch =
       c.companyName.toLowerCase().includes(search.toLowerCase()) ||
       c.domain.toLowerCase().includes(search.toLowerCase())
     const matchFilter =
       filter === 'all' ||
-      (filter === 'active' && c.status === 'active') ||
-      (filter === 'onboarding' && c.status === 'onboarding') ||
-      (filter === 'suspended' && c.status === 'suspended')
+      (filter === 'active' && c.status === 'ACTIVE') ||
+      (filter === 'onboarding' && c.status === 'ONBOARDING') ||
+      (filter === 'suspended' && c.status === 'SUSPENDED')
     return matchSearch && matchFilter
   })
 
-  const totalActive = productCustomers.filter(c => c.status === 'active').length
-  const totalOnboarding = productCustomers.filter(c => c.status === 'onboarding').length
+  const totalActive = productCustomers.filter(c => c.status === 'ACTIVE').length
+  const totalOnboarding = productCustomers.filter(c => c.status === 'ONBOARDING').length
 
   const filters = [
     { key: 'all', label: 'הכל' },
     { key: 'active', label: 'פעיל' },
-    { key: 'onboarding', label: 'Onboarding' },
+    { key: 'onboarding', label: 'בתהליך קליטה' },
     { key: 'suspended', label: 'מושהה' },
   ]
 
@@ -78,7 +70,8 @@ export default function IntegratorCustomersList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">לקוחות</h1>
-          <p className="text-slate-500 text-sm mt-0.5">רשימת לקוחות · {product === 'all' ? 'All Products' : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
+          <p className="text-slate-500 text-sm mt-0.5">רשימת לקוחות · Perception Point</p>
+          {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
         </div>
         <button
           className="btn-primary flex items-center gap-2 text-sm"
@@ -141,20 +134,21 @@ export default function IntegratorCustomersList() {
         {/* Table header */}
         <div className="grid grid-cols-8 px-5 py-3 border-b border-white/[0.08] text-xs text-slate-500 font-medium">
           <div className="col-span-2">לקוח</div>
-          <div>משתמשים</div>
-          <div>פאקג'</div>
+          <div>Seats</div>
+          <div>Org ID</div>
           <div>סטטוס</div>
-          <div>Onboarding</div>
-          <div>FortiSASE</div>
+          <div>קליטה</div>
+          <div>PP Admin</div>
           <div>בריאות / פעולות</div>
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="px-5 py-12 text-center text-slate-500 text-sm">טוען לקוחות...</div>
+        ) : filtered.length === 0 ? (
           <div className="px-5 py-12 text-center text-slate-500 text-sm">לא נמצאו לקוחות</div>
         ) : (
           filtered.map(c => {
-            const env = getCustomerEnvironment(c.id)
-            const score = env?.complianceScore
+            const score = c.complianceScore
             const scoreColor = score >= 95 ? '#10b981' : score >= 80 ? '#f59e0b' : '#ef4444'
             return (
               <div
@@ -173,39 +167,19 @@ export default function IntegratorCustomersList() {
                   </div>
                 </div>
 
-                {/* Users */}
-                <div className="text-sm text-white font-medium">{c.numberOfUsers.toLocaleString()}</div>
+                <div className="text-sm text-white font-medium">{c.seats.toLocaleString()}</div>
 
-                {/* Package */}
-                <div className="text-xs text-slate-400 truncate pr-2">{c.packageName}</div>
+                <div className="text-xs text-slate-400 truncate pr-2">{c.ppOrgId || '—'}</div>
 
-                {/* Status */}
                 <div>
-                  <span className={statusBadge(c.status)}>{statusLabel(c.status)}</span>
+                  <span className="badge-steel">{c.status}</span>
                 </div>
 
-                {/* Onboarding */}
                 <div>
-                  <span className={onboardingBadge(c.onboardingStatus)}>
-                    {onboardingLabel(c.onboardingStatus)}
-                  </span>
+                  <span className="badge-steel">{c.onboardingStatus}</span>
                 </div>
 
-                {/* FortiSASE */}
-                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                  <span className="text-xs font-mono text-cdata-300 bg-cdata-500/10 px-2 py-0.5 rounded">
-                    {c.fortisaseUser}
-                  </span>
-                  <a
-                    href={c.fortisaseUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1 rounded hover:bg-white/5 text-slate-500 hover:text-cdata-300 transition-colors"
-                    title="פתח FortiSASE"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
+                <div className="text-xs text-slate-400 truncate">{c.ppAdminUserId || '—'}</div>
 
                 {/* Health + action */}
                 <div className="flex items-center justify-between">

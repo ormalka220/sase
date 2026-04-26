@@ -17,4 +17,9 @@ app.use('/api/orders', ordersRoutes)
 app.use('/api/customers', customersRoutes)
 app.use('/api/workspace-security', workspaceRoutes)
 
+app.use((err, _req, res, _next) => {
+  const message = err?.message || 'Internal server error'
+  res.status(500).json({ error: message })
+})
+
 module.exports = { app }

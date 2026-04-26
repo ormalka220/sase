@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { FileText, Download, TrendingUp, BarChart as BarChartIcon, Calendar } from 'lucide-react'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -6,6 +6,7 @@ import {
 } from 'recharts'
 import { growthData, integrators, getCustomersByIntegrator, getOrdersByDistributor } from '../../data/mockData'
 import { useProduct } from '../../context/ProductContext'
+import { workspaceApi } from '../../api/workspaceApi'
 
 const reportsList = [
   {
@@ -30,6 +31,53 @@ const reportsList = [
 
 export default function Reports() {
   const { product, config } = useProduct()
+  const [summary, setSummary] = useState(null)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (product === 'sase') return
+    async function load() {
+      try {
+        setLoading(true)
+        setError('')
+        const data = await workspaceApi.getPpReportsSummary({ distributorId: 'd1', role: 'distributor' })
+        setSummary(data)
+      } catch (e) {
+        setError(e.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [product])
+
+  if (product !== 'sase') {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">דוחות</h1>
+          <p className="text-slate-500 text-sm mt-0.5">ניהול דוחות מפיץ · Perception Point</p>
+          {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="stat-card"><div className="text-xl font-bold text-white">{summary?.totals?.customers || 0}</div><div className="text-xs text-slate-500">לקוחות</div></div>
+          <div className="stat-card"><div className="text-xl font-bold text-white">{summary?.totals?.orders || 0}</div><div className="text-xs text-slate-500">הזמנות</div></div>
+          <div className="stat-card"><div className="text-xl font-bold text-white">{summary?.totals?.provisionedOrders || 0}</div><div className="text-xs text-slate-500">הזמנות מופעלות</div></div>
+        </div>
+        <div className="glass glow-border rounded-2xl p-5">
+          <div className="text-sm font-semibold text-white mb-3">דוחות זמינים</div>
+          {loading ? <div className="text-xs text-slate-500">טוען...</div> : (summary?.downloadableReports || []).map((r) => (
+            <div key={r.id} className="flex items-center justify-between py-2 border-b border-white/5">
+              <span className="text-sm text-white">{r.title}</span>
+              <span className="badge-steel">{r.type}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   const distributorOrders = getOrdersByDistributor('d1')
   const scopedOrders = product === 'all' ? distributorOrders : distributorOrders.filter(o => o.product === product)
   const scopedIntegratorIds = product === 'all' ? null : new Set(scopedOrders.map(o => o.integratorId))

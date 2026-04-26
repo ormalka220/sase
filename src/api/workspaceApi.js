@@ -13,15 +13,27 @@ async function request(path, { method = 'GET', body, role = 'integrator', userId
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error(error.error || 'Request failed')
+    const normalizedError = typeof error.error === 'string'
+      ? error.error
+      : error?.error?.formErrors?.[0] || error?.error?.fieldErrors
+        ? 'נתונים לא תקינים בטופס'
+        : 'Request failed'
+    throw new Error(normalizedError)
   }
 
   return response.json()
 }
 
 export const workspaceApi = {
-  getCustomers: (integratorId) =>
-    request(`/api/customers?integratorId=${encodeURIComponent(integratorId)}`, { role: 'integrator' }),
+  createCustomer: (payload) =>
+    request('/api/customers', { method: 'POST', body: payload, role: 'integrator' }),
+
+  getCustomers: (integratorId, role = 'integrator', distributorId) => {
+    const query = new URLSearchParams()
+    if (integratorId) query.set('integratorId', integratorId)
+    if (distributorId) query.set('distributorId', distributorId)
+    return request(`/api/customers?${query.toString()}`, { role })
+  },
 
   getOrders: ({ distributorId, integratorId, role }) => {
     const query = new URLSearchParams()
@@ -53,4 +65,31 @@ export const workspaceApi = {
 
   markIntegrationComplete: (customerId) =>
     request(`/api/workspace-security/customers/${customerId}/mark-integration-complete`, { method: 'POST', role: 'distributor' }),
+
+  getPpOverview: ({ integratorId, distributorId, role = 'integrator' } = {}) => {
+    const query = new URLSearchParams()
+    if (integratorId) query.set('integratorId', integratorId)
+    if (distributorId) query.set('distributorId', distributorId)
+    return request(`/api/workspace-security/overview?${query.toString()}`, { role })
+  },
+
+  getPpCustomersList: ({ integratorId, distributorId, role = 'integrator' } = {}) => {
+    const query = new URLSearchParams()
+    if (integratorId) query.set('integratorId', integratorId)
+    if (distributorId) query.set('distributorId', distributorId)
+    return request(`/api/workspace-security/customers-list?${query.toString()}`, { role })
+  },
+
+  getPpCustomerProfile: (customerId, role = 'integrator') =>
+    request(`/api/workspace-security/customers/${customerId}/profile`, { role }),
+
+  getPpReportsSummary: ({ integratorId, distributorId, role = 'integrator' } = {}) => {
+    const query = new URLSearchParams()
+    if (integratorId) query.set('integratorId', integratorId)
+    if (distributorId) query.set('distributorId', distributorId)
+    return request(`/api/workspace-security/reports-summary?${query.toString()}`, { role })
+  },
+
+  getPpAudit: (customerId, role = 'integrator') =>
+    request(`/api/workspace-security/customers/${customerId}/audit`, { role }),
 }

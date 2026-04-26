@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
 import { ShieldOff, Bug, Mail, AlertTriangle, Search, Clock, ChevronDown } from 'lucide-react'
-import { ppRecentThreats } from '../../data/mockData'
-
-const threats = ppRecentThreats.filter(t => t.customerId === 'c1')
+import { workspaceApi } from '../../api/workspaceApi'
 
 const severityConfig = {
   critical: { label: 'קריטי',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
@@ -24,9 +22,35 @@ function fmt(dt) {
 }
 
 export default function PerceptionThreats() {
+  const [threats, setThreats] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [severityFilter, setSeverityFilter] = useState('all')
+
+  React.useEffect(() => {
+    async function loadAudit() {
+      try {
+        const audit = await workspaceApi.getPpAudit('c1', 'customer')
+        const mapped = (audit.entries || []).map((entry, idx) => ({
+          id: entry.id,
+          type: entry.source === 'MANUAL' ? 'Spam' : 'Phishing',
+          severity: entry.status === 'active' ? 'low' : 'medium',
+          subject: entry.status,
+          sender: entry.createdBy || 'system@perception-point',
+          recipient: 'customer@domain.local',
+          blockedAt: entry.createdAt,
+        }))
+        setThreats(mapped)
+      } catch (e) {
+        setError(e.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadAudit()
+  }, [])
 
   const filtered = threats.filter(t => {
     const matchSearch = !search || t.subject.toLowerCase().includes(search.toLowerCase()) || t.sender.toLowerCase().includes(search.toLowerCase())
@@ -50,6 +74,7 @@ export default function PerceptionThreats() {
           <h1 className="text-xl font-black text-white">Threat <span className="text-red-400">Analysis</span></h1>
         </div>
         <p className="text-xs text-slate-500">ניתוח איומים — Perception Point Email Security</p>
+        {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
       </div>
 
       {/* Summary cards */}
@@ -113,7 +138,9 @@ export default function PerceptionThreats() {
           </span>
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="py-16 text-center text-slate-600">טוען אירועים...</div>
+        ) : filtered.length === 0 ? (
           <div className="py-16 text-center text-slate-600">
             <ShieldOff className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <div className="text-sm">אין איומים תואמים</div>

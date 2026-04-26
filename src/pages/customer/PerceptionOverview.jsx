@@ -6,11 +6,7 @@ import {
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
-import { ppCustomerStats, ppEmailTrend, ppThreatBreakdown, ppRecentThreats } from '../../data/mockData'
 import { workspaceApi } from '../../api/workspaceApi'
-
-const stats = ppCustomerStats.find(s => s.customerId === 'c1')
-const threats = ppRecentThreats.filter(t => t.customerId === 'c1')
 
 const severityConfig = {
   critical: { label: 'קריטי', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.25)' },
@@ -72,14 +68,41 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function PerceptionOverview() {
   const customerId = 'c1'
   const [activeTab, setActiveTab] = useState('all')
+  const [profile, setProfile] = useState(null)
+  const [audit, setAudit] = useState([])
   const [onboarding, setOnboarding] = useState(null)
   const [integrationStatus, setIntegrationStatus] = useState(null)
   const [checkLoading, setCheckLoading] = useState(false)
+  const [error, setError] = useState('')
+  const stats = {
+    emailsScanned: audit.length * 20,
+    threatsBlocked: audit.filter((e) => e.status !== 'active').length,
+    safeEmails: Math.max((audit.length * 20) - audit.filter((e) => e.status !== 'active').length, 0),
+    protectedMailboxes: profile?.metrics?.protectedUsers || 0,
+    totalMailboxes: profile?.metrics?.protectedUsers || 0,
+  }
+  const ppEmailTrend = audit.slice(0, 7).reverse().map((e, idx) => ({ day: `D${idx + 1}`, scanned: 20, blocked: e.status !== 'active' ? 1 : 0 }))
+  const ppThreatBreakdown = [
+    { category: 'Phishing', count: audit.filter((e) => e.source === 'API').length, pct: 60, color: '#ef4444' },
+    { category: 'Manual', count: audit.filter((e) => e.source === 'MANUAL').length, pct: 30, color: '#f97316' },
+    { category: 'System', count: audit.filter((e) => e.source === 'SYSTEM').length, pct: 10, color: '#eab308' },
+  ]
+  const threats = audit.map((e) => ({
+    id: e.id,
+    type: e.source === 'MANUAL' ? 'Spam' : 'Phishing',
+    severity: e.status === 'active' ? 'low' : 'medium',
+    subject: e.status,
+    sender: e.createdBy || 'system',
+    recipient: profile?.customer?.adminEmail || 'customer@domain.local',
+    blockedAt: e.createdAt,
+  }))
   const blockRate = stats ? ((stats.threatsBlocked / stats.emailsScanned) * 100).toFixed(1) : 0
 
   useEffect(() => {
-    workspaceApi.getOnboarding(customerId, 'customer').then(setOnboarding).catch(() => {})
-    workspaceApi.getIntegrationStatus(customerId, 'customer').then(setIntegrationStatus).catch(() => {})
+    workspaceApi.getOnboarding(customerId, 'customer').then(setOnboarding).catch((e) => setError(e.message))
+    workspaceApi.getIntegrationStatus(customerId, 'customer').then(setIntegrationStatus).catch((e) => setError(e.message))
+    workspaceApi.getPpCustomerProfile(customerId, 'customer').then(setProfile).catch((e) => setError(e.message))
+    workspaceApi.getPpAudit(customerId, 'customer').then((d) => setAudit(d.entries || [])).catch((e) => setError(e.message))
   }, [])
 
   async function checkConnection() {
@@ -98,14 +121,15 @@ export default function PerceptionOverview() {
     return (
       <div className="space-y-4">
         <div className="glass rounded-xl p-5 border border-indigo-500/20">
-          <h1 className="text-xl font-black text-white mb-2">Connect Microsoft 365 to activate Workspace Security</h1>
+          <h1 className="text-xl font-black text-white mb-2">חברו את Microsoft 365 להפעלת Perception Point</h1>
           <p className="text-xs text-slate-400">{integrationStatus.message}</p>
+          {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
             <a href={onboarding?.deepLinkUrl || onboarding?.portalUrl || 'https://app.perception-point.io'} target="_blank" rel="noreferrer" className="btn-primary text-xs">
-              Open Email Service Configuration
+              פתח הגדרת שירות דוא"ל
             </a>
             <button className="btn-ghost text-xs" onClick={checkConnection}>
-              {checkLoading ? 'Checking...' : 'Check connection'}
+              {checkLoading ? 'בודק...' : 'בדוק חיבור'}
             </button>
           </div>
         </div>

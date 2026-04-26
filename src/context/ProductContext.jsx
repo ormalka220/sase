@@ -31,8 +31,8 @@ export const PRODUCTS = {
   },
   perception: {
     id: 'perception',
-    name: 'Workspace Security',
-    nameHe: 'FortiMail Workspace Security',
+    name: 'Perception Point',
+    nameHe: 'Perception Point',
     primaryColor: '#2563EB',
     accentColor: '#7C3AED',
     lightColor: '#A5B4FC',
@@ -48,7 +48,7 @@ export const PRODUCTS = {
 const ProductContext = createContext(null)
 
 export function ProductProvider({ children }) {
-  const [product, setProduct] = useState('sase')
+  const [product, setProduct] = useState('perception')
   return (
     <ProductContext.Provider value={{ product, setProduct, config: PRODUCTS[product] || PRODUCTS.all }}>
       {children}

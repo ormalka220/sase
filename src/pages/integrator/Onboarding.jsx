@@ -1,26 +1,30 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { ExternalLink, RefreshCcw, CheckCircle2 } from 'lucide-react'
 import { workspaceApi } from '../../api/workspaceApi'
+import { useProduct } from '../../context/ProductContext'
 
 const INTEGRATOR_ID = 'i1'
 
-const steps = [
-  'Organization created',
-  'Admin user invited',
-  'Licenses assigned',
-  'Email service not connected',
-  'Microsoft 365 consent pending',
-  'DNS / mail flow pending',
-  'Protection active',
+const checklistRows = [
+  { key: 'organizationCreated', label: 'הארגון נוצר' },
+  { key: 'adminUserInvited', label: 'משתמש אדמין הוזמן' },
+  { key: 'licensesAssigned', label: 'הרישיונות הוקצו' },
+  { key: 'emailServiceNotConnected', label: 'שירות הדוא"ל עדיין לא מחובר' },
+  { key: 'microsoftConsentPending', label: 'הסכמת Microsoft 365 ממתינה' },
+  { key: 'dnsMailFlowPending', label: 'DNS / זרימת דואר ממתינים' },
+  { key: 'protectionActive', label: 'ההגנה פעילה' },
 ]
 
 export default function IntegratorOnboarding() {
+  const { product } = useProduct()
   const [customers, setCustomers] = useState([])
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [onboarding, setOnboarding] = useState(null)
   const [status, setStatus] = useState(null)
   const [error, setError] = useState('')
   const [checking, setChecking] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   const selectedCustomer = useMemo(
     () => customers.find(c => c.id === selectedCustomerId) || null,
@@ -70,18 +74,41 @@ export default function IntegratorOnboarding() {
     await checkConnection()
   }
 
+  async function resendOnboardingEmail() {
+    if (!selectedCustomerId) return
+    setResending(true)
+    setSuccessMessage('')
+    try {
+      await workspaceApi.resendOnboardingEmail(selectedCustomerId)
+      setSuccessMessage('מייל הנחיות נשלח מחדש בהצלחה.')
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setResending(false)
+    }
+  }
+
+  if (product === 'sase') {
+    return (
+      <div className="glass rounded-xl p-5 border border-white/10 text-sm text-slate-300">
+        קליטה זמינה כרגע רק עבור Perception Point.
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-black text-white">Connect Microsoft 365 to activate Workspace Security</h1>
+        <h1 className="text-xl font-black text-white">חברו את Microsoft 365 להפעלת Perception Point</h1>
         <p className="text-xs text-slate-500 mt-1">
-          Your organization has been created. To start protecting email traffic, complete the Email Service Configuration wizard in the FortiMail Workspace Security portal.
+          הארגון שלכם כבר נוצר. בשלב זה הקליטה מתבצעת דרך פורטל Perception Point בלבד - השלימו שם את אשף הגדרת שירות הדוא"ל.
         </p>
         {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+        {successMessage && <p className="text-xs text-emerald-400 mt-2">{successMessage}</p>}
       </div>
 
       <div className="glass rounded-xl p-4 border border-white/10">
-        <label className="text-xs text-slate-400 block mb-2">Customer</label>
+        <label className="text-xs text-slate-400 block mb-2">לקוח</label>
         <select
           value={selectedCustomerId}
           onChange={(e) => setSelectedCustomerId(e.target.value)}
@@ -94,12 +121,12 @@ export default function IntegratorOnboarding() {
       {selectedCustomer && onboarding && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="glass rounded-xl p-4 border border-indigo-500/30">
-            <div className="text-sm font-semibold text-white mb-2">Status checklist</div>
+            <div className="text-sm font-semibold text-white mb-2">רשימת סטטוסים</div>
             <div className="space-y-2">
-              {steps.map((item, idx) => (
-                <div key={item} className="flex items-center gap-2 text-xs text-slate-300">
-                  <CheckCircle2 className={`w-3.5 h-3.5 ${idx < 3 ? 'text-emerald-400' : 'text-slate-500'}`} />
-                  <span>{item}</span>
+              {checklistRows.map((item) => (
+                <div key={item.key} className="flex items-center gap-2 text-xs text-slate-300">
+                  <CheckCircle2 className={`w-3.5 h-3.5 ${onboarding?.checklist?.[item.key] ? 'text-emerald-400' : 'text-slate-500'}`} />
+                  <span>{item.label}</span>
                 </div>
               ))}
             </div>
@@ -107,30 +134,33 @@ export default function IntegratorOnboarding() {
           </div>
 
           <div className="glass rounded-xl p-4 border border-white/10 space-y-3">
-            <div className="text-sm font-semibold text-white">Steps to complete in FortiMail Workspace Security</div>
+            <div className="text-sm font-semibold text-white">שלבים לביצוע ב־Perception Point</div>
             <ol className="list-decimal list-inside text-xs text-slate-300 space-y-1">
-              <li>Click "+ Email Service Configuration"</li>
-              <li>Select "Microsoft 365"</li>
-              <li>Keep connection method as "Inline"</li>
-              <li>Click "Next"</li>
-              <li>Follow the Perception Point wizard</li>
-              <li>Approve Microsoft 365 Admin Consent</li>
-              <li>Complete DNS / domain / mail-flow steps if requested</li>
-              <li>Finish the integration</li>
-              <li>Return here and click "Check connection"</li>
+              <li>לחצו על "+ Email Service Configuration"</li>
+              <li>בחרו "Microsoft 365"</li>
+              <li>השאירו את שיטת החיבור על "Inline"</li>
+              <li>לחצו "Next"</li>
+              <li>המשיכו לפי האשף של Perception Point</li>
+              <li>אשרו הרשאות אדמין ל־Microsoft 365</li>
+              <li>השלימו שלבי DNS / דומיין / Mail Flow אם נדרש</li>
+              <li>סיימו את האינטגרציה</li>
+              <li>חזרו לכאן ולחצו "בדוק חיבור"</li>
             </ol>
             <div className="flex flex-wrap gap-2 pt-2">
               <a href={onboarding.deepLinkUrl || onboarding.portalUrl} target="_blank" rel="noreferrer" className="btn-primary text-xs inline-flex items-center gap-1">
                 <ExternalLink className="w-3.5 h-3.5" />
-                Open Email Service Configuration
+                פתח הגדרת שירות דוא"ל
               </a>
               <button onClick={checkConnection} className="btn-ghost text-xs inline-flex items-center gap-1" disabled={checking}>
                 <RefreshCcw className="w-3.5 h-3.5" />
-                {checking ? 'Checking...' : 'Check connection'}
+                {checking ? 'בודק...' : 'בדוק חיבור'}
               </button>
               {status?.manualCompletionAvailable && (
-                <button onClick={markComplete} className="btn-ghost text-xs">Mark integration as completed</button>
+                <button onClick={markComplete} className="btn-ghost text-xs">סמן אינטגרציה כהושלמה</button>
               )}
+              <button onClick={resendOnboardingEmail} className="btn-ghost text-xs" disabled={resending}>
+                {resending ? 'שולח...' : 'שלח שוב מייל הנחיות'}
+              </button>
             </div>
           </div>
         </div>
