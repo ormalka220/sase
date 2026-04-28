@@ -17,9 +17,36 @@ const PP_CODE = 'WORKSPACE_SECURITY'
 
 // ─── Ownership helpers ────────────────────────────────────────────────────────
 
-function buildCustomerWhere(auth) {
-  const { role, orgId } = auth
+async function resolveOrgScope(auth) {
+  if (auth.orgId) return auth.orgId
+  if (!auth.userId) return null
+
+  const user = await prisma.user.findUnique({
+    where: { id: auth.userId },
+    include: {
+      organization: {
+        include: {
+          distributor: true,
+          integrator: true,
+          customer: true,
+        },
+      },
+    },
+  })
+  if (!user) return null
+  return user.organization.distributor?.id
+    || user.organization.integrator?.id
+    || user.organization.customer?.id
+    || null
+}
+
+async function buildCustomerWhere(auth) {
+  const { role } = auth
   if (role === ROLES.SUPER_ADMIN) return {}
+
+  const orgId = await resolveOrgScope(auth)
+  if (!orgId) throw new ForbiddenError('Missing organization scope')
+
   if (role === ROLES.DISTRIBUTOR_ADMIN) return { distributorId: orgId }
   if (role === ROLES.INTEGRATOR_ADMIN) return { integratorId: orgId }
   if (role === ROLES.CUSTOMER_ADMIN || role === ROLES.CUSTOMER_VIEWER) return { id: orgId }
@@ -45,7 +72,7 @@ function mapHealth(tenant) {
 
 router.get('/overview', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, next) => {
   try {
-    const where = buildCustomerWhere(req.auth)
+    const where = await buildCustomerWhere(req.auth)
     const customers = await prisma.customer.findMany({
       where,
       include: {
@@ -106,7 +133,7 @@ router.get('/overview', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, 
 
 router.get('/customers-list', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
   try {
-    const where = buildCustomerWhere(req.auth)
+    const where = await buildCustomerWhere(req.auth)
     const { page, limit, skip } = parsePagination(req.query)
 
     const [customers, total] = await Promise.all([
@@ -161,7 +188,7 @@ router.get('/customers-list', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req
 
 router.get('/customers/:customerId/profile', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, next) => {
   try {
-    const where = buildCustomerWhere(req.auth)
+    const where = await buildCustomerWhere(req.auth)
     const customer = await prisma.customer.findFirst({
       where: { id: req.params.customerId, ...where },
       include: {
@@ -220,7 +247,7 @@ router.get('/customers/:customerId/profile', requireMinRole(ROLES.CUSTOMER_VIEWE
 
 router.get('/reports-summary', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
   try {
-    const where = buildCustomerWhere(req.auth)
+    const where = await buildCustomerWhere(req.auth)
     const customers = await prisma.customer.findMany({
       where,
       include: {
@@ -254,7 +281,7 @@ router.get('/reports-summary', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (re
 
 router.get('/customers/:customerId/audit', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, next) => {
   try {
-    const where = buildCustomerWhere(req.auth)
+    const where = await buildCustomerWhere(req.auth)
     const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
     if (!customer) throw new NotFoundError('Customer')
 
@@ -279,7 +306,7 @@ router.get('/customers/:customerId/audit', requireMinRole(ROLES.CUSTOMER_VIEWER)
 
 router.get('/customers/:customerId/onboarding', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, next) => {
   try {
-    const where = buildCustomerWhere(req.auth)
+    const where = await buildCustomerWhere(req.auth)
     const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
     if (!customer) throw new NotFoundError('Customer')
 
@@ -317,7 +344,7 @@ router.get('/customers/:customerId/onboarding', requireMinRole(ROLES.CUSTOMER_VI
 
 router.get('/customers/:customerId/integration-status', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, next) => {
   try {
-    const where = buildCustomerWhere(req.auth)
+    const where = await buildCustomerWhere(req.auth)
     const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
     if (!customer) throw new NotFoundError('Customer')
 
@@ -332,7 +359,7 @@ router.get('/customers/:customerId/integration-status', requireMinRole(ROLES.CUS
 
 router.post('/customers/:customerId/resend-onboarding-email', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
   try {
-    const where = buildCustomerWhere(req.auth)
+    const where = await buildCustomerWhere(req.auth)
     const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
     if (!customer) throw new NotFoundError('Customer')
 
@@ -347,7 +374,7 @@ router.post('/customers/:customerId/resend-onboarding-email', requireMinRole(ROL
 
 router.post('/customers/:customerId/mark-integration-complete', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
   try {
-    const where = buildCustomerWhere(req.auth)
+    const where = await buildCustomerWhere(req.auth)
     const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
     if (!customer) throw new NotFoundError('Customer')
 
@@ -362,7 +389,7 @@ router.post('/customers/:customerId/mark-integration-complete', requireMinRole(R
 
 router.get('/customers/:customerId/health', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
   try {
-    const where = buildCustomerWhere(req.auth)
+    const where = await buildCustomerWhere(req.auth)
     const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
     if (!customer) throw new NotFoundError('Customer')
 

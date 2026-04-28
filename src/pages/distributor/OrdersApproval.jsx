@@ -6,26 +6,30 @@ import {
 } from 'lucide-react'
 import { useProduct } from '../../context/ProductContext'
 import { workspaceApi } from '../../api/workspaceApi'
+import { useLanguage } from '../../context/LanguageContext'
+import { getCommonLabels } from '../../i18n/labels'
 
 // ── Status config ─────────────────────────────────────────────────────────────
 
-const statusConfig = {
-  DRAFT:                  { label: 'Draft',                color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
-  PAYMENT_PENDING:        { label: 'Payment Pending',      color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  PENDING_APPROVAL:       { label: 'Pending Approval',     color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  PENDING_CDATA_APPROVAL: { label: 'Pending CData Approval', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  APPROVED:               { label: 'Approved',             color: '#2C6A8A', bg: 'rgba(44,106,138,0.12)' },
-  APPROVED_BY_CDATA:      { label: 'Approved by CData',    color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
-  PROVISIONING:           { label: 'Provisioning',         color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
-  PROVISIONING_STARTED:   { label: 'Provisioning',         color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
-  PP_ORG_CREATED:         { label: 'PP Org Created',       color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)' },
-  PP_ADMIN_INVITED:       { label: 'Admin Invited',        color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)' },
-  READY_FOR_ONBOARDING:   { label: 'Ready for Onboarding', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-  ACTIVE:                 { label: 'Active',               color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-  REJECTED:               { label: 'Rejected',             color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  REJECTED_BY_CDATA:      { label: 'Rejected by CData',    color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  FAILED:                 { label: 'Failed',               color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  CANCELLED:              { label: 'Cancelled',            color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+function getStatusConfig(labels) {
+  return {
+    DRAFT:                  { label: labels.statuses.DRAFT, color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+    PAYMENT_PENDING:        { label: labels.statuses.PAYMENT_PENDING, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    PENDING_APPROVAL:       { label: labels.statuses.PENDING_APPROVAL, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    PENDING_CDATA_APPROVAL: { label: labels.statuses.PENDING_CDATA_APPROVAL, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    APPROVED:               { label: labels.statuses.APPROVED, color: '#2C6A8A', bg: 'rgba(44,106,138,0.12)' },
+    APPROVED_BY_CDATA:      { label: labels.statuses.APPROVED_BY_CDATA, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+    PROVISIONING:           { label: labels.statuses.PROVISIONING, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+    PROVISIONING_STARTED:   { label: labels.statuses.PROVISIONING_STARTED, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+    PP_ORG_CREATED:         { label: labels.statuses.PP_ORG_CREATED, color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)' },
+    PP_ADMIN_INVITED:       { label: labels.statuses.PP_ADMIN_INVITED, color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)' },
+    READY_FOR_ONBOARDING:   { label: labels.statuses.READY_FOR_ONBOARDING, color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+    ACTIVE:                 { label: labels.statuses.ACTIVE, color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+    REJECTED:               { label: labels.statuses.REJECTED, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+    REJECTED_BY_CDATA:      { label: labels.statuses.REJECTED_BY_CDATA, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+    FAILED:                 { label: labels.statuses.FAILED, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+    CANCELLED:              { label: labels.statuses.CANCELLED, color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+  }
 }
 
 function StatusBadge({ status }) {
@@ -38,9 +42,9 @@ function StatusBadge({ status }) {
   )
 }
 
-function fmt(dt) {
+function fmt(dt, locale) {
   if (!dt) return '—'
-  return new Date(dt).toLocaleDateString('en-IL', { day: '2-digit', month: '2-digit', year: '2-digit' })
+  return new Date(dt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
 function fmtUsd(amount) {
@@ -106,7 +110,7 @@ function PPOrderDetail({ order }) {
           </div>
           <div>
             <div className="text-slate-600 mb-0.5">Submitted</div>
-            <div className="text-white font-semibold">{fmt(order.submittedAt)}</div>
+            <div className="text-white font-semibold">{fmt(order.submittedAt, isHebrew ? 'he-IL' : 'en-US')}</div>
           </div>
         </div>
       </div>
@@ -138,6 +142,9 @@ const PENDING_APPROVAL_STATUSES = ['PENDING_APPROVAL', 'PENDING_CDATA_APPROVAL']
 
 export default function OrdersApproval() {
   const { product, config } = useProduct()
+  const { tr, isHebrew } = useLanguage()
+  const labels = getCommonLabels(tr)
+  const statusConfig = getStatusConfig(labels)
   const [orders, setOrders] = useState([])
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
@@ -217,17 +224,17 @@ export default function OrdersApproval() {
           <div className="flex items-center gap-2 mb-1">
             <ShoppingCart className="w-5 h-5" style={{ color: config.navActiveColor }} />
             <h1 className="text-xl font-black text-white">
-              Orders <span style={{ color: config.navActiveColor }}>Approval</span>
+              {tr('אישור', 'Orders')} <span style={{ color: config.navActiveColor }}>{tr('הזמנות', 'Approval')}</span>
             </h1>
           </div>
-          <p className="text-xs text-slate-500">Review and approve Perception Point and SASE orders</p>
+          <p className="text-xs text-slate-500">{tr('סקירה ואישור הזמנות Perception Point ו-SASE', 'Review and approve Perception Point and SASE orders')}</p>
           {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
         </div>
         {pendingCount > 0 && (
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl"
             style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-semibold text-amber-400">{pendingCount} orders pending approval</span>
+            <span className="text-xs font-semibold text-amber-400">{pendingCount} {tr('הזמנות ממתינות לאישור', 'orders pending approval')}</span>
           </div>
         )}
       </div>
@@ -258,13 +265,13 @@ export default function OrdersApproval() {
         <div className="relative w-full md:w-72">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search by order # or customer..."
+            placeholder={tr('חיפוש לפי מספר הזמנה או לקוח...', 'Search by order # or customer...')}
             className="w-full bg-white/[0.03] border border-white/10 rounded-lg pr-9 pl-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none" />
         </div>
         {product === 'all' && (
           <select value={productFilter} onChange={e => setProductFilter(e.target.value)}
             className="bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
-            <option value="all">All Products</option>
+            <option value="all">{tr('כל המוצרים', 'All Products')}</option>
             <option value="sase">Forti SASE</option>
             <option value="perception">Perception Point</option>
           </select>
@@ -272,7 +279,7 @@ export default function OrdersApproval() {
         <button onClick={() => { setSearch(''); setFilter('all'); setProductFilter(product === 'all' ? 'all' : product) }}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 border border-white/10 hover:text-white hover:border-white/20 transition-colors">
           <RotateCcw className="w-3.5 h-3.5" />
-          Clear
+          {tr('נקה', 'Clear')}
         </button>
       </div>
 
@@ -281,7 +288,7 @@ export default function OrdersApproval() {
         {filtered.length === 0 && (
           <div className="glass rounded-xl py-16 text-center text-slate-600">
             <ShoppingCart className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <div className="text-sm">No matching orders</div>
+            <div className="text-sm">{tr('אין הזמנות תואמות', 'No matching orders')}</div>
           </div>
         )}
 
@@ -344,7 +351,7 @@ export default function OrdersApproval() {
                         )}
                         <span>Integrator: <span className="text-slate-400">{order.integrator?.organization?.name || order.integratorId}</span></span>
                         <span className="text-slate-700">·</span>
-                        <span>Created: {fmt(order.createdAt)}</span>
+                        <span>{tr('נוצר', 'Created')}: {fmt(order.createdAt, isHebrew ? 'he-IL' : 'en-US')}</span>
                         {order.totalAmount != null && (
                           <>
                             <span className="text-slate-700">·</span>
@@ -367,7 +374,7 @@ export default function OrdersApproval() {
                     {isPPOrder && (
                       <button onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors text-slate-400 hover:text-white border border-white/10 hover:border-white/20">
-                        {isExpanded ? 'Less' : 'Details'}
+                        {isExpanded ? tr('פחות', 'Less') : tr('פרטים', 'Details')}
                       </button>
                     )}
 
@@ -377,13 +384,13 @@ export default function OrdersApproval() {
                           className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105"
                           style={{ background: 'linear-gradient(135deg, #059669, #047857)', boxShadow: '0 2px 8px rgba(5,150,105,0.3)' }}>
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          Approve
+                          {tr('אשר', 'Approve')}
                         </button>
                         <button onClick={() => setRejectTarget(order.id)}
                           className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:scale-105"
                           style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}>
                           <XCircle className="w-3.5 h-3.5" />
-                          Reject
+                          {tr('דחה', 'Reject')}
                         </button>
                       </>
                     )}
@@ -394,7 +401,7 @@ export default function OrdersApproval() {
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105"
                         style={{ background: 'linear-gradient(135deg, #2C6A8A, #1F5070)', boxShadow: '0 2px 8px rgba(44,106,138,0.3)' }}>
                         <Zap className="w-3.5 h-3.5" />
-                        Provision
+                        {tr('בצע הקמה', 'Provision')}
                       </button>
                     )}
                   </div>
@@ -407,19 +414,19 @@ export default function OrdersApproval() {
               {/* Rejection input */}
               {rejectTarget === order.id && (
                 <div className="px-5 pb-4 border-t border-white/5 pt-3">
-                  <div className="text-xs font-semibold text-slate-300 mb-2">Rejection Reason *</div>
+                  <div className="text-xs font-semibold text-slate-300 mb-2">{tr('סיבת דחייה *', 'Rejection Reason *')}</div>
                   <div className="flex gap-2">
                     <input type="text" value={rejectReason} onChange={e => setRejectReason(e.target.value)}
-                      placeholder="Explain the reason for rejection..."
+                      placeholder={tr('הסבר את סיבת הדחייה...', 'Explain the reason for rejection...')}
                       className="flex-1 bg-white/[0.03] border border-red-500/30 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-red-500/50" />
                     <button onClick={() => rejectOrder(order.id)} disabled={!rejectReason.trim()}
                       className="px-4 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-40 transition-colors"
                       style={{ background: 'rgba(239,68,68,0.8)' }}>
-                      Confirm Reject
+                      {tr('אשר דחייה', 'Confirm Reject')}
                     </button>
                     <button onClick={() => { setRejectTarget(null); setRejectReason('') }}
                       className="px-3 py-2 rounded-lg text-xs text-slate-400 hover:text-white border border-white/10">
-                      Cancel
+                      {tr('בטל', 'Cancel')}
                     </button>
                   </div>
                 </div>

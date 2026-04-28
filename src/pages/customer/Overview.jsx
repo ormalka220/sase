@@ -10,6 +10,7 @@ import {
   getSitesByCustomer,
   threatData,
 } from '../../data/mockData'
+import { useLanguage } from '../../context/LanguageContext'
 
 const CUSTOMER_ID = 'c1'
 const env = getCustomerEnvironment(CUSTOMER_ID)
@@ -56,6 +57,7 @@ function ThreatTooltip({ active, payload, label }) {
 }
 
 export default function CustomerOverview() {
+  const { tr } = useLanguage()
   const handleCopyUser = () => {
     navigator.clipboard.writeText(customer.fortisaseUser).catch(() => {})
   }
@@ -78,7 +80,7 @@ export default function CustomerOverview() {
           className="btn-primary flex items-center gap-2 text-sm"
         >
           <ExternalLink className="w-4 h-4" />
-          FortiSASE Console
+          {tr('מסוף FortiSASE', 'FortiSASE Console')}
         </a>
       </div>
 
@@ -97,7 +99,7 @@ export default function CustomerOverview() {
           </div>
           <div>
             <div className="text-lg font-bold text-white">הארגון מוגן ופעיל</div>
-            <div className="text-sm text-emerald-400 mt-0.5">All FortiSASE services operational</div>
+            <div className="text-sm text-emerald-400 mt-0.5">{tr('כל שירותי FortiSASE פעילים', 'All FortiSASE services operational')}</div>
             <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               סונכרן לאחרונה: היום בשעה 10:30
@@ -108,14 +110,14 @@ export default function CustomerOverview() {
         {/* Center: Score */}
         <div className="text-center px-8 border-r border-l border-white/5">
           <div className="text-4xl font-black text-emerald-400">98%</div>
-          <div className="text-xs text-slate-400 mt-1 font-medium">Security Posture</div>
+          <div className="text-xs text-slate-400 mt-1 font-medium">{tr('מצב אבטחה', 'Security Posture')}</div>
           <div className="text-[10px] text-slate-600 mt-0.5">ציון אבטחה כולל</div>
         </div>
 
         {/* Right: FortiSASE access */}
         <div className="flex flex-col items-end gap-2.5 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">FortiSASE User:</span>
+            <span className="text-xs text-slate-500">{tr(':משתמש FortiSASE', 'FortiSASE User:')}</span>
             <code className="text-sm font-mono font-bold text-cdata-300 bg-cdata-500/10 px-2.5 py-0.5 rounded border border-cdata-500/20">
               {customer.fortisaseUser}
             </code>
@@ -127,7 +129,7 @@ export default function CustomerOverview() {
             className="btn-primary flex items-center gap-2 text-sm"
           >
             <ExternalLink className="w-4 h-4" />
-            פתח FortiSASE Console
+            {tr('פתח מסוף FortiSASE', 'Open FortiSASE Console')}
           </a>
         </div>
       </div>
@@ -145,7 +147,7 @@ export default function CustomerOverview() {
             <span className="text-sm font-normal text-slate-500"> / {env.licenseTotal}</span>
           </div>
           <div className="text-xs font-medium text-slate-300 mt-0.5">משתמשים מוגנים</div>
-          <div className="text-[10px] text-slate-600">Protected Users</div>
+          <div className="text-[10px] text-slate-600">{tr('משתמשים מוגנים', 'Protected Users')}</div>
         </div>
 
         {/* Active Devices */}
@@ -155,7 +157,7 @@ export default function CustomerOverview() {
           </div>
           <div className="text-xl font-bold text-white">{env.activeDevices}</div>
           <div className="text-xs font-medium text-slate-300 mt-0.5">התקנים פעילים</div>
-          <div className="text-[10px] text-slate-600">Active Devices</div>
+          <div className="text-[10px] text-slate-600">{tr('התקנים פעילים', 'Active Devices')}</div>
         </div>
 
         {/* Connected Sites */}
@@ -165,7 +167,7 @@ export default function CustomerOverview() {
           </div>
           <div className="text-xl font-bold text-white">{env.connectedSites}</div>
           <div className="text-xs font-medium text-slate-300 mt-0.5">אתרים מחוברים</div>
-          <div className="text-[10px] text-slate-600">Connected Sites</div>
+          <div className="text-[10px] text-slate-600">{tr('אתרים מחוברים', 'Connected Sites')}</div>
         </div>
 
         {/* Open Alerts */}
@@ -177,7 +179,7 @@ export default function CustomerOverview() {
             {openAlerts.length}
           </div>
           <div className="text-xs font-medium text-slate-300 mt-0.5">התראות פתוחות</div>
-          <div className="text-[10px] text-slate-600">Open Alerts</div>
+          <div className="text-[10px] text-slate-600">{tr('התראות פתוחות', 'Open Alerts')}</div>
         </div>
 
         {/* Compliance Score */}
@@ -187,7 +189,7 @@ export default function CustomerOverview() {
           </div>
           <div className="text-xl font-bold text-white">{env.complianceScore}%</div>
           <div className="text-xs font-medium text-slate-300 mt-0.5">ציות לתקנות</div>
-          <div className="text-[10px] text-slate-600">Compliance Score</div>
+          <div className="text-[10px] text-slate-600">{tr('ציון ציות', 'Compliance Score')}</div>
         </div>
 
         {/* Gateway Health */}
@@ -197,7 +199,7 @@ export default function CustomerOverview() {
           </div>
           <div className="text-xl font-bold text-emerald-400">{env.gatewayHealth}%</div>
           <div className="text-xs font-medium text-slate-300 mt-0.5">בריאות Gateway</div>
-          <div className="text-[10px] text-slate-600">Gateway Health</div>
+          <div className="text-[10px] text-slate-600">{tr('בריאות Gateway', 'Gateway Health')}</div>
         </div>
 
       </div>
@@ -210,9 +212,9 @@ export default function CustomerOverview() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <div className="font-semibold text-white text-sm">חסימות איומים — 7 ימים</div>
-              <div className="text-xs text-slate-500 mt-0.5">Threat Blocking Activity</div>
+              <div className="text-xs text-slate-500 mt-0.5">{tr('פעילות חסימת איומים', 'Threat Blocking Activity')}</div>
             </div>
-            <span className="badge-green text-xs px-3 py-1">{totalBlocked.toLocaleString()} Blocked This Week</span>
+            <span className="badge-green text-xs px-3 py-1">{totalBlocked.toLocaleString()} {tr('נחסמו השבוע', 'Blocked This Week')}</span>
           </div>
           <ResponsiveContainer width="100%" height={148}>
             <AreaChart data={threatData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -245,7 +247,7 @@ export default function CustomerOverview() {
         {/* Sites connectivity list */}
         <div className="glass glow-border rounded-xl p-5 flex flex-col">
           <div className="font-semibold text-white text-sm mb-0.5">אתרים — קישוריות</div>
-          <div className="text-xs text-slate-500 mb-4">Sites Connectivity Status</div>
+          <div className="text-xs text-slate-500 mb-4">{tr('סטטוס קישוריות אתרים', 'Sites Connectivity Status')}</div>
           <div className="space-y-3 flex-1">
             {sites.map(site => (
               <div key={site.id}>
@@ -281,7 +283,7 @@ export default function CustomerOverview() {
           </div>
           {/* Summary footer */}
           <div className="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between">
-            <span className="text-[10px] text-slate-600">Tunnel Health Average</span>
+            <span className="text-[10px] text-slate-600">{tr('ממוצע בריאות מנהרות', 'Tunnel Health Average')}</span>
             <span className="text-xs font-semibold text-emerald-400">
               {Math.round(sites.reduce((s, x) => s + x.tunnelHealth, 0) / sites.length)}%
             </span>
@@ -295,7 +297,7 @@ export default function CustomerOverview() {
         {/* Security Posture Breakdown */}
         <div className="glass glow-border rounded-xl p-5">
           <div className="font-semibold text-white text-sm mb-0.5">Security Posture — פירוט</div>
-          <div className="text-xs text-slate-500 mb-4">Service-Level Security Scores</div>
+          <div className="text-xs text-slate-500 mb-4">{tr('ציוני אבטחה לפי שירות', 'Service-Level Security Scores')}</div>
           <div className="space-y-1 divide-y divide-white/[0.04]">
             {[
               { label: 'Zero Trust Network Access', score: 99, icon: Lock },
@@ -329,7 +331,7 @@ export default function CustomerOverview() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="font-semibold text-white text-sm">התראות אחרונות</div>
-              <div className="text-xs text-slate-500 mt-0.5">Recent Open Alerts</div>
+              <div className="text-xs text-slate-500 mt-0.5">{tr('התראות פתוחות אחרונות', 'Recent Open Alerts')}</div>
             </div>
             {openAlerts.length > 0 && (
               <span className="badge-red">{openAlerts.length} פתוחות</span>
@@ -342,7 +344,7 @@ export default function CustomerOverview() {
                 <CheckCircle className="w-6 h-6 text-emerald-400" />
               </div>
               <span className="text-sm text-emerald-400 font-medium">אין התראות פתוחות</span>
-              <span className="text-xs text-slate-600">No open alerts at this time</span>
+              <span className="text-xs text-slate-600">{tr('אין התראות פתוחות כרגע', 'No open alerts at this time')}</span>
             </div>
           ) : (
             <div className="space-y-2">
@@ -377,14 +379,14 @@ export default function CustomerOverview() {
       <div className="glass glow-border rounded-2xl p-5">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <div className="text-sm font-semibold text-white mb-2.5">FortiSASE Quick Access</div>
+            <div className="text-sm font-semibold text-white mb-2.5">{tr('גישה מהירה ל-FortiSASE', 'FortiSASE Quick Access')}</div>
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-500 w-14">Console:</span>
+                <span className="text-[10px] text-slate-500 w-14">{tr(':מסוף', 'Console:')}</span>
                 <code className="text-xs font-mono text-slate-300 select-all">{customer.fortisaseUrl}</code>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-500 w-14">User:</span>
+                <span className="text-[10px] text-slate-500 w-14">{tr(':משתמש', 'User:')}</span>
                 <code className="text-xs font-mono text-cdata-300 font-bold select-all">{customer.fortisaseUser}</code>
               </div>
             </div>
@@ -395,7 +397,7 @@ export default function CustomerOverview() {
               className="btn-ghost flex items-center gap-2 text-sm"
             >
               <Copy className="w-4 h-4" />
-              העתק יוזר
+              {tr('העתק משתמש', 'Copy User')}
             </button>
             <a
               href={customer.fortisaseUrl}
@@ -404,7 +406,7 @@ export default function CustomerOverview() {
               className="btn-primary flex items-center gap-2 text-sm"
             >
               <ExternalLink className="w-4 h-4" />
-              פתח Console
+              {tr('פתח מסוף', 'Open Console')}
             </a>
           </div>
         </div>

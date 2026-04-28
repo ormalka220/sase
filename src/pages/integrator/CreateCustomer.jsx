@@ -4,8 +4,7 @@ import {
   ArrowLeft, CheckCircle, ChevronRight,
 } from 'lucide-react'
 import { workspaceApi } from '../../api/workspaceApi'
-
-const STEPS = ['פרטי חברה', 'איש קשר', 'אישור']
+import { useLanguage } from '../../context/LanguageContext'
 
 const inputClass =
   'w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-cdata-500/40 transition-colors'
@@ -13,8 +12,10 @@ const labelClass = 'text-xs text-slate-400 mb-1.5 block'
 
 export default function CreateCustomer() {
   const navigate = useNavigate()
+  const { tr } = useLanguage()
   const INTEGRATOR_ID = 'i1'
   const DISTRIBUTOR_ID = 'd1'
+  const STEPS = [tr('פרטי חברה', 'Company Details'), tr('איש קשר', 'Contact'), tr('אישור', 'Confirmation')]
 
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
@@ -75,7 +76,7 @@ export default function CreateCustomer() {
   const Step0 = () => (
     <div className="grid grid-cols-2 gap-4">
       <div className="col-span-2">
-        <label className={labelClass}>שם החברה *</label>
+        <label className={labelClass}>{tr('שם החברה *', 'Company Name *')}</label>
         <input
           className={inputClass}
           placeholder="Elbit Systems"
@@ -84,7 +85,7 @@ export default function CreateCustomer() {
         />
       </div>
       <div>
-        <label className={labelClass}>דומיין</label>
+        <label className={labelClass}>{tr('דומיין', 'Domain')}</label>
         <input
           className={inputClass}
           placeholder="elbit.co.il"
@@ -93,18 +94,18 @@ export default function CreateCustomer() {
         />
       </div>
       <div>
-        <label className={labelClass}>מדינה</label>
+        <label className={labelClass}>{tr('מדינה', 'Country')}</label>
         <select
           className={inputClass}
           value={form.country}
           onChange={e => set('country', e.target.value)}
         >
-          <option>Israel</option>
-          <option>United States</option>
-          <option>United Kingdom</option>
-          <option>Germany</option>
-          <option>France</option>
-          <option>Other</option>
+          <option value="Israel">{tr('ישראל', 'Israel')}</option>
+          <option value="United States">{tr('ארצות הברית', 'United States')}</option>
+          <option value="United Kingdom">{tr('בריטניה', 'United Kingdom')}</option>
+          <option value="Germany">{tr('גרמניה', 'Germany')}</option>
+          <option value="France">{tr('צרפת', 'France')}</option>
+          <option value="Other">{tr('אחר', 'Other')}</option>
         </select>
       </div>
       {/* Static IP */}
@@ -125,10 +126,10 @@ export default function CreateCustomer() {
           </div>
           <div>
             <div className={`text-sm font-medium ${form.requiresStaticIp ? 'text-white' : 'text-slate-400'}`}>
-              נדרשת כתובת IP קבועה (Static IP)
+              {tr('נדרשת כתובת IP קבועה (Static IP)', 'Static IP address is required')}
             </div>
             <div className="text-[11px] text-slate-600 mt-0.5">
-              הסביבה תקבל כתובת IP ייעודית וקבועה לצורך חיבורי VPN וזיהוי
+              {tr('הסביבה תקבל כתובת IP ייעודית וקבועה לצורך חיבורי VPN וזיהוי', 'The environment will receive a dedicated static IP for VPN connections and identification')}
             </div>
           </div>
         </button>
@@ -141,7 +142,7 @@ export default function CreateCustomer() {
   const Step1 = () => (
     <div className="space-y-4">
       <div>
-        <label className={labelClass}>מייל אדמין *</label>
+        <label className={labelClass}>{tr('מייל אדמין *', 'Admin Email *')}</label>
         <input
           className={inputClass}
           type="email"
@@ -151,7 +152,7 @@ export default function CreateCustomer() {
         />
       </div>
       <div>
-        <label className={labelClass}>שם איש קשר</label>
+        <label className={labelClass}>{tr('שם איש קשר', 'Contact Name')}</label>
         <input
           className={inputClass}
           placeholder="ישראל ישראלי"
@@ -160,7 +161,7 @@ export default function CreateCustomer() {
         />
       </div>
       <div>
-        <label className={labelClass}>טלפון</label>
+        <label className={labelClass}>{tr('טלפון', 'Phone')}</label>
         <input
           className={inputClass}
           type="tel"
@@ -175,11 +176,11 @@ export default function CreateCustomer() {
   // Step 2: Confirmation
   const Step2 = () => {
     const rows = [
-      { label: 'Company', value: form.companyName || '—' },
-      { label: 'Domain', value: form.domain || '—' },
-      { label: 'Admin', value: form.adminEmail || '—' },
-      { label: 'Country', value: form.country },
-      { label: 'Static IP', value: form.requiresStaticIp ? 'כן — נדרשת IP קבועה' : 'לא' },
+      { label: tr('חברה', 'Company'), value: form.companyName || '—' },
+      { label: tr('דומיין', 'Domain'), value: form.domain || '—' },
+      { label: tr('אדמין', 'Admin'), value: form.adminEmail || '—' },
+      { label: tr('מדינה', 'Country'), value: form.country },
+      { label: tr('כתובת IP קבועה', 'Static IP'), value: form.requiresStaticIp ? tr('כן — נדרשת IP קבועה', 'Yes — static IP required') : tr('לא', 'No') },
     ]
     return (
       <div className="space-y-4">
@@ -193,10 +194,10 @@ export default function CreateCustomer() {
         </div>
 
         <div>
-          <label className={labelClass}>הערות (אופציונלי)</label>
+          <label className={labelClass}>{tr('הערות (אופציונלי)', 'Notes (optional)')}</label>
           <textarea
             className={inputClass + ' resize-none h-20'}
-            placeholder="הערות נוספות..."
+            placeholder={tr('הערות נוספות...', 'Additional notes...')}
             value={form.notes}
             onChange={e => set('notes', e.target.value)}
           />
@@ -252,8 +253,8 @@ export default function CreateCustomer() {
             <ArrowLeft className="w-4 h-4 text-slate-400" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-white">לקוח חדש</h1>
-            <p className="text-slate-500 text-sm mt-0.5">רישום לקוח חדש</p>
+            <h1 className="text-2xl font-bold text-white">{tr('לקוח חדש', 'New Customer')}</h1>
+            <p className="text-slate-500 text-sm mt-0.5">{tr('רישום לקוח חדש', 'Register a new customer')}</p>
             {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
           </div>
         </div>
@@ -262,20 +263,20 @@ export default function CreateCustomer() {
           <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-5">
             <CheckCircle className="w-9 h-9 text-emerald-400" />
           </div>
-          <h2 className="text-xl font-bold text-white mb-1">הלקוח נוצר בהצלחה!</h2>
-          <p className="text-slate-400 text-sm mb-8">{form.companyName} הוסף למערכת</p>
+          <h2 className="text-xl font-bold text-white mb-1">{tr('הלקוח נוצר בהצלחה!', 'Customer created successfully!')}</h2>
+          <p className="text-slate-400 text-sm mb-8">{tr('נוסף למערכת', 'Added to the system')}: {form.companyName}</p>
           <div className="flex items-center justify-center gap-3">
             <button
               className="btn-primary"
               onClick={() => navigate(`/integrator/customers/${createdCustomerId || 'c1'}`)}
             >
-              פתח פרופיל לקוח
+              {tr('פתח פרופיל לקוח', 'Open Customer Profile')}
             </button>
             <button
               className="btn-ghost"
               onClick={resetForm}
             >
-              צור לקוח נוסף
+              {tr('צור לקוח נוסף', 'Create Another Customer')}
             </button>
           </div>
         </div>
@@ -300,8 +301,8 @@ export default function CreateCustomer() {
           <ArrowLeft className="w-4 h-4 text-slate-400" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white">לקוח חדש</h1>
-          <p className="text-slate-500 text-sm mt-0.5">רישום לקוח חדש</p>
+          <h1 className="text-2xl font-bold text-white">{tr('לקוח חדש', 'New Customer')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{tr('רישום לקוח חדש', 'Register a new customer')}</p>
         </div>
       </div>
 
@@ -314,7 +315,7 @@ export default function CreateCustomer() {
       <div className="glass glow-border rounded-2xl p-7 max-w-2xl mx-auto">
         <div className="mb-6">
           <h2 className="text-base font-semibold text-white">{STEPS[step]}</h2>
-          <div className="text-xs text-slate-500 mt-0.5">שלב {step + 1} מתוך {STEPS.length}</div>
+          <div className="text-xs text-slate-500 mt-0.5">{tr(`שלב ${step + 1} מתוך ${STEPS.length}`, `Step ${step + 1} of ${STEPS.length}`)}</div>
         </div>
 
         {renderStepContent()}
@@ -328,7 +329,7 @@ export default function CreateCustomer() {
                 onClick={() => setStep(s => s - 1)}
               >
                 <ArrowLeft className="w-4 h-4" />
-                {step === 2 ? 'ערוך' : 'חזור'}
+                {step === 2 ? tr('ערוך', 'Edit') : tr('חזור', 'Back')}
               </button>
             )}
           </div>
@@ -338,7 +339,7 @@ export default function CreateCustomer() {
                 className="btn-primary flex items-center gap-2"
                 onClick={() => setStep(s => s + 1)}
               >
-                הבא
+                {tr('הבא', 'Next')}
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
@@ -348,7 +349,7 @@ export default function CreateCustomer() {
                 disabled={loading}
               >
                 <CheckCircle className="w-4 h-4" />
-                {loading ? 'יוצר לקוח...' : 'צור לקוח'}
+                {loading ? tr('יוצר לקוח...', 'Creating customer...') : tr('צור לקוח', 'Create Customer')}
               </button>
             )}
           </div>

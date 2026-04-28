@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Search, Shield, AlertTriangle, CheckCircle, Users, Plus, Mail } from 'lucide-react'
+import { useLanguage } from '../../context/LanguageContext'
 
 const users = [
   { name: 'דנה לוי', email: 'dana.levi@techglobal.co.il', role: 'IT Manager', dept: 'IT', status: 'protected', threats: 0, lastSeen: 'עכשיו' },
@@ -19,6 +20,7 @@ const statusConfig = {
 }
 
 export default function CustomerUsers() {
+  const { tr } = useLanguage()
   const [search, setSearch] = useState('')
 
   const filtered = users.filter(u =>
@@ -30,20 +32,20 @@ export default function CustomerUsers() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">משתמשים</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Users — Protected Accounts</p>
+          <p className="text-slate-500 text-sm mt-0.5">{tr('משתמשים — חשבונות מוגנים', 'Users - Protected Accounts')}</p>
         </div>
         <button className="btn-primary flex items-center gap-2 text-sm">
           <Plus className="w-4 h-4" />
-          הוסף משתמש
+          {tr('הוסף משתמש', 'Add User')}
         </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'מוגנים', sub: 'Protected', value: users.filter(u => u.status === 'protected').length, color: 'text-emerald-400', bg: 'bg-emerald-600/15', icon: Shield },
-          { label: 'דורשים תשומת לב', sub: 'Need Attention', value: users.filter(u => u.status === 'alert').length, color: 'text-amber-400', bg: 'bg-amber-600/15', icon: AlertTriangle },
-          { label: 'לא פעילים', sub: 'Inactive', value: users.filter(u => u.status === 'inactive').length, color: 'text-slate-400', bg: 'bg-slate-600/15', icon: Users },
+          { label: tr('מוגנים', 'Protected'), sub: tr('מוגנים', 'Protected'), value: users.filter(u => u.status === 'protected').length, color: 'text-emerald-400', bg: 'bg-emerald-600/15', icon: Shield },
+          { label: tr('דורשים תשומת לב', 'Need Attention'), sub: tr('דורשים תשומת לב', 'Need Attention'), value: users.filter(u => u.status === 'alert').length, color: 'text-amber-400', bg: 'bg-amber-600/15', icon: AlertTriangle },
+          { label: tr('לא פעילים', 'Inactive'), sub: tr('לא פעילים', 'Inactive'), value: users.filter(u => u.status === 'inactive').length, color: 'text-slate-400', bg: 'bg-slate-600/15', icon: Users },
         ].map(s => (
           <div key={s.label} className="stat-card">
             <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
@@ -62,7 +64,7 @@ export default function CustomerUsers() {
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="חיפוש משתמש..."
+          placeholder={tr('חיפוש משתמש...', 'Search user...')}
           className="w-full bg-white/[0.04] border border-white/8 rounded-lg pr-9 pl-4 py-2 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-cdata-500/30"
         />
       </div>

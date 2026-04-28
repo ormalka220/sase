@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
+import { useLanguage } from '../../context/LanguageContext'
 
 const inputCls = 'w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-cdata-500/40 focus:bg-white/[0.06] transition-colors'
 const labelCls = 'text-xs text-slate-400 mb-1.5 block'
 
 export default function CreateIntegrator() {
   const navigate = useNavigate()
+  const { tr } = useLanguage()
 
   const [form, setForm] = useState({
     companyName: '',
@@ -26,9 +28,9 @@ export default function CreateIntegrator() {
 
   const validate = () => {
     const e = {}
-    if (!form.companyName.trim()) e.companyName = 'שדה חובה'
-    if (!form.contactName.trim()) e.contactName = 'שדה חובה'
-    if (!form.contactEmail.trim()) e.contactEmail = 'שדה חובה'
+    if (!form.companyName.trim()) e.companyName = tr('שדה חובה', 'Required field')
+    if (!form.contactName.trim()) e.contactName = tr('שדה חובה', 'Required field')
+    if (!form.contactEmail.trim()) e.contactEmail = tr('שדה חובה', 'Required field')
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -52,8 +54,8 @@ export default function CreateIntegrator() {
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white">אינטגרטור חדש</h1>
-          <p className="text-slate-500 text-sm mt-0.5">הוסף שותף חדש למערכת</p>
+          <h1 className="text-2xl font-bold text-white">{tr('אינטגרטור חדש', 'New Integrator')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{tr('הוסף שותף חדש למערכת', 'Add a new partner to the system')}</p>
         </div>
       </div>
 
@@ -64,19 +66,19 @@ export default function CreateIntegrator() {
           style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}
         >
           <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-          <span className="text-sm text-emerald-400 font-medium">האינטגרטור נוצר בהצלחה — מועבר לרשימה...</span>
+          <span className="text-sm text-emerald-400 font-medium">{tr('האינטגרטור נוצר בהצלחה — מועבר לרשימה...', 'Integrator created successfully — redirecting to list...')}</span>
         </div>
       )}
 
       {/* Form card */}
       <form onSubmit={handleSubmit} className="glass glow-border rounded-2xl p-7 max-w-2xl mx-auto">
-        <h3 className="text-sm font-semibold text-white mb-6">פרטי האינטגרטור</h3>
+        <h3 className="text-sm font-semibold text-white mb-6">{tr('פרטי האינטגרטור', 'Integrator Details')}</h3>
 
         <div className="grid grid-cols-2 gap-5">
           {/* Company Name */}
           <div>
             <label className={labelCls}>
-              שם חברה <span className="text-red-400">*</span>
+              {tr('שם חברה', 'Company name')} <span className="text-red-400">*</span>
             </label>
             <input
               className={`${inputCls} ${errors.companyName ? 'border-red-500/50' : ''}`}
@@ -89,24 +91,24 @@ export default function CreateIntegrator() {
 
           {/* Country */}
           <div>
-            <label className={labelCls}>מדינה</label>
+            <label className={labelCls}>{tr('מדינה', 'Country')}</label>
             <select
               className={inputCls}
               value={form.country}
               onChange={e => set('country', e.target.value)}
               style={{ background: 'rgba(255,255,255,0.04)' }}
             >
-              <option value="Israel">ישראל</option>
-              <option value="US">ארצות הברית</option>
-              <option value="UK">בריטניה</option>
-              <option value="Germany">גרמניה</option>
+              <option value="Israel">{tr('ישראל', 'Israel')}</option>
+              <option value="US">{tr('ארצות הברית', 'United States')}</option>
+              <option value="UK">{tr('בריטניה', 'United Kingdom')}</option>
+              <option value="Germany">{tr('גרמניה', 'Germany')}</option>
             </select>
           </div>
 
           {/* Contact Name */}
           <div>
             <label className={labelCls}>
-              איש קשר <span className="text-red-400">*</span>
+              {tr('איש קשר', 'Contact name')} <span className="text-red-400">*</span>
             </label>
             <input
               className={`${inputCls} ${errors.contactName ? 'border-red-500/50' : ''}`}
@@ -120,7 +122,7 @@ export default function CreateIntegrator() {
           {/* Contact Email */}
           <div>
             <label className={labelCls}>
-              אימייל <span className="text-red-400">*</span>
+              {tr('אימייל', 'Email')} <span className="text-red-400">*</span>
             </label>
             <input
               type="email"
@@ -134,7 +136,7 @@ export default function CreateIntegrator() {
 
           {/* Phone */}
           <div>
-            <label className={labelCls}>טלפון</label>
+            <label className={labelCls}>{tr('טלפון', 'Phone')}</label>
             <input
               className={inputCls}
               placeholder="+972-50-0000000"
@@ -145,21 +147,21 @@ export default function CreateIntegrator() {
 
           {/* Status */}
           <div>
-            <label className={labelCls}>סטטוס</label>
+            <label className={labelCls}>{tr('סטטוס', 'Status')}</label>
             <select
               className={inputCls}
               value={form.status}
               onChange={e => set('status', e.target.value)}
               style={{ background: 'rgba(255,255,255,0.04)' }}
             >
-              <option value="onboarding">Onboarding</option>
-              <option value="active">פעיל</option>
+              <option value="onboarding">{tr('בתהליך קליטה', 'Onboarding')}</option>
+              <option value="active">{tr('פעיל', 'Active')}</option>
             </select>
           </div>
 
           {/* Partner Code */}
           <div>
-            <label className={labelCls}>קוד שותף (אופציונלי)</label>
+            <label className={labelCls}>{tr('קוד שותף (אופציונלי)', 'Partner code (optional)')}</label>
             <input
               className={inputCls}
               placeholder="NS-2024-001"
@@ -173,11 +175,11 @@ export default function CreateIntegrator() {
 
           {/* Notes — full width */}
           <div className="col-span-2">
-            <label className={labelCls}>הערות</label>
+            <label className={labelCls}>{tr('הערות', 'Notes')}</label>
             <textarea
               rows={3}
               className={inputCls}
-              placeholder="הערות נוספות על האינטגרטור..."
+              placeholder={tr('הערות נוספות על האינטגרטור...', 'Additional notes about the integrator...')}
               value={form.notes}
               onChange={e => set('notes', e.target.value)}
               style={{ resize: 'vertical' }}
@@ -207,7 +209,7 @@ export default function CreateIntegrator() {
                 </div>
               </div>
               <span className="text-sm text-slate-400 group-hover:text-white transition-colors">
-                שלח הזמנה במייל <span className="text-xs text-slate-600">(demo בלבד)</span>
+                {tr('שלח הזמנה במייל', 'Send invitation by email')} <span className="text-xs text-slate-600">({tr('demo בלבד', 'demo only')})</span>
               </span>
             </label>
           </div>
@@ -220,14 +222,14 @@ export default function CreateIntegrator() {
             className="btn-ghost text-sm"
             onClick={() => navigate('/distribution/integrators')}
           >
-            ביטול
+            {tr('ביטול', 'Cancel')}
           </button>
           <button
             type="submit"
             className="btn-primary text-sm"
             disabled={success}
           >
-            שמור אינטגרטור
+            {tr('שמור אינטגרטור', 'Save Integrator')}
           </button>
         </div>
       </form>

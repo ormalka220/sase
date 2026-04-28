@@ -18,9 +18,34 @@ const createCustomerSchema = z.object({
 })
 
 // Derive the Prisma `where` filter that enforces ownership for the calling user
+async function resolveOrgScope(auth) {
+  if (auth.orgId) return auth.orgId
+  if (!auth.userId) return null
+
+  const user = await prisma.user.findUnique({
+    where: { id: auth.userId },
+    include: {
+      organization: {
+        include: {
+          distributor: true,
+          integrator: true,
+          customer: true,
+        },
+      },
+    },
+  })
+  if (!user) return null
+  return user.organization.distributor?.id
+    || user.organization.integrator?.id
+    || user.organization.customer?.id
+    || null
+}
+
 async function ownershipWhere(auth) {
-  const { role, orgId } = auth
+  const { role } = auth
   if (role === ROLES.SUPER_ADMIN) return {}
+  const orgId = await resolveOrgScope(auth)
+  if (!orgId) throw new ForbiddenError('Missing organization scope')
   if (role === ROLES.DISTRIBUTOR_ADMIN) return { distributorId: orgId }
   if (role === ROLES.INTEGRATOR_ADMIN) return { integratorId: orgId }
   if (role === ROLES.CUSTOMER_ADMIN || role === ROLES.CUSTOMER_VIEWER) {

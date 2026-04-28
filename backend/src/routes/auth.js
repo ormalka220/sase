@@ -27,7 +27,15 @@ router.post('/login', async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { organization: true },
+      include: {
+        organization: {
+          include: {
+            distributor: true,
+            integrator: true,
+            customer: true,
+          },
+        },
+      },
     })
 
     if (!user) {
@@ -82,7 +90,15 @@ router.get('/me', authenticate, async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.auth.userId },
-      include: { organization: true },
+      include: {
+        organization: {
+          include: {
+            distributor: true,
+            integrator: true,
+            customer: true,
+          },
+        },
+      },
     })
     if (!user) return res.status(404).json({ error: 'User not found' })
 

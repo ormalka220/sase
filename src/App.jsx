@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth, ROLE_PORTAL } from './context/AuthContext'
 import { ProductProvider, useProduct } from './context/ProductContext'
 import { CustomerProductProvider, useCustomerProducts } from './context/CustomerProductContext'
+import { LanguageProvider, useLanguage } from './context/LanguageContext'
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 
@@ -30,6 +31,7 @@ const IntegratorReports         = lazy(() => import('./pages/integrator/Reports'
 const IntegratorSettings        = lazy(() => import('./pages/integrator/Settings'))
 const OrdersList                = lazy(() => import('./pages/integrator/OrdersList'))
 const CreateOrder               = lazy(() => import('./pages/integrator/CreateOrder'))
+const OrderDetails              = lazy(() => import('./pages/integrator/OrderDetails'))
 
 // Customer pages — SASE
 const CustomerOverview  = lazy(() => import('./pages/customer/Overview'))
@@ -89,6 +91,7 @@ function PerceptionOnlyRoute({ children }) {
 function CustomerOverviewRouter() {
   const { product } = useProduct()
   const { hasBoth, hasSase, hasPerception, loading } = useCustomerProducts()
+  const { tr } = useLanguage()
 
   if (loading) return null
 
@@ -108,7 +111,7 @@ function CustomerOverviewRouter() {
   // No products yet
   return (
     <div className="flex items-center justify-center h-64">
-      <p className="text-slate-500 text-sm">No active products. Contact your integrator to get started.</p>
+      <p className="text-slate-500 text-sm">{tr('אין מוצרים פעילים. פנו לאינטגרטור להתחלה.', 'No active products. Contact your integrator to get started.')}</p>
     </div>
   )
 }
@@ -117,11 +120,12 @@ function CustomerOverviewRouter() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ProductProvider>
-        <CustomerProductProvider>
-          <Suspense fallback={<div className="min-h-screen bg-navy-900" />}>
-            <Routes>
+    <LanguageProvider>
+      <AuthProvider>
+        <ProductProvider>
+          <CustomerProductProvider>
+            <Suspense fallback={<div className="min-h-screen bg-navy-900" />}>
+              <Routes>
               <Route path="/" element={<LandingPage />} />
 
               {/* Distributor Portal */}
@@ -150,6 +154,7 @@ export default function App() {
                 <Route path="customers/new"  element={<CreateCustomer />} />
                 <Route path="customers/:id"  element={<IntegratorCustomerProfile />} />
                 <Route path="orders"         element={<OrdersList />} />
+                <Route path="orders/:id"     element={<OrderDetails />} />
                 <Route path="orders/new"     element={<CreateOrder />} />
                 <Route path="onboarding"     element={<IntegratorOnboarding />} />
                 <Route path="reports"        element={<IntegratorReports />} />
@@ -177,10 +182,11 @@ export default function App() {
 
               {/* Catch-all */}
               <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </CustomerProductProvider>
-      </ProductProvider>
-    </AuthProvider>
+              </Routes>
+            </Suspense>
+          </CustomerProductProvider>
+        </ProductProvider>
+      </AuthProvider>
+    </LanguageProvider>
   )
 }

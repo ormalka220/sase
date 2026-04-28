@@ -1,5 +1,13 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
 
+const ROLE_TO_LEGACY_HEADER = {
+  SUPER_ADMIN: 'super_admin',
+  DISTRIBUTOR_ADMIN: 'distributor',
+  INTEGRATOR_ADMIN: 'integrator',
+  CUSTOMER_ADMIN: 'customer',
+  CUSTOMER_VIEWER: 'customer',
+}
+
 function getStoredAuth() {
   try {
     const token = localStorage.getItem('auth_token')
@@ -19,7 +27,7 @@ export async function request(path, { method = 'GET', body, auth } = {}) {
     headers['Authorization'] = `Bearer ${token}`
   } else if (user) {
     // Legacy demo mode — backend accepts x-role / x-user-id / x-org-id
-    headers['x-role'] = user.legacyRole || user.role?.toLowerCase() || 'integrator'
+    headers['x-role'] = user.legacyRole || ROLE_TO_LEGACY_HEADER[user.role] || user.role || 'integrator'
     headers['x-user-id'] = user.id || 'demo-user'
     if (user.orgId) headers['x-org-id'] = user.orgId
   }

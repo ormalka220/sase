@@ -8,10 +8,12 @@ import {
 import { integrators, customers, customerEnvironments, growthData, getCustomersByIntegrator, getOrdersByDistributor } from '../../data/mockData'
 import { useProduct } from '../../context/ProductContext'
 import { workspaceApi } from '../../api/workspaceApi'
+import { useLanguage } from '../../context/LanguageContext'
 
 export default function DistributorDashboard() {
   const navigate = useNavigate()
   const { product, config } = useProduct()
+  const { tr } = useLanguage()
   const [ppOverview, setPpOverview] = useState(null)
   const [ppError, setPpError] = useState('')
   const [ppLoading, setPpLoading] = useState(false)
@@ -37,16 +39,16 @@ export default function DistributorDashboard() {
     return (
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Distributor Overview · Perception Point</p>
+          <h1 className="text-2xl font-bold text-white">{tr('לוח בקרה', 'Dashboard')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{tr('סקירת מפיץ · Perception Point', 'Distributor Overview · Perception Point')}</p>
           {ppError && <p className="text-xs text-red-400 mt-1">{ppError}</p>}
         </div>
         <div className="grid grid-cols-4 gap-4">
           {[
-            ['לקוחות', ppOverview?.kpis?.totalCustomers || 0],
-            ['לקוחות פעילים', ppOverview?.kpis?.activeCustomers || 0],
-            ['בתהליך קליטה', ppOverview?.kpis?.pendingOnboarding || 0],
-            ['התראות פתוחות', ppOverview?.kpis?.openAlerts || 0],
+            [tr('לקוחות', 'Customers'), ppOverview?.kpis?.totalCustomers || 0],
+            [tr('לקוחות פעילים', 'Active customers'), ppOverview?.kpis?.activeCustomers || 0],
+            [tr('בתהליך קליטה', 'Onboarding'), ppOverview?.kpis?.pendingOnboarding || 0],
+            [tr('התראות פתוחות', 'Open alerts'), ppOverview?.kpis?.openAlerts || 0],
           ].map(([label, value]) => (
             <div key={label} className="stat-card">
               <div className="text-xl font-bold text-white">{value}</div>
@@ -55,9 +57,9 @@ export default function DistributorDashboard() {
           ))}
         </div>
         <div className="glass glow-border rounded-2xl p-5">
-          <div className="text-sm font-semibold text-white mb-3">צמיחת לקוחות Perception Point</div>
+          <div className="text-sm font-semibold text-white mb-3">{tr('צמיחת לקוחות Perception Point', 'Perception Point customer growth')}</div>
           {ppLoading ? (
-            <div className="text-xs text-slate-500">טוען נתונים...</div>
+            <div className="text-xs text-slate-500">{tr('טוען נתונים...', 'Loading data...')}</div>
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <AreaChart data={ppOverview?.growthData || []}>
@@ -89,34 +91,34 @@ export default function DistributorDashboard() {
   const kpis = [
     {
       icon: Building2,
-      label: 'אינטגרטורים',
+      label: tr('אינטגרטורים', 'Integrators'),
       value: scopedIntegrators.length,
-      sub: `${activeIntegrators} / ${scopedIntegrators.length} פעילים`,
-      badge: '+12% מחודש שעבר',
+      sub: tr(`${activeIntegrators} / ${scopedIntegrators.length} פעילים`, `${activeIntegrators} / ${scopedIntegrators.length} active`),
+      badge: tr('+12% מחודש שעבר', '+12% from last month'),
       alert: false,
     },
     {
       icon: Users,
-      label: 'לקוחות',
+      label: tr('לקוחות', 'Customers'),
       value: scopedCustomers.length,
-      sub: `${scopedCustomers.length} לקוחות מנוהלים`,
-      badge: '+12% מחודש שעבר',
+      sub: tr(`${scopedCustomers.length} לקוחות מנוהלים`, `${scopedCustomers.length} managed customers`),
+      badge: tr('+12% מחודש שעבר', '+12% from last month'),
       alert: false,
     },
     {
       icon: Shield,
-      label: 'משתמשים מוגנים',
+      label: tr('משתמשים מוגנים', 'Protected users'),
       value: scopedProtectedUsers.toLocaleString(),
-      sub: '1,764 users protected by FortiSASE',
-      badge: '+12% מחודש שעבר',
+      sub: tr('1,764 משתמשים מוגנים על ידי FortiSASE', '1,764 users protected by FortiSASE'),
+      badge: tr('+12% מחודש שעבר', '+12% from last month'),
       alert: false,
     },
     {
       icon: AlertTriangle,
-      label: 'התראות פעילות',
+      label: tr('התראות פעילות', 'Active alerts'),
       value: scopedAlerts,
-      sub: `${scopedAlerts} open alerts`,
-      badge: '+12% מחודש שעבר',
+      sub: tr(`${scopedAlerts} התראות פתוחות`, `${scopedAlerts} open alerts`),
+      badge: tr('+12% מחודש שעבר', '+12% from last month'),
       alert: scopedAlerts > 5,
     },
   ]
@@ -127,8 +129,8 @@ export default function DistributorDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-slate-500 text-sm mt-0.5">סקירה כללית — Distribution Overview · {product === 'all' ? 'All Products' : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
+        <h1 className="text-2xl font-bold text-white">{tr('לוח בקרה', 'Dashboard')}</h1>
+        <p className="text-slate-500 text-sm mt-0.5">{tr('סקירה כללית — פורטל הפצה', 'Overview - Distribution Portal')} · {product === 'all' ? tr('כל המוצרים', 'All Products') : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
       </div>
 
       {/* Platform Overview Banner */}
@@ -139,13 +141,13 @@ export default function DistributorDashboard() {
             <LayoutDashboard className="w-5 h-5 text-cdata-300" />
           </div>
           <div>
-            <div className="text-sm font-semibold text-white">C-DATA Distribution Platform</div>
-            <div className="text-xs text-slate-500">FortiSASE Channel Management · {new Date().toLocaleDateString('he-IL')}</div>
+            <div className="text-sm font-semibold text-white">{tr('פלטפורמת ההפצה של C-DATA', 'C-DATA Distribution Platform')}</div>
+            <div className="text-xs text-slate-500">{tr('ניהול ערוץ FortiSASE', 'FortiSASE Channel Management')} · {new Date().toLocaleDateString('he-IL')}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-slow" />
-          <span className="text-xs text-emerald-400">כל המערכות פעילות</span>
+          <span className="text-xs text-emerald-400">{tr('כל המערכות פעילות', 'All systems operational')}</span>
         </div>
       </div>
 
@@ -175,8 +177,8 @@ export default function DistributorDashboard() {
         <div className="col-span-2 glass glow-border rounded-2xl p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-semibold text-white">צמיחת לקוחות</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Customer Growth — 6 חודשים אחרונים</p>
+              <h3 className="text-sm font-semibold text-white">{tr('צמיחת לקוחות', 'Customer growth')}</h3>
+              <p className="text-xs text-slate-500 mt-0.5">{tr('צמיחת לקוחות — 6 חודשים אחרונים', 'Customer Growth - Last 6 months')}</p>
             </div>
             <span className="badge-blue text-xs">2024</span>
           </div>
@@ -201,7 +203,7 @@ export default function DistributorDashboard() {
 
         {/* Integrators Performance */}
         <div className="glass glow-border rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">ביצועי אינטגרטורים</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">{tr('ביצועי אינטגרטורים', 'Integrator performance')}</h3>
           <div className="space-y-3">
             {scopedIntegrators.map(integ => {
               const custCount = getCustomersByIntegrator(integ.id).length
@@ -222,7 +224,7 @@ export default function DistributorDashboard() {
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs font-medium text-white truncate">{integ.companyName}</div>
-                      <div className="text-[10px] text-slate-600">{custCount} לקוחות</div>
+                      <div className="text-[10px] text-slate-600">{tr(`${custCount} לקוחות`, `${custCount} customers`)}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -241,15 +243,15 @@ export default function DistributorDashboard() {
       {/* FortiSASE Environment Stats */}
       <div className="glass glow-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-white">FortiSASE — סטטיסטיקות סביבה</h3>
+          <h3 className="text-sm font-semibold text-white">{tr('FortiSASE — סטטיסטיקות סביבה', 'FortiSASE - Environment Statistics')}</h3>
           <span className="badge-blue text-xs">ftntsa.saas.fortinet.com</span>
         </div>
         <div className="grid grid-cols-4 gap-4">
           {[
-            { label: 'סביבות פעילות', value: '5', sub: 'Active Tenants', color: 'text-emerald-400' },
-            { label: 'כולל מנוהל FortiSASE', value: '1,764', sub: 'Protected Users', color: 'text-cdata-300' },
-            { label: 'Sites מחוברים', value: '34', sub: 'SD-WAN Sites', color: 'text-blue-400' },
-            { label: 'ציות ממוצע', value: '96%', sub: 'Avg Compliance', color: 'text-emerald-400' },
+            { label: tr('סביבות פעילות', 'Active tenants'), value: '5', sub: tr('Active Tenants', 'Active Tenants'), color: 'text-emerald-400' },
+            { label: tr('משתמשים מוגנים FortiSASE', 'FortiSASE protected users'), value: '1,764', sub: tr('Protected Users', 'Protected Users'), color: 'text-cdata-300' },
+            { label: tr('אתרים מחוברים', 'Connected sites'), value: '34', sub: tr('SD-WAN Sites', 'SD-WAN Sites'), color: 'text-blue-400' },
+            { label: tr('ציות ממוצע', 'Average compliance'), value: '96%', sub: tr('Avg Compliance', 'Avg Compliance'), color: 'text-emerald-400' },
           ].map(s => (
             <div key={s.label} className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/5">
               <div className={`text-2xl font-black ${s.color} mb-0.5`}>{s.value}</div>
@@ -265,12 +267,12 @@ export default function DistributorDashboard() {
         {/* Recent Integrators */}
         <div className="glass glow-border rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-white">אינטגרטורים אחרונים</h3>
+            <h3 className="text-sm font-semibold text-white">{tr('אינטגרטורים אחרונים', 'Recent integrators')}</h3>
             <button
               onClick={() => navigate('/distribution/integrators')}
               className="text-xs text-cdata-300 hover:text-cdata-200 flex items-center gap-1 transition-colors"
             >
-              כל האינטגרטורים <ChevronLeft className="w-3 h-3" />
+              {tr('כל האינטגרטורים', 'All integrators')} <ChevronLeft className="w-3 h-3" />
             </button>
           </div>
           <div className="space-y-2">
@@ -306,11 +308,11 @@ export default function DistributorDashboard() {
 
         {/* Alert Summary */}
         <div className="glass glow-border rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">סיכום התראות</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">{tr('סיכום התראות', 'Alert summary')}</h3>
           {alertEnvs.length === 0 ? (
             <div className="text-center py-8">
               <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">אין התראות פעילות</p>
+              <p className="text-sm text-slate-500">{tr('אין התראות פעילות', 'No active alerts')}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -329,7 +331,7 @@ export default function DistributorDashboard() {
                       </div>
                     </div>
                     <span className={`text-xs font-bold ${env.alertsCount > 5 ? 'text-red-400' : 'text-amber-400'}`}>
-                      {env.alertsCount} התראות
+                      {tr(`${env.alertsCount} התראות`, `${env.alertsCount} alerts`)}
                     </span>
                   </div>
                 )

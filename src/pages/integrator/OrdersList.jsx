@@ -6,29 +6,35 @@ import {
 } from 'lucide-react'
 import { useProduct } from '../../context/ProductContext'
 import { workspaceApi } from '../../api/workspaceApi'
+import { useLanguage } from '../../context/LanguageContext'
 
 const INTEGRATOR_ID = 'i1'
 
-const statusConfig = {
-  DRAFT: { label: 'טיוטה', color: '#6b7280', bg: 'rgba(107,114,128,0.12)', icon: FileText },
-  PAYMENT_PENDING: { label: 'ממתין לתשלום', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: Clock },
-  PENDING_DISTRIBUTOR_APPROVAL: { label: 'ממתין לאישור מפיץ', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: Clock },
-  APPROVED: { label: 'אושר', color: '#2C6A8A', bg: 'rgba(44,106,138,0.12)', icon: CheckCircle2 },
-  PROVISIONING: { label: 'בפרוביז׳נינג', color: '#6366f1', bg: 'rgba(99,102,241,0.12)', icon: PackageCheck },
-  PROVISIONED: { label: 'הוקם', color: '#10B981', bg: 'rgba(16,185,129,0.12)', icon: PackageCheck },
-  ONBOARDING_PENDING: { label: 'ממתין לאונבורדינג', color: '#06b6d4', bg: 'rgba(6,182,212,0.12)', icon: Clock },
-  INTEGRATION_IN_PROGRESS: { label: 'אינטגרציה בתהליך', color: '#06b6d4', bg: 'rgba(6,182,212,0.12)', icon: Clock },
-  ACTIVE: { label: 'פעיל', color: '#10B981', bg: 'rgba(16,185,129,0.12)', icon: CheckCircle2 },
-  REJECTED: { label: 'נדחה', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', icon: XCircle },
-  FAILED: { label: 'נכשל', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', icon: XCircle },
+function getStatusConfig(tr) {
+  return {
+    DRAFT: { label: tr('טיוטה', 'Draft'), color: '#6b7280', bg: 'rgba(107,114,128,0.12)', icon: FileText },
+    PAYMENT_PENDING: { label: tr('ממתין לתשלום', 'Payment Pending'), color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: Clock },
+    PENDING_DISTRIBUTOR_APPROVAL: { label: tr('ממתין לאישור מפיץ', 'Awaiting Distributor Approval'), color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: Clock },
+    APPROVED: { label: tr('אושר', 'Approved'), color: '#2C6A8A', bg: 'rgba(44,106,138,0.12)', icon: CheckCircle2 },
+    PROVISIONING: { label: tr('בפרוביז׳נינג', 'Provisioning'), color: '#6366f1', bg: 'rgba(99,102,241,0.12)', icon: PackageCheck },
+    PROVISIONED: { label: tr('הוקם', 'Provisioned'), color: '#10B981', bg: 'rgba(16,185,129,0.12)', icon: PackageCheck },
+    ONBOARDING_PENDING: { label: tr('ממתין לאונבורדינג', 'Onboarding Pending'), color: '#06b6d4', bg: 'rgba(6,182,212,0.12)', icon: Clock },
+    INTEGRATION_IN_PROGRESS: { label: tr('אינטגרציה בתהליך', 'Integration in Progress'), color: '#06b6d4', bg: 'rgba(6,182,212,0.12)', icon: Clock },
+    ACTIVE: { label: tr('פעיל', 'Active'), color: '#10B981', bg: 'rgba(16,185,129,0.12)', icon: CheckCircle2 },
+    REJECTED: { label: tr('נדחה', 'Rejected'), color: '#ef4444', bg: 'rgba(239,68,68,0.12)', icon: XCircle },
+    FAILED: { label: tr('נכשל', 'Failed'), color: '#ef4444', bg: 'rgba(239,68,68,0.12)', icon: XCircle },
+  }
 }
 
-const productConfig = {
-  FORTISASE: { label: 'FortiSASE', color: '#2C6A8A', icon: ShieldCheck },
-  WORKSPACE_SECURITY: { label: 'Perception Point', color: '#059669', icon: Mail },
+function getProductConfig() {
+  return {
+    FORTISASE: { label: 'FortiSASE', color: '#2C6A8A', icon: ShieldCheck },
+    WORKSPACE_SECURITY: { label: 'Perception Point', color: '#059669', icon: Mail },
+    UNKNOWN: { label: '—', color: '#64748b', icon: Mail },
+  }
 }
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, statusConfig }) {
   const cfg = statusConfig[status] || statusConfig.DRAFT
   const Icon = cfg.icon
   return (
@@ -40,8 +46,8 @@ function StatusBadge({ status }) {
   )
 }
 
-function ProductBadge({ product }) {
-  const cfg = productConfig[product] || productConfig.FORTISASE
+function ProductBadge({ product, productConfig }) {
+  const cfg = productConfig[product] || productConfig.UNKNOWN
   const Icon = cfg.icon
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold"
@@ -52,13 +58,16 @@ function ProductBadge({ product }) {
   )
 }
 
-function fmt(dt) {
-  return new Date(dt).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' })
+function fmt(dt, locale) {
+  return new Date(dt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
 export default function OrdersList() {
   const navigate = useNavigate()
   const { product } = useProduct()
+  const { tr, isHebrew } = useLanguage()
+  const statusConfig = getStatusConfig(tr)
+  const productConfig = getProductConfig()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -71,7 +80,7 @@ export default function OrdersList() {
         setError('')
         setLoading(true)
         const apiOrders = await workspaceApi.getOrders({ integratorId: INTEGRATOR_ID, role: 'integrator' })
-        setOrders(apiOrders)
+        setOrders(Array.isArray(apiOrders) ? apiOrders : (apiOrders?.data || []))
       } catch (loadError) {
         setError(loadError.message)
       } finally {
@@ -81,10 +90,18 @@ export default function OrdersList() {
     loadOrders()
   }, [])
 
+  function getOrderProductCodes(order) {
+    return (order.items || []).map((item) => item?.product?.code).filter(Boolean)
+  }
+
+  function getOrderSeats(order) {
+    return (order.items || []).reduce((sum, item) => sum + (item?.seats || 0), 0)
+  }
+
   const productOrders = useMemo(() => {
     if (product === 'all') return orders
     const mapped = product === 'sase' ? 'FORTISASE' : 'WORKSPACE_SECURITY'
-    return orders.filter(o => o.productType === mapped)
+    return orders.filter((o) => getOrderProductCodes(o).includes(mapped))
   }, [orders, product])
 
   const filtered = productOrders.filter(o => {
@@ -107,9 +124,9 @@ export default function OrdersList() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <ShoppingCart className="w-5 h-5 text-cdata-300" />
-            <h1 className="text-xl font-black text-white">הזמנות <span className="text-cdata-300">רישויים</span></h1>
+            <h1 className="text-xl font-black text-white">{tr('הזמנות', 'Orders')} <span className="text-cdata-300">{tr('רישויים', 'Licensing')}</span></h1>
           </div>
-          <p className="text-xs text-slate-500">הזמנות רישוי של האינטגרטור</p>
+          <p className="text-xs text-slate-500">{tr('הזמנות רישוי של האינטגרטור', 'Integrator licensing orders')}</p>
           {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
         </div>
         <button
@@ -117,7 +134,7 @@ export default function OrdersList() {
           className="btn-primary flex items-center gap-2 text-xs"
         >
           <PlusCircle className="w-4 h-4" />
-          הזמנה חדשה +
+          {tr('הזמנה חדשה +', 'New Order +')}
         </button>
       </div>
 
@@ -151,7 +168,7 @@ export default function OrdersList() {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="חיפוש לפי מספר הזמנה / לקוח..."
+            placeholder={tr('חיפוש לפי מספר הזמנה / לקוח...', 'Search by order number / customer...')}
             className="w-full bg-white/[0.03] border border-white/10 rounded-lg pr-9 pl-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cdata-500/40"
           />
         </div>
@@ -161,35 +178,39 @@ export default function OrdersList() {
       <div className="glass rounded-xl overflow-hidden" style={{ border: '1px solid rgba(44,106,138,0.12)' }}>
         <div className="px-5 py-3.5 border-b border-white/5">
           <span className="text-sm font-bold text-white">
-            הזמנות <span className="text-cdata-400 font-normal text-xs mr-2">{filtered.length} נמצאו</span>
+            {tr('הזמנות', 'Orders')} <span className="text-cdata-400 font-normal text-xs mr-2">{filtered.length} {tr('נמצאו', 'found')}</span>
           </span>
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-slate-500 text-sm">טוען הזמנות...</div>
+          <div className="py-16 text-center text-slate-500 text-sm">{tr('טוען הזמנות...', 'Loading orders...')}</div>
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center text-slate-600">
             <ShoppingCart className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <div className="text-sm">אין הזמנות תואמות</div>
+            <div className="text-sm">{tr('אין הזמנות תואמות', 'No matching orders')}</div>
           </div>
         ) : (
           <div className="divide-y divide-white/[0.04]">
             {filtered.map(order => (
-              <div key={order.id} className="px-5 py-4 hover:bg-white/[0.02] transition-colors">
+              <div
+                key={order.id}
+                className="px-5 py-4 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                onClick={() => navigate(`/integrator/orders/${order.id}`)}
+              >
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-bold text-white">{order.id.slice(0, 8).toUpperCase()}</span>
-                        <StatusBadge status={order.status} />
-                        <ProductBadge product={order.productType} />
+                        <StatusBadge status={order.status} statusConfig={statusConfig} />
+                        <ProductBadge product={getOrderProductCodes(order)[0]} productConfig={productConfig} />
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-slate-400">{order.customerId}</span>
                         <span className="text-[10px] text-slate-600">
-                          {order.seats.toLocaleString()} רישיונות
+                          {getOrderSeats(order).toLocaleString()} {tr('רישיונות', 'licenses')}
                         </span>
-                        <span className="text-[10px] text-slate-600">{order.billingType === 'MONTHLY_INVOICE' ? 'חשבונית חודשית' : 'כרטיס אשראי'}</span>
+                        <span className="text-[10px] text-slate-600">{order.billingType === 'MONTHLY_INVOICE' ? tr('חשבונית חודשית', 'Monthly invoice') : tr('כרטיס אשראי', 'Credit card')}</span>
                       </div>
                       {(order.failureReason || order.rejectionReason) && (
                         <div className="text-[10px] text-red-400 mt-1 flex items-center gap-1">
@@ -200,18 +221,19 @@ export default function OrdersList() {
                     </div>
                   </div>
                   <div className="text-left">
-                    <div className="text-[10px] text-slate-600 mb-0.5">נוצר</div>
-                    <div className="text-xs text-slate-400">{fmt(order.createdAt)}</div>
+                    <div className="text-[10px] text-slate-600 mb-0.5">{tr('נוצר', 'Created')}</div>
+                    <div className="text-xs text-slate-400">{fmt(order.createdAt, isHebrew ? 'he-IL' : 'en-US')}</div>
                     {order.approvedAt && (
-                      <div className="text-[10px] text-slate-600 mt-1">אושר: <span className="text-slate-400">{fmt(order.approvedAt)}</span></div>
+                      <div className="text-[10px] text-slate-600 mt-1">{tr('אושר', 'Approved')}: <span className="text-slate-400">{fmt(order.approvedAt, isHebrew ? 'he-IL' : 'en-US')}</span></div>
                     )}
                   </div>
                 </div>
                 {order.notes && (
                   <div className="mt-2 text-[10px] text-slate-600 pr-1">
-                    <span className="text-slate-500">הערות: </span>{order.notes}
+                    <span className="text-slate-500">{tr('הערות', 'Notes')}: </span>{order.notes}
                   </div>
                 )}
+                <div className="mt-2 text-[10px] text-cdata-300">{tr('פתח הזמנה', 'Open order')}</div>
               </div>
             ))}
           </div>

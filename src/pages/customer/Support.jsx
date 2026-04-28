@@ -4,6 +4,7 @@ import {
   ChevronLeft, Clock, CheckCircle, AlertCircle, Plus
 } from 'lucide-react'
 import { CDataLogo, SpotNetLogo } from '../../components/Logos'
+import { useLanguage } from '../../context/LanguageContext'
 
 const tickets = [
   { id: 'TK-2341', subject: 'שאלה על הגדרת MFA לכל המשתמשים', status: 'open',     priority: 'medium', created: 'היום 09:12',    agent: 'תמיכה C-Data' },
@@ -32,6 +33,7 @@ const faqs = [
 ]
 
 export default function CustomerSupport() {
+  const { tr } = useLanguage()
   const [showForm, setShowForm] = useState(false)
   const [openFaq, setOpenFaq] = useState(null)
 
@@ -40,20 +42,20 @@ export default function CustomerSupport() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">תמיכה</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Support Center</p>
+          <p className="text-slate-500 text-sm mt-0.5">{tr('מרכז תמיכה', 'Support Center')}</p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2 text-sm">
           <Plus className="w-4 h-4" />
-          פתח קריאה חדשה
+          {tr('פתח קריאה חדשה', 'Open New Ticket')}
         </button>
       </div>
 
       {/* Contact options */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { icon: MessageSquare, label: 'Live Chat', sub: 'זמין ראשון-חמישי 08:00–18:00', color: 'text-cdata-300', bg: 'rgba(44,106,138,0.1)', border: 'rgba(44,106,138,0.2)', action: 'פתח Chat' },
-          { icon: Mail,          label: 'Email Support', sub: 'support@cdata.co.il',      color: 'text-emerald-400', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)', action: 'שלח מייל' },
-          { icon: Phone,         label: 'Phone Support', sub: '03-123-4567 | זמין 24/7', color: 'text-spot-400', bg: 'rgba(245,124,32,0.1)', border: 'rgba(245,124,32,0.2)', action: 'התקשר' },
+          { icon: MessageSquare, label: tr('צ׳אט חי', 'Live Chat'), sub: tr('זמין ראשון-חמישי 08:00–18:00', 'Sun-Thu 08:00-18:00 available'), color: 'text-cdata-300', bg: 'rgba(44,106,138,0.1)', border: 'rgba(44,106,138,0.2)', action: tr('פתח צ׳אט', 'Open Chat') },
+          { icon: Mail,          label: tr('תמיכה במייל', 'Email Support'), sub: 'support@cdata.co.il',      color: 'text-emerald-400', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)', action: tr('שלח מייל', 'Send Email') },
+          { icon: Phone,         label: tr('תמיכה טלפונית', 'Phone Support'), sub: tr('03-123-4567 | זמין 24/7', '03-123-4567 | Available 24/7'), color: 'text-spot-400', bg: 'rgba(245,124,32,0.1)', border: 'rgba(245,124,32,0.2)', action: tr('התקשר', 'Call') },
         ].map(c => (
           <div key={c.label} className="glass rounded-xl p-5 cursor-pointer hover:scale-[1.02] transition-all"
             style={{ border: `1px solid ${c.border}`, background: c.bg }}>
@@ -75,7 +77,7 @@ export default function CustomerSupport() {
         <div className="px-5 py-4 border-b border-white/8 flex items-center justify-between">
           <div>
             <div className="font-semibold text-white text-sm">קריאות שירות</div>
-            <div className="text-xs text-slate-500">Support Tickets</div>
+            <div className="text-xs text-slate-500">{tr('קריאות תמיכה', 'Support Tickets')}</div>
           </div>
           <span className="badge-blue text-xs">{tickets.filter(t => t.status !== 'resolved').length} פתוחות</span>
         </div>
@@ -112,7 +114,7 @@ export default function CustomerSupport() {
       <div className="glass glow-border rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b border-white/8">
           <div className="font-semibold text-white text-sm">שאלות נפוצות</div>
-          <div className="text-xs text-slate-500">FAQ</div>
+          <div className="text-xs text-slate-500">{tr('שאלות נפוצות', 'FAQ')}</div>
         </div>
         {faqs.map((faq, i) => (
           <div key={i} className="border-b border-white/[0.04] last:border-0">
@@ -136,12 +138,12 @@ export default function CustomerSupport() {
       {/* Support team logos */}
       <div className="glass glow-border rounded-xl p-4 flex items-center justify-center gap-8">
         <div className="text-center">
-          <div className="text-[10px] text-slate-600 mb-2">Distribution Support</div>
+          <div className="text-[10px] text-slate-600 mb-2">{tr('תמיכת הפצה', 'Distribution Support')}</div>
           <CDataLogo className="h-6 opacity-60" />
         </div>
         <div className="w-px h-8 bg-white/5"></div>
         <div className="text-center">
-          <div className="text-[10px] text-slate-600 mb-2">Technical Support</div>
+          <div className="text-[10px] text-slate-600 mb-2">{tr('תמיכה טכנית', 'Technical Support')}</div>
           <SpotNetLogo className="h-5 opacity-60" />
         </div>
       </div>
@@ -156,7 +158,7 @@ export default function CustomerSupport() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <div className="font-bold text-white text-lg">קריאת שירות חדשה</div>
-                <div className="text-xs text-slate-500">Open Support Ticket</div>
+                <div className="text-xs text-slate-500">{tr('פתיחת קריאת תמיכה', 'Open Support Ticket')}</div>
               </div>
               <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-white transition-colors text-lg leading-none">✕</button>
             </div>

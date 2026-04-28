@@ -3,18 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import { Search, Plus, Users, CheckCircle, Clock, ChevronRight } from 'lucide-react'
 import { useProduct } from '../../context/ProductContext'
 import { workspaceApi } from '../../api/workspaceApi'
+import { useLanguage } from '../../context/LanguageContext'
+import { getCommonLabels } from '../../i18n/labels'
 
 const INTEGRATOR_ID = 'i1'
 
 export default function IntegratorCustomersList() {
   const navigate = useNavigate()
   const { product, config } = useProduct()
+  const { tr } = useLanguage()
+  const labels = getCommonLabels(tr)
   const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
+  const ppPortalBase = import.meta.env.VITE_PP_PORTAL_URL || 'https://app.perception-point.io'
 
   useEffect(() => {
     if (product === 'sase') {
@@ -27,7 +32,7 @@ export default function IntegratorCustomersList() {
         setLoading(true)
         setError('')
         const data = await workspaceApi.getPpCustomersList({ integratorId: INTEGRATOR_ID, role: 'integrator' })
-        setCustomers(data)
+        setCustomers(Array.isArray(data) ? data : (data?.data || []))
       } catch (e) {
         setError(e.message)
       } finally {
@@ -38,7 +43,7 @@ export default function IntegratorCustomersList() {
   }, [product])
 
   if (product === 'sase') {
-    return <div className="glass rounded-xl p-5 border border-white/10 text-sm text-slate-300">רשימת לקוחות אמיתית זמינה כרגע רק עבור Perception Point.</div>
+    return <div className="glass rounded-xl p-5 border border-white/10 text-sm text-slate-300">{tr('רשימת לקוחות אמיתית זמינה כרגע רק עבור Perception Point.', 'Live customer list is currently available only for Perception Point.')}</div>
   }
 
   const productCustomers = customers
@@ -58,10 +63,10 @@ export default function IntegratorCustomersList() {
   const totalOnboarding = productCustomers.filter(c => c.status === 'ONBOARDING').length
 
   const filters = [
-    { key: 'all', label: 'הכל' },
-    { key: 'active', label: 'פעיל' },
-    { key: 'onboarding', label: 'בתהליך קליטה' },
-    { key: 'suspended', label: 'מושהה' },
+    { key: 'all', label: tr('הכל', 'All') },
+    { key: 'active', label: tr('פעיל', 'Active') },
+    { key: 'onboarding', label: tr('בתהליך קליטה', 'Onboarding') },
+    { key: 'suspended', label: tr('מושהה', 'Suspended') },
   ]
 
   return (
@@ -69,8 +74,8 @@ export default function IntegratorCustomersList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">לקוחות</h1>
-          <p className="text-slate-500 text-sm mt-0.5">רשימת לקוחות · Perception Point</p>
+          <h1 className="text-2xl font-bold text-white">{tr('לקוחות', 'Customers')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{tr('רשימת לקוחות · Perception Point', 'Customer List · Perception Point')}</p>
           {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
         </div>
         <button
@@ -78,16 +83,16 @@ export default function IntegratorCustomersList() {
           onClick={() => navigate('/integrator/customers/new')}
         >
           <Plus className="w-4 h-4" />
-          לקוח חדש +
+          {tr('לקוח חדש +', 'New Customer +')}
         </button>
       </div>
 
       {/* KPI row */}
       <div className="grid grid-cols-3 gap-4">
           {[
-          { label: 'סה"כ לקוחות', value: productCustomers.length, icon: Users, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
-          { label: 'לקוחות פעילים', value: totalActive, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-600/15' },
-          { label: 'בתהליך קליטה', value: totalOnboarding, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-600/15' },
+          { label: tr('סה"כ לקוחות', 'Total Customers'), value: productCustomers.length, icon: Users, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
+          { label: tr('לקוחות פעילים', 'Active Customers'), value: totalActive, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-600/15' },
+          { label: tr('בתהליך קליטה', 'In Onboarding'), value: totalOnboarding, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-600/15' },
         ].map(s => (
           <div key={s.label} className="stat-card">
             <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
@@ -106,7 +111,7 @@ export default function IntegratorCustomersList() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="חיפוש לקוח..."
+            placeholder={tr('חיפוש לקוח...', 'Search customer...')}
             className="w-full bg-white/[0.04] border border-white/10 rounded-lg pr-9 pl-4 py-2 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none"
             style={{ borderColor: 'rgba(255,255,255,0.1)' }}
           />
@@ -132,20 +137,21 @@ export default function IntegratorCustomersList() {
       {/* Table */}
       <div className="glass glow-border rounded-2xl overflow-hidden">
         {/* Table header */}
-        <div className="grid grid-cols-8 px-5 py-3 border-b border-white/[0.08] text-xs text-slate-500 font-medium">
-          <div className="col-span-2">לקוח</div>
-          <div>Seats</div>
-          <div>Org ID</div>
-          <div>סטטוס</div>
-          <div>קליטה</div>
+        <div className="grid grid-cols-9 px-5 py-3 border-b border-white/[0.08] text-xs text-slate-500 font-medium">
+          <div className="col-span-2">{tr('לקוח', 'Customer')}</div>
+          <div>{tr('רישיונות', 'Seats')}</div>
+          <div>{tr('מזהה ארגון', 'Org ID')}</div>
+          <div>{tr('פורטל', 'Portal')}</div>
+          <div>{tr('סטטוס', 'Status')}</div>
+          <div>{tr('קליטה', 'Onboarding')}</div>
           <div>PP Admin</div>
-          <div>בריאות / פעולות</div>
+          <div>{tr('בריאות / פעולות', 'Health / Actions')}</div>
         </div>
 
         {loading ? (
-          <div className="px-5 py-12 text-center text-slate-500 text-sm">טוען לקוחות...</div>
+          <div className="px-5 py-12 text-center text-slate-500 text-sm">{tr('טוען לקוחות...', 'Loading customers...')}</div>
         ) : filtered.length === 0 ? (
-          <div className="px-5 py-12 text-center text-slate-500 text-sm">לא נמצאו לקוחות</div>
+          <div className="px-5 py-12 text-center text-slate-500 text-sm">{tr('לא נמצאו לקוחות', 'No customers found')}</div>
         ) : (
           filtered.map(c => {
             const score = c.complianceScore
@@ -153,7 +159,7 @@ export default function IntegratorCustomersList() {
             return (
               <div
                 key={c.id}
-                className="grid grid-cols-8 px-5 py-4 border-b border-white/[0.04] hover:bg-white/[0.025] cursor-pointer transition-all items-center group"
+                className="grid grid-cols-9 px-5 py-4 border-b border-white/[0.04] hover:bg-white/[0.025] cursor-pointer transition-all items-center group"
                 onClick={() => navigate('/integrator/customers/' + c.id)}
               >
                 {/* Customer */}
@@ -171,8 +177,24 @@ export default function IntegratorCustomersList() {
 
                 <div className="text-xs text-slate-400 truncate pr-2">{c.ppOrgId || '—'}</div>
 
+                <div className="text-xs truncate">
+                  {c.ppOrgId ? (
+                    <a
+                      href={`${ppPortalBase}/org/${c.ppOrgId}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-cdata-300 hover:underline"
+                    >
+                      {tr('פתח פורטל', 'Open Portal')}
+                    </a>
+                  ) : (
+                    <span className="text-slate-600">—</span>
+                  )}
+                </div>
+
                 <div>
-                  <span className="badge-steel">{c.status}</span>
+                  <span className="badge-steel">{labels.statuses[c.status] || c.status}</span>
                 </div>
 
                 <div>

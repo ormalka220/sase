@@ -10,6 +10,8 @@ import ProductSwitch from '../components/ProductSwitch'
 import { useProduct } from '../context/ProductContext'
 import { useAuth } from '../context/AuthContext'
 import { useCustomerProducts } from '../context/CustomerProductContext'
+import { useLanguage } from '../context/LanguageContext'
+import LanguageSwitch from '../components/LanguageSwitch'
 
 const saseNavItems = [
   { icon: Home,          label: 'Overview',  labelHe: 'סקירה כללית', path: '/customer/overview' },
@@ -49,9 +51,11 @@ export default function CustomerLayout() {
   const location = useLocation()
   const { product, config } = useProduct()
   const { user, logout } = useAuth()
+  const { tr, isHebrew } = useLanguage()
   const { hasSase, hasPerception } = useCustomerProducts()
-  const orgName = user?.organizationName || 'Customer'
-  const userName = user?.name || 'User'
+  const orgName = user?.organizationName || tr('לקוח', 'Customer')
+  const userName = user?.name || tr('משתמש', 'User')
+  const roleLabel = user?.role?.replace(/_/g, ' ') || tr('מנהל לקוח', 'Customer Admin')
   const userInitials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
   // Filter nav items based on owned products
@@ -67,8 +71,8 @@ export default function CustomerLayout() {
   const activeBg = config.navActiveBg
   const activeBorder = config.navActiveBorder
 
-  const productLabel = product === 'all' ? 'All Products' : (product === 'perception' ? 'Perception Point' : 'Forti SASE')
-  const statusLabel = product === 'all' ? 'Unified Security' : (product === 'perception' ? 'Protected Email' : 'Protected')
+  const productLabel = product === 'all' ? tr('כל המוצרים', 'All Products') : (product === 'perception' ? 'Perception Point' : 'Forti SASE')
+  const statusLabel = product === 'all' ? tr('אבטחה מאוחדת', 'Unified Security') : (product === 'perception' ? tr('דוא"ל מוגן', 'Protected Email') : tr('מוגן', 'Protected'))
   const statusColor = product === 'all' ? '#A78BFA' : (product === 'perception' ? '#34D399' : '#10B981')
 
   return (
@@ -85,8 +89,8 @@ export default function CustomerLayout() {
         <div className="px-5 py-4 flex items-center gap-3 border-b border-white/5">
           <CDataMark className="w-8 h-8 flex-shrink-0" />
           <div>
-            <div className="font-black text-white text-sm">Security<span style={{ color: activeColor }}> Hub</span></div>
-            <div className="text-[10px]" style={{ color: config.primaryColor }}>Customer Portal · {productLabel}</div>
+            <div className="font-black text-white text-sm">{tr('מרכז', 'Security')}<span style={{ color: activeColor }}>{tr(' אבטחה', ' Hub')}</span></div>
+            <div className="text-[10px]" style={{ color: config.primaryColor }}>{tr('פורטל לקוח', 'Customer Portal')} · {productLabel}</div>
           </div>
         </div>
 
@@ -117,8 +121,7 @@ export default function CustomerLayout() {
                 style={active ? { color: activeColor, background: activeBg, borderRight: `2px solid ${activeBorder}` } : {}}>
                 <item.icon className="w-4 h-4 flex-shrink-0" />
                 <div>
-                  <div className="text-xs">{item.label}</div>
-                  <div className="text-[10px] text-slate-600">{item.labelHe}</div>
+                  <div className="text-xs">{isHebrew ? item.labelHe : item.label}</div>
                 </div>
               </Link>
             )
@@ -127,14 +130,14 @@ export default function CustomerLayout() {
 
         {/* Branding strip */}
         <div className="mx-3 mb-3 p-2.5 rounded-xl border border-white/5 bg-white/[0.02]">
-          <div className="text-[9px] text-slate-600 mb-1.5 text-center">Powered by</div>
+          <div className="text-[9px] text-slate-600 mb-1.5 text-center">{tr('מופעל על ידי', 'Powered by')}</div>
           <CDataLogo className="h-5 mx-auto" />
         </div>
 
         <div className="px-2 py-3 border-t border-white/5">
           <button onClick={() => { logout(); navigate('/') }} className="nav-item w-full text-slate-600 hover:text-slate-400">
             <LogOut className="w-4 h-4 flex-shrink-0" />
-            <span className="text-xs">יציאה</span>
+            <span className="text-xs">{tr('יציאה', 'Logout')}</span>
           </button>
         </div>
       </aside>
@@ -144,11 +147,12 @@ export default function CustomerLayout() {
         <header className="px-6 py-3 flex items-center justify-between flex-shrink-0 border-b border-white/[0.06]"
           style={{ background: 'rgba(7,17,30,0.8)', backdropFilter: 'blur(16px)' }}>
           <div>
-            <div className="text-xs text-slate-500">ברוך הבא,</div>
+            <div className="text-xs text-slate-500">{tr('ברוך הבא,', 'Welcome,')}</div>
             <div className="text-sm font-semibold text-white">{orgName}</div>
           </div>
           <div className="flex items-center gap-3">
             <ProductSwitch />
+            <LanguageSwitch />
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
               style={{ background: `${statusColor}12`, border: `1px solid ${statusColor}30`, color: statusColor }}>
               <span className="w-1.5 h-1.5 rounded-full animate-pulse-slow inline-block" style={{ background: statusColor }} />
@@ -160,7 +164,7 @@ export default function CustomerLayout() {
             <div className="flex items-center gap-2.5 pr-3 border-r border-white/5">
               <div className="text-right">
                 <div className="text-xs font-medium text-white">{userName}</div>
-                <div className="text-[10px] text-slate-500">{user?.role?.replace(/_/g, ' ') || 'Customer Admin'}</div>
+                <div className="text-[10px] text-slate-500">{roleLabel}</div>
               </div>
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
                 style={{ background: `linear-gradient(135deg,${config.primaryColor},${config.darkColor})`, border: `1px solid ${config.primaryColor}40` }}>

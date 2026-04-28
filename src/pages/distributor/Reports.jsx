@@ -7,6 +7,7 @@ import {
 import { growthData, integrators, getCustomersByIntegrator, getOrdersByDistributor } from '../../data/mockData'
 import { useProduct } from '../../context/ProductContext'
 import { workspaceApi } from '../../api/workspaceApi'
+import { useLanguage } from '../../context/LanguageContext'
 
 const reportsList = [
   {
@@ -31,6 +32,7 @@ const reportsList = [
 
 export default function Reports() {
   const { product, config } = useProduct()
+  const { tr } = useLanguage()
   const [summary, setSummary] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -56,18 +58,18 @@ export default function Reports() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">דוחות</h1>
-          <p className="text-slate-500 text-sm mt-0.5">ניהול דוחות מפיץ · Perception Point</p>
+          <h1 className="text-2xl font-bold text-white">{tr('דוחות', 'Reports')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{tr('ניהול דוחות מפיץ · Perception Point', 'Distributor Reports Management · Perception Point')}</p>
           {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="stat-card"><div className="text-xl font-bold text-white">{summary?.totals?.customers || 0}</div><div className="text-xs text-slate-500">לקוחות</div></div>
-          <div className="stat-card"><div className="text-xl font-bold text-white">{summary?.totals?.orders || 0}</div><div className="text-xs text-slate-500">הזמנות</div></div>
-          <div className="stat-card"><div className="text-xl font-bold text-white">{summary?.totals?.provisionedOrders || 0}</div><div className="text-xs text-slate-500">הזמנות מופעלות</div></div>
+          <div className="stat-card"><div className="text-xl font-bold text-white">{summary?.totals?.customers || 0}</div><div className="text-xs text-slate-500">{tr('לקוחות', 'Customers')}</div></div>
+          <div className="stat-card"><div className="text-xl font-bold text-white">{summary?.totals?.orders || 0}</div><div className="text-xs text-slate-500">{tr('הזמנות', 'Orders')}</div></div>
+          <div className="stat-card"><div className="text-xl font-bold text-white">{summary?.totals?.provisionedOrders || 0}</div><div className="text-xs text-slate-500">{tr('הזמנות מופעלות', 'Provisioned Orders')}</div></div>
         </div>
         <div className="glass glow-border rounded-2xl p-5">
-          <div className="text-sm font-semibold text-white mb-3">דוחות זמינים</div>
-          {loading ? <div className="text-xs text-slate-500">טוען...</div> : (summary?.downloadableReports || []).map((r) => (
+          <div className="text-sm font-semibold text-white mb-3">{tr('דוחות זמינים', 'Available reports')}</div>
+          {loading ? <div className="text-xs text-slate-500">{tr('טוען...', 'Loading...')}</div> : (summary?.downloadableReports || []).map((r) => (
             <div key={r.id} className="flex items-center justify-between py-2 border-b border-white/5">
               <span className="text-sm text-white">{r.title}</span>
               <span className="badge-steel">{r.type}</span>
@@ -92,13 +94,13 @@ export default function Reports() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">דוחות</h1>
-          <p className="text-slate-500 text-sm mt-0.5">ניהול דוחות מפיץ · {product === 'all' ? 'All Products' : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
+          <h1 className="text-2xl font-bold text-white">{tr('דוחות', 'Reports')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{tr('ניהול דוחות מפיץ', 'Distributor Reports Management')} · {product === 'all' ? tr('כל המוצרים', 'All Products') : product === 'sase' ? 'Forti SASE' : 'Perception Point'}</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="badge-steel text-xs flex items-center gap-1.5">
             <Calendar className="w-3 h-3" />
-            ינואר 2024
+            {tr('ינואר 2024', 'January 2024')}
           </span>
         </div>
       </div>
@@ -109,8 +111,8 @@ export default function Reports() {
         <div className="glass glow-border rounded-2xl p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-semibold text-white">צמיחת לקוחות</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Customer Growth — 6 חודשים אחרונים</p>
+              <h3 className="text-sm font-semibold text-white">{tr('צמיחת לקוחות', 'Customer Growth')}</h3>
+              <p className="text-xs text-slate-500 mt-0.5">{tr('6 חודשים אחרונים', 'Last 6 months')}</p>
             </div>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `rgba(${config.glowRgb},0.12)` }}>
               <TrendingUp className="w-4 h-4 text-cdata-300" />
@@ -139,8 +141,8 @@ export default function Reports() {
         <div className="glass glow-border rounded-2xl p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-semibold text-white">לקוחות לפי אינטגרטור</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Customers per Integrator</p>
+              <h3 className="text-sm font-semibold text-white">{tr('לקוחות לפי אינטגרטור', 'Customers by Integrator')}</h3>
+              <p className="text-xs text-slate-500 mt-0.5">{tr('לקוחות לפי אינטגרטור', 'Customers per Integrator')}</p>
             </div>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `rgba(${config.glowRgb},0.12)` }}>
               <BarChartIcon className="w-4 h-4 text-cdata-300" />
@@ -165,10 +167,10 @@ export default function Reports() {
       <div className="glass glow-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="text-sm font-semibold text-white">דוחות להורדה</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Downloadable Reports</p>
+            <h3 className="text-sm font-semibold text-white">{tr('דוחות להורדה', 'Downloadable Reports')}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">{tr('דוחות זמינים להורדה', 'Available downloadable reports')}</p>
           </div>
-          <span className="text-xs text-slate-600">{reportsList.length} דוחות זמינים</span>
+          <span className="text-xs text-slate-600">{reportsList.length} {tr('דוחות זמינים', 'reports available')}</span>
         </div>
 
         <div className="space-y-3">
@@ -197,7 +199,7 @@ export default function Reports() {
               </div>
               <button className="btn-ghost text-xs flex items-center gap-1.5 flex-shrink-0">
                 <Download className="w-3.5 h-3.5" />
-                הורד PDF
+                {tr('הורד PDF', 'Download PDF')}
               </button>
             </div>
           ))}

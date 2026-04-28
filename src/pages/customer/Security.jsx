@@ -1,6 +1,7 @@
 import React from 'react'
 import { Shield, CheckCircle, AlertTriangle, Lock, Globe, Zap, Mail, Eye } from 'lucide-react'
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts'
+import { useLanguage } from '../../context/LanguageContext'
 
 const protections = [
   {
@@ -62,11 +63,12 @@ const protections = [
 ]
 
 export default function CustomerSecurity() {
+  const { tr } = useLanguage()
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">סטטוס הגנה</h1>
-        <p className="text-slate-500 text-sm mt-0.5">Security Status — Real Time</p>
+        <p className="text-slate-500 text-sm mt-0.5">{tr('סטטוס אבטחה — בזמן אמת', 'Security Status - Real Time')}</p>
       </div>
 
       {/* Overall Score */}
@@ -86,11 +88,11 @@ export default function CustomerSecurity() {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-3xl font-black text-white">98</span>
-            <span className="text-xs text-slate-500">Score</span>
+            <span className="text-xs text-slate-500">{tr('ציון', 'Score')}</span>
           </div>
         </div>
         <div className="flex-1">
-          <div className="text-xl font-bold text-white mb-1">Security Score מצוין</div>
+          <div className="text-xl font-bold text-white mb-1">{tr('ציון אבטחה מצוין', 'Excellent Security Score')}</div>
           <div className="text-sm text-emerald-400 mb-3">הארגון שלך מוגן ברמה גבוהה מאוד</div>
           <div className="flex gap-3">
             <div className="badge-green">4 שירותים פעילים</div>
@@ -98,9 +100,9 @@ export default function CustomerSecurity() {
             <div className="badge-blue">עדכון אחרון: עכשיו</div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-slate-500 mb-2">רמת הגנה</div>
-          <div className="text-2xl font-black text-gradient">Protected</div>
+          <div className="text-right">
+          <div className="text-xs text-slate-500 mb-2">{tr('רמת הגנה', 'Protection Level')}</div>
+          <div className="text-2xl font-black text-gradient">{tr('מוגן', 'Protected')}</div>
         </div>
       </div>
 
@@ -127,14 +129,14 @@ export default function CustomerSecurity() {
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full animate-pulse-slow" style={{ background: p.color }}></div>
-                <span className="text-xs font-semibold" style={{ color: p.color }}>Active</span>
+                <span className="text-xs font-semibold" style={{ color: p.color }}>{tr('פעיל', 'Active')}</span>
               </div>
             </div>
 
             {/* Score Bar */}
             <div className="mb-4">
               <div className="flex justify-between text-xs mb-1.5">
-                <span className="text-slate-500">Security Score</span>
+                <span className="text-slate-500">{tr('ציון אבטחה', 'Security Score')}</span>
                 <span className="font-bold text-white">{p.score}%</span>
               </div>
               <div className="w-full bg-white/5 rounded-full h-2">

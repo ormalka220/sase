@@ -2,6 +2,7 @@ import React from 'react'
 import { FileText, Download, Calendar, Shield, BarChart3, TrendingUp, CheckCircle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 import { useProduct } from '../../context/ProductContext'
+import { useLanguage } from '../../context/LanguageContext'
 
 const monthlyData = [
   { month: 'יוני', blocked: 245, phishing: 98, malware: 67, bec: 80 },
@@ -28,27 +29,28 @@ const typeColors = {
 }
 
 export default function CustomerReports() {
+  const { tr } = useLanguage()
   const { product, config } = useProduct()
   const reportTitle = product === 'perception' ? 'דוחות Perception Point' : product === 'all' ? 'דוחות מאוחדים' : 'דוחות Forti SASE'
   const blockedLabel = product === 'sase' ? 'אירועים נחסמו ב-30 יום' : 'איומי מייל נחסמו ב-30 יום'
-  const primaryScoreLabel = product === 'perception' ? 'Email Security Score' : 'Security Score'
+  const primaryScoreLabel = product === 'perception' ? tr('ציון אבטחת דוא"ל', 'Email Security Score') : tr('ציון אבטחה', 'Security Score')
   const chartBars = product === 'sase'
-    ? [{ key: 'blocked', color: config.primaryColor, label: 'Blocked' }]
+    ? [{ key: 'blocked', color: config.primaryColor, label: tr('נחסם', 'Blocked') }]
     : [{ key: 'phishing', color: '#5B9BB8', label: 'Phishing' }, { key: 'malware', color: '#ef4444', label: 'Malware' }, { key: 'bec', color: '#f59e0b', label: 'BEC' }]
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">דוחות</h1>
-        <p className="text-slate-500 text-sm mt-0.5">{reportTitle} · Reports & Analytics</p>
+        <p className="text-slate-500 text-sm mt-0.5">{reportTitle} · {tr('דוחות ואנליטיקה', 'Reports & Analytics')}</p>
       </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-4 gap-4">
         {[
           { label: blockedLabel, value: '356', icon: Shield, color: 'text-emerald-400', bg: 'bg-emerald-600/15' },
-          { label: 'Phishing שנחסמו', value: '140', icon: BarChart3, color: 'text-red-400', bg: 'bg-red-600/15' },
-          { label: 'Malware שנחסמו', value: '91', icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-600/15' },
+          { label: tr('Phishing שנחסמו', 'Phishing Blocked'), value: '140', icon: BarChart3, color: 'text-red-400', bg: 'bg-red-600/15' },
+          { label: tr('Malware שנחסמו', 'Malware Blocked'), value: '91', icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-600/15' },
           { label: primaryScoreLabel, value: '98%', icon: CheckCircle, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
         ].map(s => (
           <div key={s.label} className="stat-card">
@@ -66,7 +68,7 @@ export default function CustomerReports() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="font-semibold text-white text-sm">איומים שנחסמו — 6 חודשים</div>
-            <div className="text-xs text-slate-500">Threat Blocking Trends</div>
+            <div className="text-xs text-slate-500">{tr('מגמות חסימת איומים', 'Threat Blocking Trends')}</div>
           </div>
           <div className="flex gap-3 text-[10px]">
             {chartBars.map(l => (
@@ -95,8 +97,8 @@ export default function CustomerReports() {
       {/* Reports List */}
       <div className="glass glow-border rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b border-white/8 flex items-center justify-between">
-          <div className="font-semibold text-white text-sm">דוחות זמינים להורדה</div>
-          <span className="badge-blue text-xs">{reports.length} דוחות</span>
+          <div className="font-semibold text-white text-sm">{tr('דוחות זמינים להורדה', 'Reports Available for Download')}</div>
+          <span className="badge-blue text-xs">{reports.length} {tr('דוחות', 'reports')}</span>
         </div>
         {reports.map((r, i) => (
           <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-white/[0.04] hover:bg-white/[0.02] transition-all group cursor-pointer">
@@ -116,7 +118,7 @@ export default function CustomerReports() {
             </div>
             <button className="flex items-center gap-1.5 text-xs text-cdata-300 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
               <Download className="w-3.5 h-3.5" />
-              הורד
+              {tr('הורד', 'Download')}
             </button>
           </div>
         ))}

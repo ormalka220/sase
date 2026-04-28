@@ -8,14 +8,16 @@ import { CDataLogo, CDataMark } from '../components/Logos'
 import ProductSwitch from '../components/ProductSwitch'
 import { useProduct } from '../context/ProductContext'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
+import LanguageSwitch from '../components/LanguageSwitch'
 
 const navItems = [
-  { icon: LayoutDashboard, labelHe: 'לוח בקרה', path: '/integrator/dashboard' },
-  { icon: Users, labelHe: 'לקוחות', path: '/integrator/customers' },
-  { icon: ShoppingCart, labelHe: 'הזמנות', path: '/integrator/orders' },
-  { icon: ClipboardList, labelHe: 'קליטה', path: '/integrator/onboarding' },
-  { icon: BarChart3, labelHe: 'דוחות', path: '/integrator/reports' },
-  { icon: Settings2, labelHe: 'הגדרות', path: '/integrator/settings' },
+  { icon: LayoutDashboard, labelHe: 'לוח בקרה', labelEn: 'Dashboard', path: '/integrator/dashboard' },
+  { icon: Users, labelHe: 'לקוחות', labelEn: 'Customers', path: '/integrator/customers' },
+  { icon: ShoppingCart, labelHe: 'הזמנות', labelEn: 'Orders', path: '/integrator/orders' },
+  { icon: ClipboardList, labelHe: 'קליטה', labelEn: 'Onboarding', path: '/integrator/onboarding' },
+  { icon: BarChart3, labelHe: 'דוחות', labelEn: 'Reports', path: '/integrator/reports' },
+  { icon: Settings2, labelHe: 'הגדרות', labelEn: 'Settings', path: '/integrator/settings' },
 ]
 
 export default function IntegratorLayout() {
@@ -24,11 +26,16 @@ export default function IntegratorLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { product, config } = useProduct()
   const { user, logout } = useAuth()
-  const orgName = user?.organizationName || 'Integrator'
-  const userName = user?.name || 'Admin'
+  const { tr, isHebrew } = useLanguage()
+  const orgName = user?.organizationName || tr('אינטגרטור', 'Integrator')
+  const userName = user?.name || tr('מנהל', 'Admin')
+  const orgTypeLabel = user?.orgType || tr('אינטגרטור', 'INTEGRATOR')
+  const roleLabel = user?.role?.replace(/_/g, ' ') || tr('מנהל אינטגרטור', 'Integrator Admin')
   const userInitials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const showOnboarding = product === 'perception' || product === 'all'
-  const productLabel = product === 'all' ? 'כל המוצרים' : (product === 'perception' ? 'Perception Point' : 'FortiSASE')
+  const productLabel = product === 'all'
+    ? tr('כל המוצרים', 'All Products')
+    : (product === 'perception' ? 'Perception Point' : 'FortiSASE')
   const appBackground = `
     radial-gradient(circle at 12% 18%, rgba(${config.glowRgb},0.18) 0%, transparent 34%),
     radial-gradient(circle at 88% 82%, rgba(${config.glowRgb},0.12) 0%, transparent 32%),
@@ -47,8 +54,8 @@ export default function IntegratorLayout() {
           <CDataMark className={sidebarOpen ? 'w-8 h-8 flex-shrink-0' : 'w-8 h-8'} />
           {sidebarOpen && (
             <div className="min-w-0 leading-tight">
-              <div className="font-black text-white text-sm tracking-tight">מרכז <span style={{ color: config.navActiveColor }}>אינטגרטור</span></div>
-              <div className="text-[10px] font-medium" style={{ color: config.primaryColor }}>פורטל אינטגרטור · {productLabel}</div>
+              <div className="font-black text-white text-sm tracking-tight">{tr('מרכז', 'Integrator')} <span style={{ color: config.navActiveColor }}>{tr('אינטגרטור', 'Hub')}</span></div>
+              <div className="text-[10px] font-medium" style={{ color: config.primaryColor }}>{tr('פורטל אינטגרטור', 'Integrator Portal')} · {productLabel}</div>
             </div>
           )}
         </div>
@@ -69,7 +76,7 @@ export default function IntegratorLayout() {
                   className="text-[10px] px-2 py-0.5 rounded-full inline-flex mt-0.5"
                   style={{ color: config.navActiveColor, background: `${config.primaryColor}1f`, border: `1px solid ${config.primaryColor}33` }}
                 >
-                  אינטגרטור
+                  {tr('אינטגרטור', 'Integrator')}
                 </span>
               </div>
             </div>
@@ -90,7 +97,7 @@ export default function IntegratorLayout() {
                 <item.icon className="w-4 h-4 flex-shrink-0" />
                 {sidebarOpen && (
                   <div className="min-w-0">
-                    <div className="text-xs">{item.labelHe}</div>
+                    <div className="text-xs">{isHebrew ? item.labelHe : item.labelEn}</div>
                   </div>
                 )}
               </Link>
@@ -107,22 +114,22 @@ export default function IntegratorLayout() {
                   style={{ background: config.gradient, boxShadow: `0 4px 15px rgba(${config.glowRgb},0.3)` }}
                 >
                   <ShoppingCart className="w-3.5 h-3.5 flex-shrink-0" />
-                  הזמנה חדשה +
+                  {tr('הזמנה חדשה +', 'New Order +')}
                 </button>
                 <button
                   onClick={() => navigate('/integrator/customers/new')}
                   className="btn-ghost w-full flex items-center justify-center gap-2 text-xs py-2"
                 >
                   <PlusCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                  לקוח חדש +
+                  {tr('לקוח חדש +', 'New Customer +')}
                 </button>
               </>
             ) : (
               <>
-                <button onClick={() => navigate('/integrator/orders/new')} className="nav-item w-full justify-center hover:text-white" style={{ color: config.navActiveColor }} title="הזמנה חדשה">
+                <button onClick={() => navigate('/integrator/orders/new')} className="nav-item w-full justify-center hover:text-white" style={{ color: config.navActiveColor }} title={tr('הזמנה חדשה', 'New order')}>
                   <ShoppingCart className="w-4 h-4 flex-shrink-0" />
                 </button>
-                <button onClick={() => navigate('/integrator/customers/new')} className="nav-item w-full justify-center hover:text-white" style={{ color: config.navActiveColor }} title="לקוח חדש">
+                <button onClick={() => navigate('/integrator/customers/new')} className="nav-item w-full justify-center hover:text-white" style={{ color: config.navActiveColor }} title={tr('לקוח חדש', 'New customer')}>
                   <PlusCircle className="w-4 h-4 flex-shrink-0" />
                 </button>
               </>
@@ -133,7 +140,7 @@ export default function IntegratorLayout() {
         {/* Branding strip */}
         {sidebarOpen && (
           <div className="mx-3 mb-3 p-2.5 rounded-xl border border-white/5 bg-white/[0.02]">
-            <div className="text-[9px] text-slate-600 mb-1.5 text-center">מופעל על ידי</div>
+            <div className="text-[9px] text-slate-600 mb-1.5 text-center">{tr('מופעל על ידי', 'Powered by')}</div>
             <CDataLogo className="h-5 mx-auto" />
           </div>
         )}
@@ -142,7 +149,7 @@ export default function IntegratorLayout() {
         <div className="px-2 py-3 border-t border-white/5 space-y-0.5">
           <button onClick={() => { logout(); navigate('/') }} className="nav-item w-full text-slate-600 hover:text-slate-400">
             <LogOut className="w-4 h-4 flex-shrink-0" />
-            {sidebarOpen && <span className="text-xs">יציאה</span>}
+            {sidebarOpen && <span className="text-xs">{tr('יציאה', 'Logout')}</span>}
           </button>
         </div>
 
@@ -164,13 +171,14 @@ export default function IntegratorLayout() {
           style={{ background: `linear-gradient(90deg, rgba(7,17,30,0.82), rgba(${config.glowRgb},0.08))`, backdropFilter: 'blur(16px)' }}
         >
           <div>
-            <div className="text-xs text-slate-500">פורטל אינטגרטור</div>
+            <div className="text-xs text-slate-500">{tr('פורטל אינטגרטור', 'Integrator Portal')}</div>
             <div className="text-sm font-semibold text-white">{orgName}</div>
-            <div className="text-[10px] mt-0.5" style={{ color: config.navActiveColor }}>ניהול לקוחות · הזמנות ואונבורדינג</div>
+            <div className="text-[10px] mt-0.5" style={{ color: config.navActiveColor }}>{tr('ניהול לקוחות · הזמנות ואונבורדינג', 'Customers · Orders & Onboarding')}</div>
           </div>
 
           <div className="flex items-center gap-3">
             <ProductSwitch />
+            <LanguageSwitch />
             <button className="relative p-2 rounded-lg hover:bg-white/5 transition-colors text-slate-500 hover:text-white">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full ring-1 ring-navy-900" style={{ background: config.primaryColor }}></span>
@@ -183,10 +191,10 @@ export default function IntegratorLayout() {
                     className="text-[9px] px-1.5 py-0.5 rounded-full"
                     style={{ color: config.navActiveColor, background: `${config.primaryColor}1f`, border: `1px solid ${config.primaryColor}33` }}
                   >
-                    {user?.orgType || 'INTEGRATOR'}
+                    {orgTypeLabel}
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-500">{user?.role?.replace(/_/g, ' ') || 'Integrator Admin'}</div>
+                <div className="text-[10px] text-slate-500">{roleLabel}</div>
               </div>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"

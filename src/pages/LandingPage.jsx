@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Users, Shield, ArrowLeft, Building2, LogIn, Loader2 } from 'lucide-react'
 import { CDataLogo, SpotNetLogo, CDataMark } from '../components/Logos'
 import { useAuth, ROLE_PORTAL } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
+import LanguageSwitch from '../components/LanguageSwitch'
 
 const ROLE_ICON = {
   SUPER_ADMIN: Shield,
@@ -31,6 +33,7 @@ const ROLE_LABEL_HE = {
 export default function LandingPage() {
   const navigate = useNavigate()
   const { login, isAuthenticated, user } = useAuth()
+  const { tr } = useLanguage()
   const [demoUsers, setDemoUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [loggingIn, setLoggingIn] = useState(null)
@@ -107,9 +110,10 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <LanguageSwitch />
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/5 bg-white/[0.03]">
             <div className="w-2 h-2 rounded-full bg-red-500" />
-            <span className="text-xs text-slate-400 font-medium">Fortinet Partner</span>
+            <span className="text-xs text-slate-400 font-medium">{tr('שותף Fortinet', 'Fortinet Partner')}</span>
           </div>
           <CDataLogo className="h-5 opacity-60 hover:opacity-100 transition-opacity" />
           <span className="text-slate-700 text-xs">×</span>
@@ -146,7 +150,7 @@ export default function LandingPage() {
         {loading ? (
           <div className="flex items-center gap-2 text-slate-500">
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span className="text-sm">Loading demo users...</span>
+            <span className="text-sm">{tr('טוען משתמשי דמו...', 'Loading demo users...')}</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-5xl mb-12">

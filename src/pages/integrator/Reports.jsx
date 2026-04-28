@@ -3,44 +3,13 @@ import { FileText, Download, BarChart2, Users, Shield } from 'lucide-react'
 import { AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Area } from 'recharts'
 import { useProduct } from '../../context/ProductContext'
 import { workspaceApi } from '../../api/workspaceApi'
+import { useLanguage } from '../../context/LanguageContext'
 
 const INTEGRATOR_ID = 'i1'
 
-const reports = [
-  {
-    id: 'monthly',
-    icon: FileText,
-    title: 'סיכום חודשי',
-    desc: 'דוח כולל על פעילות הלקוחות, התראות ואירועי אבטחה',
-    date: 'ינואר 2024',
-    type: 'PDF',
-    color: 'text-cdata-300',
-    bg: 'bg-cdata-500/15',
-  },
-  {
-    id: 'health',
-    icon: Shield,
-    title: 'דוח בריאות לקוחות',
-    desc: 'ציוני compliance, סטטוס גייטוויי ועמידה בפוליסי לכל לקוח',
-    date: 'ינואר 2024',
-    type: 'PDF',
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-600/15',
-  },
-  {
-    id: 'licenses',
-    icon: Users,
-    title: 'ניצול רישיונות',
-    desc: 'מעקב שימוש ברישיונות SASE, עלייה וירידה לפי לקוח',
-    date: 'ינואר 2024',
-    type: 'Excel',
-    color: 'text-amber-400',
-    bg: 'bg-amber-600/15',
-  },
-]
-
 export default function IntegratorReports() {
   const { product, config } = useProduct()
+  const { tr } = useLanguage()
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -66,7 +35,7 @@ export default function IntegratorReports() {
   }, [product])
 
   if (product === 'sase') {
-    return <div className="glass rounded-xl p-5 border border-white/10 text-sm text-slate-300">דוחות אמת זמינים כרגע רק ל-Perception Point.</div>
+    return <div className="glass rounded-xl p-5 border border-white/10 text-sm text-slate-300">{tr('דוחות אמת זמינים כרגע רק ל-Perception Point.', 'Live reports are currently available only for Perception Point.')}</div>
   }
 
   const totals = summary?.totals || { customers: 0, activeCustomers: 0 }
@@ -76,22 +45,22 @@ export default function IntegratorReports() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">דוחות</h1>
-          <p className="text-slate-500 text-sm mt-0.5">דוחות אינטגרטור · Perception Point</p>
+          <h1 className="text-2xl font-bold text-white">{tr('דוחות', 'Reports')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{tr('דוחות אינטגרטור · Perception Point', 'Integrator Reports · Perception Point')}</p>
           {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">עודכן לאחרונה:</span>
-          <span className="text-xs text-slate-300">15 ינואר 2024</span>
+          <span className="text-xs text-slate-500">{tr('עודכן לאחרונה:', 'Last updated:')}</span>
+          <span className="text-xs text-slate-300">{tr('15 ינואר 2024', '15 Jan 2024')}</span>
         </div>
       </div>
 
       {/* KPI mini row */}
       <div className="grid grid-cols-3 gap-4">
           {[
-          { label: 'סה"כ לקוחות', value: totals.customers, icon: Users, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
-          { label: 'לקוחות פעילים', value: totals.activeCustomers, icon: Shield, color: 'text-emerald-400', bg: 'bg-emerald-600/15' },
-          { label: 'דוחות זמינים', value: (summary?.downloadableReports || []).length, icon: FileText, color: 'text-amber-400', bg: 'bg-amber-600/15' },
+          { label: tr('סה"כ לקוחות', 'Total Customers'), value: totals.customers, icon: Users, color: 'text-cdata-300', bg: 'bg-cdata-500/15' },
+          { label: tr('לקוחות פעילים', 'Active Customers'), value: totals.activeCustomers, icon: Shield, color: 'text-emerald-400', bg: 'bg-emerald-600/15' },
+          { label: tr('דוחות זמינים', 'Available Reports'), value: (summary?.downloadableReports || []).length, icon: FileText, color: 'text-amber-400', bg: 'bg-amber-600/15' },
         ].map(s => (
           <div key={s.label} className="stat-card">
             <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
@@ -107,12 +76,12 @@ export default function IntegratorReports() {
       <div className="glass glow-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-sm font-semibold text-white">צמיחת לקוחות</div>
-            <div className="text-xs text-slate-500">6 חודשים אחרונים</div>
+            <div className="text-sm font-semibold text-white">{tr('צמיחת לקוחות', 'Customer Growth')}</div>
+            <div className="text-xs text-slate-500">{tr('6 חודשים אחרונים', 'Last 6 months')}</div>
           </div>
           <div className="flex items-center gap-1.5">
             <BarChart2 className="w-3.5 h-3.5" style={{ color: config.navActiveColor }} />
-            <span className="text-xs font-semibold" style={{ color: config.navActiveColor }}>{totals.customers} לקוחות</span>
+            <span className="text-xs font-semibold" style={{ color: config.navActiveColor }}>{totals.customers} {tr('לקוחות', 'customers')}</span>
           </div>
         </div>
         <ResponsiveContainer width="100%" height={200}>
@@ -141,7 +110,7 @@ export default function IntegratorReports() {
               stroke={config.primaryColor}
               strokeWidth={2}
               fill="url(#rptGrad)"
-              name="Seats"
+              name={tr('רישיונות', 'Seats')}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -150,11 +119,11 @@ export default function IntegratorReports() {
       {/* Reports list */}
       <div className="glass glow-border rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b border-white/[0.06]">
-          <div className="text-sm font-semibold text-white">דוחות זמינים</div>
+          <div className="text-sm font-semibold text-white">{tr('דוחות זמינים', 'Available Reports')}</div>
         </div>
         <div className="divide-y divide-white/[0.04]">
           {loading ? (
-            <div className="px-5 py-6 text-xs text-slate-500">טוען דוחות...</div>
+            <div className="px-5 py-6 text-xs text-slate-500">{tr('טוען דוחות...', 'Loading reports...')}</div>
           ) : (summary?.downloadableReports || []).map(r => (
             <div
               key={r.id}
@@ -165,16 +134,16 @@ export default function IntegratorReports() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-white">{r.title}</div>
-                <div className="text-xs text-slate-500 mt-0.5 truncate">נוצר מנתוני אמת של Perception Point</div>
+                <div className="text-xs text-slate-500 mt-0.5 truncate">{tr('נוצר מנתוני אמת של Perception Point', 'Generated from live Perception Point data')}</div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 <div className="text-right">
-                  <div className="text-[10px] text-slate-500">Realtime</div>
+                  <div className="text-[10px] text-slate-500">{tr('זמן אמת', 'Realtime')}</div>
                   <div className="text-[10px] text-slate-600">{r.type}</div>
                 </div>
                 <button className="btn-ghost flex items-center gap-1.5 text-xs py-1.5 px-3">
                   <Download className="w-3.5 h-3.5" />
-                  הורדה
+                  {tr('הורדה', 'Download')}
                 </button>
               </div>
             </div>

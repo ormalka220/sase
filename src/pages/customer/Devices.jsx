@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Monitor, Search, CheckCircle } from 'lucide-react'
 import { getDevicesByCustomer, getUsersByCustomer } from '../../data/mockData'
+import { useLanguage } from '../../context/LanguageContext'
 
 const CUSTOMER_ID = 'c1'
 const allDevices = getDevicesByCustomer(CUSTOMER_ID)
@@ -26,6 +27,7 @@ const FILTERS = [
 ]
 
 export default function CustomerDevices() {
+  const { tr } = useLanguage()
   const [activeFilter, setActiveFilter] = useState('all')
 
   const filtered = allDevices.filter(d => {
@@ -45,9 +47,9 @@ export default function CustomerDevices() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">התקנים</h1>
-          <p className="text-slate-500 text-sm mt-0.5">מלאי התקנים ועמידת תקנים</p>
+          <p className="text-slate-500 text-sm mt-0.5">{tr('מלאי התקנים ועמידת תקנים', 'Device Inventory and Compliance')}</p>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-[10px] text-cdata-500">מנוהל דרך:</span>
+            <span className="text-[10px] text-cdata-500">{tr(':מנוהל דרך', 'Managed via:')}</span>
             <code className="text-[10px] text-slate-400 font-mono">ftntsa.saas.fortinet.com</code>
           </div>
         </div>
@@ -61,7 +63,7 @@ export default function CustomerDevices() {
           </div>
           <div className="text-2xl font-bold text-white">{totalDevices}</div>
           <div className="text-xs font-medium text-slate-300">סה"כ התקנים</div>
-          <div className="text-[10px] text-slate-600">Total Devices</div>
+          <div className="text-[10px] text-slate-600">{tr('סה"כ התקנים', 'Total Devices')}</div>
         </div>
         <div className="stat-card">
           <div className="w-9 h-9 rounded-xl bg-emerald-600/15 flex items-center justify-center mb-3">
@@ -117,7 +119,7 @@ export default function CustomerDevices() {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Search className="w-10 h-10 text-slate-600" />
-            <span className="text-slate-500 text-sm">לא נמצאו התקנים</span>
+            <span className="text-slate-500 text-sm">{tr('לא נמצאו התקנים', 'No devices found')}</span>
           </div>
         ) : (
           filtered.map(device => (

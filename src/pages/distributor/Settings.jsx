@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { User, Bell, Settings as SettingsIcon, Eye, EyeOff, CheckCircle } from 'lucide-react'
+import { useLanguage } from '../../context/LanguageContext'
 
 const inputCls = 'w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-cdata-500/40 focus:bg-white/[0.06] transition-colors'
 const labelCls = 'text-xs text-slate-400 mb-1.5 block'
@@ -33,7 +34,7 @@ function ToggleRow({ label, description, checked, onChange }) {
   )
 }
 
-function SaveSuccess({ show }) {
+function SaveSuccess({ show, message }) {
   if (!show) return null
   return (
     <div
@@ -41,12 +42,13 @@ function SaveSuccess({ show }) {
       style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}
     >
       <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-      <span className="text-xs text-emerald-400 font-medium">השינויים נשמרו בהצלחה</span>
+      <span className="text-xs text-emerald-400 font-medium">{message}</span>
     </div>
   )
 }
 
 export default function Settings() {
+  const { tr } = useLanguage()
   // Profile card
   const [profile, setProfile] = useState({
     name: 'CDATA Distribution',
@@ -91,8 +93,8 @@ export default function Settings() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">הגדרות</h1>
-        <p className="text-slate-500 text-sm mt-0.5">הגדרות מפיץ</p>
+        <h1 className="text-2xl font-bold text-white">{tr('הגדרות', 'Settings')}</h1>
+        <p className="text-slate-500 text-sm mt-0.5">{tr('הגדרות מפיץ', 'Distributor Settings')}</p>
       </div>
 
       {/* ── Card 1: Profile ── */}
@@ -102,7 +104,7 @@ export default function Settings() {
             <User className="w-4 h-4 text-cdata-300" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">פרופיל מפיץ</h3>
+            <h3 className="text-sm font-semibold text-white">{tr('פרופיל מפיץ', 'Distributor Profile')}</h3>
             <p className="text-xs text-slate-500">Distributor Profile</p>
           </div>
         </div>
@@ -139,9 +141,9 @@ export default function Settings() {
         </div>
 
         <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <SaveSuccess show={profileSaved} />
+          <SaveSuccess show={profileSaved} message={tr('השינויים נשמרו בהצלחה', 'Changes saved successfully')} />
           <button className="btn-primary text-sm ml-auto" onClick={handleProfileSave}>
-            שמור שינויים
+            {tr('שמור שינויים', 'Save Changes')}
           </button>
         </div>
       </div>
@@ -154,25 +156,25 @@ export default function Settings() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">העדפות התראות</h3>
-            <p className="text-xs text-slate-500">Notification Preferences</p>
+            <p className="text-xs text-slate-500">{tr('העדפות התראות', 'Notification Preferences')}</p>
           </div>
         </div>
 
         <div className="mb-5">
           <ToggleRow
-            label="פעילות אינטגרטורים"
+            label={tr('פעילות אינטגרטורים', 'Integrator activity')}
             description="קבל התראה כאשר אינטגרטור מבצע פעולה חשובה"
             checked={notifs.integratorActivity}
             onChange={v => setNotifs(prev => ({ ...prev, integratorActivity: v }))}
           />
           <ToggleRow
-            label="לקוחות חדשים"
+            label={tr('לקוחות חדשים', 'New customers')}
             description="קבל התראה כאשר לקוח חדש נוסף למערכת"
             checked={notifs.newCustomers}
             onChange={v => setNotifs(prev => ({ ...prev, newCustomers: v }))}
           />
           <ToggleRow
-            label="דוחות חודשיים"
+            label={tr('דוחות חודשיים', 'Monthly reports')}
             description="שלח דוח חודשי אוטומטי לאימייל"
             checked={notifs.monthlyReports}
             onChange={v => setNotifs(prev => ({ ...prev, monthlyReports: v }))}
@@ -180,9 +182,9 @@ export default function Settings() {
         </div>
 
         <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <SaveSuccess show={notifSaved} />
+          <SaveSuccess show={notifSaved} message={tr('השינויים נשמרו בהצלחה', 'Changes saved successfully')} />
           <button className="btn-primary text-sm ml-auto" onClick={handleNotifSave}>
-            שמור שינויים
+            {tr('שמור שינויים', 'Save Changes')}
           </button>
         </div>
       </div>
@@ -194,7 +196,7 @@ export default function Settings() {
             <SettingsIcon className="w-4 h-4 text-cdata-300" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">הגדרות מערכת</h3>
+            <h3 className="text-sm font-semibold text-white">{tr('הגדרות מערכת', 'System Settings')}</h3>
             <p className="text-xs text-slate-500">System Settings</p>
           </div>
         </div>
@@ -203,14 +205,14 @@ export default function Settings() {
           {/* API Key row */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs text-slate-400">מפתח API</label>
+              <label className="text-xs text-slate-400">{tr('מפתח API', 'API Key')}</label>
               <button
                 type="button"
                 onClick={() => setShowKey(v => !v)}
                 className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300 transition-colors"
               >
                 {showKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                {showKey ? 'הסתר' : 'הצג'}
+                {showKey ? tr('הסתר', 'Hide') : tr('הצג', 'Show')}
               </button>
             </div>
             <div
@@ -220,12 +222,12 @@ export default function Settings() {
               <span className="text-slate-400 truncate">{showKey ? apiKey : maskedKey}</span>
               <span className="badge-steel text-[10px] flex-shrink-0 ml-3">read-only</span>
             </div>
-            <p className="text-[10px] text-slate-600 mt-1">מפתח ה-API משמש לגישה תכנותית למערכת. אין לשתף אותו.</p>
+            <p className="text-[10px] text-slate-600 mt-1">{tr('מפתח ה-API משמש לגישה תכנותית למערכת. אין לשתף אותו.', 'The API key is used for programmatic access. Do not share it.')}</p>
           </div>
 
           {/* Distributor ID row */}
           <div>
-            <label className={labelCls}>מזהה מפיץ</label>
+            <label className={labelCls}>{tr('מזהה מפיץ', 'Distributor ID')}</label>
             <div
               className="w-full rounded-lg px-4 py-2.5 font-mono text-sm flex items-center justify-between"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -238,9 +240,9 @@ export default function Settings() {
         </div>
 
         <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <SaveSuccess show={systemSaved} />
+          <SaveSuccess show={systemSaved} message={tr('השינויים נשמרו בהצלחה', 'Changes saved successfully')} />
           <button className="btn-primary text-sm ml-auto" onClick={handleSystemSave}>
-            שמור שינויים
+            {tr('שמור שינויים', 'Save Changes')}
           </button>
         </div>
       </div>

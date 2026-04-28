@@ -1,0 +1,40 @@
+export function getCommonLabels(tr) {
+  return {
+    statuses: {
+      DRAFT: tr('טיוטה', 'Draft'),
+      PAYMENT_PENDING: tr('ממתין לתשלום', 'Payment Pending'),
+      PENDING_APPROVAL: tr('ממתין לאישור', 'Pending Approval'),
+      PENDING_CDATA_APPROVAL: tr('ממתין לאישור CData', 'Pending CData Approval'),
+      PENDING_DISTRIBUTOR_APPROVAL: tr('ממתין לאישור מפיץ', 'Pending Distributor Approval'),
+      ACTIVE: tr('פעיל', 'Active'),
+      ONBOARDING: tr('בתהליך קליטה', 'Onboarding'),
+      SUSPENDED: tr('מושהה', 'Suspended'),
+      APPROVED: tr('אושר', 'Approved'),
+      APPROVED_BY_CDATA: tr('אושר על ידי CData', 'Approved by CData'),
+      REJECTED: tr('נדחה', 'Rejected'),
+      REJECTED_BY_CDATA: tr('נדחה על ידי CData', 'Rejected by CData'),
+      FAILED: tr('נכשל', 'Failed'),
+      PROVISIONING: tr('בהקמה', 'Provisioning'),
+      PROVISIONING_STARTED: tr('הקמה התחילה', 'Provisioning Started'),
+      PROVISIONED: tr('הוקם', 'Provisioned'),
+      PP_ORG_CREATED: tr('ארגון PP נוצר', 'PP Organization Created'),
+      PP_ADMIN_INVITED: tr('משתמש אדמין הוזמן', 'PP Admin Invited'),
+      INTEGRATION_IN_PROGRESS: tr('אינטגרציה בתהליך', 'Integration in Progress'),
+      READY_FOR_ONBOARDING: tr('מוכן לקליטה', 'Ready for Onboarding'),
+      ONBOARDING_PENDING: tr('ממתין לקליטה', 'Onboarding Pending'),
+      CANCELLED: tr('בוטל', 'Cancelled'),
+    },
+    products: {
+      FORTISASE: 'FortiSASE',
+      WORKSPACE_SECURITY: 'Perception Point',
+    },
+    actions: {
+      openPortal: tr('פתח פורטל', 'Open Portal'),
+      approve: tr('אשר', 'Approve'),
+      reject: tr('דחה', 'Reject'),
+      create: tr('צור', 'Create'),
+      save: tr('שמור', 'Save'),
+      cancel: tr('בטל', 'Cancel'),
+    },
+  }
+}

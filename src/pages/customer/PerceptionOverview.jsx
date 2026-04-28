@@ -7,6 +7,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
 import { workspaceApi } from '../../api/workspaceApi'
+import { useLanguage } from '../../context/LanguageContext'
 
 const severityConfig = {
   critical: { label: 'קריטי', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.25)' },
@@ -66,6 +67,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export default function PerceptionOverview() {
+  const { tr } = useLanguage()
   const customerId = 'c1'
   const [activeTab, setActiveTab] = useState('all')
   const [profile, setProfile] = useState(null)
@@ -121,15 +123,15 @@ export default function PerceptionOverview() {
     return (
       <div className="space-y-4">
         <div className="glass rounded-xl p-5 border border-indigo-500/20">
-          <h1 className="text-xl font-black text-white mb-2">חברו את Microsoft 365 להפעלת Perception Point</h1>
+            <h1 className="text-xl font-black text-white mb-2">{tr('חברו את Microsoft 365 להפעלת Perception Point', 'Connect Microsoft 365 to enable Perception Point')}</h1>
           <p className="text-xs text-slate-400">{integrationStatus.message}</p>
           {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
             <a href={onboarding?.deepLinkUrl || onboarding?.portalUrl || 'https://app.perception-point.io'} target="_blank" rel="noreferrer" className="btn-primary text-xs">
-              פתח הגדרת שירות דוא"ל
+              {tr('פתח הגדרת שירות דוא"ל', 'Open Email Service Setup')}
             </a>
             <button className="btn-ghost text-xs" onClick={checkConnection}>
-              {checkLoading ? 'בודק...' : 'בדוק חיבור'}
+              {checkLoading ? tr('בודק...', 'Checking...') : tr('בדוק חיבור', 'Check Connection')}
             </button>
           </div>
         </div>
@@ -144,19 +146,19 @@ export default function PerceptionOverview() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Mail className="w-5 h-5 text-emerald-400" />
-            <h1 className="text-xl font-black text-white">Email Security <span className="text-emerald-400">Dashboard</span></h1>
+            <h1 className="text-xl font-black text-white">{tr('לוח בקרה', 'Email Security ')}<span className="text-emerald-400">{tr('אבטחת דוא"ל', 'Dashboard')}</span></h1>
           </div>
-          <p className="text-xs text-slate-500">Powered by Perception Point · Elbit Systems</p>
+          <p className="text-xs text-slate-500">{tr('מופעל על ידי Perception Point · Elbit Systems', 'Powered by Perception Point · Elbit Systems')}</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
             style={{ background: 'rgba(5,150,105,0.12)', border: '1px solid rgba(5,150,105,0.3)', color: '#34D399' }}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-slow inline-block" />
-            Active Protection
+            {tr('הגנה פעילה', 'Active Protection')}
           </span>
           <button className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5">
             <ExternalLink className="w-3.5 h-3.5" />
-            Portal
+            {tr('פורטל', 'Portal')}
           </button>
         </div>
       </div>
@@ -175,7 +177,7 @@ export default function PerceptionOverview() {
         <div className="lg:col-span-2 glass rounded-xl p-5" style={{ border: '1px solid rgba(5,150,105,0.15)' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-sm font-bold text-white">Email Volume (7 Days)</div>
+              <div className="text-sm font-bold text-white">{tr('נפח מיילים (7 ימים)', 'Email Volume (7 Days)')}</div>
               <div className="text-[10px] text-slate-600">נפח מיילים — 7 ימים אחרונים</div>
             </div>
             <div className="flex items-center gap-3 text-[10px]">
@@ -207,7 +209,7 @@ export default function PerceptionOverview() {
 
         {/* Threat Breakdown */}
         <div className="glass rounded-xl p-5" style={{ border: '1px solid rgba(5,150,105,0.15)' }}>
-          <div className="text-sm font-bold text-white mb-1">Threat Categories</div>
+          <div className="text-sm font-bold text-white mb-1">{tr('קטגוריות איומים', 'Threat Categories')}</div>
           <div className="text-[10px] text-slate-600 mb-4">פירוט לפי סוג איום</div>
           <div className="space-y-3">
             {ppThreatBreakdown.map(t => (
@@ -232,11 +234,11 @@ export default function PerceptionOverview() {
             <div className="grid grid-cols-2 gap-3">
               <div className="p-2.5 rounded-lg" style={{ background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.12)' }}>
                 <div className="text-lg font-black text-emerald-400">{blockRate}%</div>
-                <div className="text-[10px] text-slate-500">Block Rate</div>
+                <div className="text-[10px] text-slate-500">{tr('שיעור חסימה', 'Block Rate')}</div>
               </div>
               <div className="p-2.5 rounded-lg" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)' }}>
                 <div className="text-lg font-black text-red-400">0</div>
-                <div className="text-[10px] text-slate-500">False Negatives</div>
+                <div className="text-[10px] text-slate-500">{tr('False Negatives', 'False Negatives')}</div>
               </div>
             </div>
           </div>
@@ -247,7 +249,7 @@ export default function PerceptionOverview() {
       <div className="glass rounded-xl" style={{ border: '1px solid rgba(5,150,105,0.12)' }}>
         <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
           <div>
-            <div className="text-sm font-bold text-white">Recent Threats Blocked</div>
+            <div className="text-sm font-bold text-white">{tr('איומים שנחסמו לאחרונה', 'Recent Threats Blocked')}</div>
             <div className="text-[10px] text-slate-600">איומים שנחסמו לאחרונה</div>
           </div>
           <div className="flex items-center gap-1.5 bg-white/[0.03] rounded-lg p-1">

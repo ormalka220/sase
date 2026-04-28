@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { User, Bell, Settings2, Eye, EyeOff, Check } from 'lucide-react'
 import { getIntegrator } from '../../data/mockData'
+import { useLanguage } from '../../context/LanguageContext'
 
 const INTEGRATOR_ID = 'i1'
 const integrator = getIntegrator(INTEGRATOR_ID)
@@ -9,7 +10,7 @@ const inputClass =
   'w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-cdata-500/40 transition-colors'
 const labelClass = 'text-xs text-slate-400 mb-1.5 block'
 
-const SaveButton = ({ onSave, saved }) => (
+const SaveButton = ({ onSave, saved, savedLabel, saveLabel }) => (
   <button
     className={`flex items-center gap-2 text-sm ${saved ? 'btn-ghost text-emerald-400' : 'btn-primary'}`}
     onClick={onSave}
@@ -17,10 +18,10 @@ const SaveButton = ({ onSave, saved }) => (
     {saved ? (
       <>
         <Check className="w-4 h-4" />
-        נשמר
+        {savedLabel}
       </>
     ) : (
-      'שמור שינויים'
+      saveLabel
     )}
   </button>
 )
@@ -50,6 +51,7 @@ const CheckboxRow = ({ label, desc, checked, onChange }) => (
 )
 
 export default function IntegratorSettings() {
+  const { tr } = useLanguage()
   const [profile, setProfile] = useState({
     companyName: integrator?.companyName || 'NetSec Solutions',
     contactName: integrator?.contactName || 'אלון כהן',
@@ -96,14 +98,14 @@ export default function IntegratorSettings() {
   }
 
   const maskedApiKey = '************'
-  const realApiKey = 'ערך מוסתר לצורכי אבטחה'
+  const realApiKey = tr('ערך מוסתר לצורכי אבטחה', 'Hidden value for security reasons')
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">הגדרות</h1>
-        <p className="text-slate-500 text-sm mt-0.5">הגדרות אינטגרטור</p>
+        <h1 className="text-2xl font-bold text-white">{tr('הגדרות', 'Settings')}</h1>
+        <p className="text-slate-500 text-sm mt-0.5">{tr('הגדרות אינטגרטור', 'Integrator Settings')}</p>
       </div>
 
       {/* Card 1: Profile */}
@@ -113,14 +115,14 @@ export default function IntegratorSettings() {
             <div className="w-8 h-8 rounded-lg bg-cdata-500/15 flex items-center justify-center">
               <User className="w-4 h-4 text-cdata-300" />
             </div>
-            <div className="text-sm font-semibold text-white">פרופיל אינטגרטור</div>
+            <div className="text-sm font-semibold text-white">{tr('פרופיל אינטגרטור', 'Integrator Profile')}</div>
           </div>
-          <SaveButton onSave={handleProfileSave} saved={profileSaved} />
+          <SaveButton onSave={handleProfileSave} saved={profileSaved} savedLabel={tr('נשמר', 'Saved')} saveLabel={tr('שמור שינויים', 'Save Changes')} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>שם החברה</label>
+            <label className={labelClass}>{tr('שם החברה', 'Company name')}</label>
             <input
               className={inputClass}
               value={profile.companyName}
@@ -128,7 +130,7 @@ export default function IntegratorSettings() {
             />
           </div>
           <div>
-            <label className={labelClass}>שם איש קשר</label>
+            <label className={labelClass}>{tr('שם איש קשר', 'Contact name')}</label>
             <input
               className={inputClass}
               value={profile.contactName}
@@ -136,7 +138,7 @@ export default function IntegratorSettings() {
             />
           </div>
           <div>
-            <label className={labelClass}>כתובת מייל</label>
+            <label className={labelClass}>{tr('כתובת מייל', 'Email address')}</label>
             <input
               className={inputClass}
               type="email"
@@ -145,7 +147,7 @@ export default function IntegratorSettings() {
             />
           </div>
           <div>
-            <label className={labelClass}>טלפון</label>
+            <label className={labelClass}>{tr('טלפון', 'Phone')}</label>
             <input
               className={inputClass}
               type="tel"
@@ -157,7 +159,7 @@ export default function IntegratorSettings() {
 
         {integrator?.partnerCode && (
           <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-3">
-            <span className="text-xs text-slate-500">קוד שותף:</span>
+            <span className="text-xs text-slate-500">{tr('קוד שותף:', 'Partner code:')}</span>
             <span className="text-xs font-mono text-slate-300 bg-white/[0.04] px-2.5 py-1 rounded-md">
               {integrator.partnerCode}
             </span>
@@ -172,33 +174,33 @@ export default function IntegratorSettings() {
             <div className="w-8 h-8 rounded-lg bg-amber-600/15 flex items-center justify-center">
               <Bell className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-sm font-semibold text-white">העדפות התראות</div>
+            <div className="text-sm font-semibold text-white">{tr('העדפות התראות', 'Notification Preferences')}</div>
           </div>
-          <SaveButton onSave={handleNotifSave} saved={notifSaved} />
+          <SaveButton onSave={handleNotifSave} saved={notifSaved} savedLabel={tr('נשמר', 'Saved')} saveLabel={tr('שמור שינויים', 'Save Changes')} />
         </div>
 
         <div className="space-y-2">
           <CheckboxRow
-            label="התראות אבטחה"
-            desc="קבל התראות על אירועי אבטחה של לקוחות"
+            label={tr('התראות אבטחה', 'Security alerts')}
+            desc={tr('קבל התראות על אירועי אבטחה של לקוחות', 'Receive alerts about customer security events')}
             checked={notifications.alerts}
             onChange={v => setN('alerts', v)}
           />
           <CheckboxRow
-            label="דוחות חודשיים"
-            desc="שלח לי דוח חודשי סיכום בתחילת כל חודש"
+            label={tr('דוחות חודשיים', 'Monthly reports')}
+            desc={tr('שלח לי דוח חודשי סיכום בתחילת כל חודש', 'Send me a monthly summary report at the beginning of each month')}
             checked={notifications.reports}
             onChange={v => setN('reports', v)}
           />
           <CheckboxRow
-            label="לקוחות חדשים"
-            desc="הודעה כאשר לקוח חדש מסיים קליטה"
+            label={tr('לקוחות חדשים', 'New customers')}
+            desc={tr('הודעה כאשר לקוח חדש מסיים קליטה', 'Notify when a new customer completes onboarding')}
             checked={notifications.newCustomers}
             onChange={v => setN('newCustomers', v)}
           />
           <CheckboxRow
-            label="עיכול שבועי"
-            desc="סיכום שבועי של כל הפעילות בפורמט מקוצר"
+            label={tr('עיכול שבועי', 'Weekly digest')}
+            desc={tr('סיכום שבועי של כל הפעילות בפורמט מקוצר', 'Weekly summary of all activity in compact format')}
             checked={notifications.weeklyDigest}
             onChange={v => setN('weeklyDigest', v)}
           />
@@ -212,15 +214,15 @@ export default function IntegratorSettings() {
             <div className="w-8 h-8 rounded-lg bg-violet-600/15 flex items-center justify-center">
               <Settings2 className="w-4 h-4 text-violet-400" />
             </div>
-            <div className="text-sm font-semibold text-white">מערכת ו-API</div>
+            <div className="text-sm font-semibold text-white">{tr('מערכת ו-API', 'System & API')}</div>
           </div>
-          <SaveButton onSave={handleSystemSave} saved={systemSaved} />
+          <SaveButton onSave={handleSystemSave} saved={systemSaved} savedLabel={tr('נשמר', 'Saved')} saveLabel={tr('שמור שינויים', 'Save Changes')} />
         </div>
 
         <div className="space-y-4">
           {/* API Key */}
           <div>
-            <label className={labelClass}>מפתח API</label>
+            <label className={labelClass}>{tr('מפתח API', 'API Key')}</label>
             <div className="flex items-center gap-2">
               <input
                 readOnly
@@ -230,7 +232,7 @@ export default function IntegratorSettings() {
               <button
                 className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center hover:bg-white/[0.08] transition-colors flex-shrink-0"
                 onClick={() => setShowApiKey(v => !v)}
-                title={showApiKey ? 'הסתר' : 'הצג'}
+                title={showApiKey ? tr('הסתר', 'Hide') : tr('הצג', 'Show')}
               >
                 {showApiKey
                   ? <EyeOff className="w-4 h-4 text-slate-400" />
@@ -239,35 +241,35 @@ export default function IntegratorSettings() {
               </button>
             </div>
             <p className="text-[10px] text-slate-600 mt-1.5">
-              לא לשתף את המפתח. ניתן לחדש מהגדרות המערכת.
+              {tr('לא לשתף את המפתח. ניתן לחדש מהגדרות המערכת.', 'Do not share this key. It can be regenerated from system settings.')}
             </p>
           </div>
 
           {/* Webhook URL */}
           <div>
-            <label className={labelClass}>Webhook URL</label>
+            <label className={labelClass}>{tr('כתובת Webhook', 'Webhook URL')}</label>
             <input
               className={inputClass}
               type="url"
-              placeholder="https://hooks.yourcompany.com/events"
+              placeholder={tr('https://hooks.yourcompany.com/events', 'https://hooks.yourcompany.com/events')}
               value={webhookUrl}
               onChange={e => { setWebhookUrl(e.target.value); setSystemSaved(false) }}
             />
             <p className="text-[10px] text-slate-600 mt-1.5">
-              אירועים יישלחו ל-URL זה בזמן אמת (POST JSON).
+              {tr('אירועים יישלחו ל-URL זה בזמן אמת (POST JSON).', 'Events will be sent to this URL in real time (POST JSON).')}
             </p>
           </div>
         </div>
 
         {/* Advanced zone */}
         <div className="mt-5 pt-5 border-t border-white/[0.06]">
-          <div className="text-xs text-slate-500 mb-3">אזור מתקדם</div>
+          <div className="text-xs text-slate-500 mb-3">{tr('אזור מתקדם', 'Advanced zone')}</div>
           <div className="flex items-center gap-3">
             <button className="text-xs text-slate-400 hover:text-slate-200 border border-white/10 px-3 py-1.5 rounded-lg transition-colors">
-              חדש מפתח API
+              {tr('חדש מפתח API', 'Regenerate API key')}
             </button>
             <button className="text-xs text-red-400/70 hover:text-red-400 border border-red-500/20 px-3 py-1.5 rounded-lg transition-colors">
-              נתק חשבון
+              {tr('נתק חשבון', 'Disconnect account')}
             </button>
           </div>
         </div>
