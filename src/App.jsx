@@ -29,6 +29,7 @@ const IntegratorCustomerProfile = lazy(() => import('./pages/integrator/Customer
 const IntegratorOnboarding      = lazy(() => import('./pages/integrator/Onboarding'))
 const IntegratorReports         = lazy(() => import('./pages/integrator/Reports'))
 const IntegratorSettings        = lazy(() => import('./pages/integrator/Settings'))
+const IntegratorBilling         = lazy(() => import('./pages/integrator/Billing'))
 const OrdersList                = lazy(() => import('./pages/integrator/OrdersList'))
 const CreateOrder               = lazy(() => import('./pages/integrator/CreateOrder'))
 const OrderDetails              = lazy(() => import('./pages/integrator/OrderDetails'))
@@ -43,6 +44,9 @@ const CustomerAlerts    = lazy(() => import('./pages/customer/Alerts'))
 const CustomerLicenses  = lazy(() => import('./pages/customer/Licenses'))
 const CustomerReports   = lazy(() => import('./pages/customer/Reports'))
 const CustomerSettings  = lazy(() => import('./pages/customer/Settings'))
+const CustomerSecurity  = lazy(() => import('./pages/customer/Security'))
+const CustomerOnboarding = lazy(() => import('./pages/customer/Onboarding'))
+const CustomerBilling   = lazy(() => import('./pages/customer/Billing'))
 
 // Customer pages — Perception Point
 const PerceptionOverview = lazy(() => import('./pages/customer/PerceptionOverview'))
@@ -157,6 +161,7 @@ export default function App() {
                 <Route path="orders/:id"     element={<OrderDetails />} />
                 <Route path="orders/new"     element={<CreateOrder />} />
                 <Route path="onboarding"     element={<IntegratorOnboarding />} />
+                <Route path="billing"        element={<IntegratorBilling />} />
                 <Route path="reports"        element={<IntegratorReports />} />
                 <Route path="settings"       element={<IntegratorSettings />} />
               </Route>
@@ -168,6 +173,9 @@ export default function App() {
               >
                 <Route index element={<Navigate to="/customer/overview" replace />} />
                 <Route path="overview"    element={<CustomerOverviewRouter />} />
+                <Route path="security"    element={<CustomerSecurity />} />
+                <Route path="onboarding"  element={<CustomerOnboarding />} />
+                <Route path="billing"     element={<CustomerBilling />} />
                 <Route path="users"       element={<SaseOnlyRoute><CustomerUsers /></SaseOnlyRoute>} />
                 <Route path="devices"     element={<SaseOnlyRoute><CustomerDevices /></SaseOnlyRoute>} />
                 <Route path="sites"       element={<SaseOnlyRoute><CustomerSites /></SaseOnlyRoute>} />
