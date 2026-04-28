@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { useAuth } from './AuthContext'
 
 export const PRODUCTS = {
   all: {
@@ -48,7 +49,14 @@ export const PRODUCTS = {
 const ProductContext = createContext(null)
 
 export function ProductProvider({ children }) {
+  const { user } = useAuth()
   const [product, setProduct] = useState('perception')
+
+  // When the user changes (login/logout), reset product selection
+  useEffect(() => {
+    setProduct('perception')
+  }, [user?.id])
+
   return (
     <ProductContext.Provider value={{ product, setProduct, config: PRODUCTS[product] || PRODUCTS.all }}>
       {children}

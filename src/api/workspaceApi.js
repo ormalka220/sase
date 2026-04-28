@@ -1,95 +1,117 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
-
-async function request(path, { method = 'GET', body, role = 'integrator', userId = 'demo-user' } = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-role': role,
-      'x-user-id': userId,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  })
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }))
-    const normalizedError = typeof error.error === 'string'
-      ? error.error
-      : error?.error?.formErrors?.[0] || error?.error?.fieldErrors
-        ? 'נתונים לא תקינים בטופס'
-        : 'Request failed'
-    throw new Error(normalizedError)
-  }
-
-  return response.json()
-}
+import { request } from './client'
 
 export const workspaceApi = {
+  // ─── Customers ────────────────────────────────────────────────────────────
   createCustomer: (payload) =>
-    request('/api/customers', { method: 'POST', body: payload, role: 'integrator' }),
+    request('/api/customers', { method: 'POST', body: payload }),
 
-  getCustomers: (integratorId, role = 'integrator', distributorId) => {
-    const query = new URLSearchParams()
-    if (integratorId) query.set('integratorId', integratorId)
-    if (distributorId) query.set('distributorId', distributorId)
-    return request(`/api/customers?${query.toString()}`, { role })
+  getCustomers: ({ search, status, productCode, page, limit } = {}) => {
+    const q = new URLSearchParams()
+    if (search) q.set('search', search)
+    if (status) q.set('status', status)
+    if (productCode) q.set('productCode', productCode)
+    if (page) q.set('page', page)
+    if (limit) q.set('limit', limit)
+    return request(`/api/customers?${q}`)
   },
 
-  getOrders: ({ distributorId, integratorId, role }) => {
-    const query = new URLSearchParams()
-    if (distributorId) query.set('distributorId', distributorId)
-    if (integratorId) query.set('integratorId', integratorId)
-    return request(`/api/orders?${query.toString()}`, { role })
+  getCustomer: (id) => request(`/api/customers/${id}`),
+
+  updateCustomer: (id, data) =>
+    request(`/api/customers/${id}`, { method: 'PATCH', body: data }),
+
+  // ─── Orders ───────────────────────────────────────────────────────────────
+  getOrders: ({ status, customerId, productCode, page, limit } = {}) => {
+    const q = new URLSearchParams()
+    if (status) q.set('status', status)
+    if (customerId) q.set('customerId', customerId)
+    if (productCode) q.set('productCode', productCode)
+    if (page) q.set('page', page)
+    if (limit) q.set('limit', limit)
+    return request(`/api/orders?${q}`)
   },
 
-  createOrder: (payload) => request('/api/orders', { method: 'POST', body: payload, role: 'integrator' }),
+  getOrder: (id) => request(`/api/orders/${id}`),
 
-  payOrder: (orderId) => request(`/api/orders/${orderId}/pay`, { method: 'POST', role: 'integrator' }),
+  createOrder: (payload) =>
+    request('/api/orders', { method: 'POST', body: payload }),
 
-  approveOrder: (orderId) => request(`/api/orders/${orderId}/approve`, { method: 'POST', role: 'distributor' }),
+  createPPOrder: (payload) =>
+    request('/api/orders/pp', { method: 'POST', body: payload }),
+
+  payOrder: (orderId) =>
+    request(`/api/orders/${orderId}/pay`, { method: 'POST' }),
+
+  approveOrder: (orderId) =>
+    request(`/api/orders/${orderId}/approve`, { method: 'POST' }),
 
   rejectOrder: (orderId, reason) =>
-    request(`/api/orders/${orderId}/reject`, { method: 'POST', role: 'distributor', body: { reason } }),
+    request(`/api/orders/${orderId}/reject`, { method: 'POST', body: { reason } }),
 
-  provisionOrder: (orderId, role = 'distributor') =>
-    request(`/api/orders/${orderId}/provision`, { method: 'POST', role }),
+  cancelOrder: (orderId, reason) =>
+    request(`/api/orders/${orderId}/cancel`, { method: 'POST', body: { reason } }),
 
-  getOnboarding: (customerId, role = 'integrator') =>
-    request(`/api/workspace-security/customers/${customerId}/onboarding`, { role }),
+  provisionOrder: (orderId) =>
+    request(`/api/orders/${orderId}/provision`, { method: 'POST' }),
 
-  getIntegrationStatus: (customerId, role = 'integrator') =>
-    request(`/api/workspace-security/customers/${customerId}/integration-status`, { role }),
+  // ─── Workspace Security (Perception Point) ────────────────────────────────
+  getPpOverview: () => request('/api/workspace-security/overview'),
+
+  getPpCustomersList: ({ page, limit } = {}) => {
+    const q = new URLSearchParams()
+    if (page) q.set('page', page)
+    if (limit) q.set('limit', limit)
+    return request(`/api/workspace-security/customers-list?${q}`)
+  },
+
+  getPpCustomerProfile: (customerId) =>
+    request(`/api/workspace-security/customers/${customerId}/profile`),
+
+  getPpReportsSummary: () =>
+    request('/api/workspace-security/reports-summary'),
+
+  getPpAudit: (customerId, { page, limit } = {}) => {
+    const q = new URLSearchParams()
+    if (page) q.set('page', page)
+    if (limit) q.set('limit', limit)
+    return request(`/api/workspace-security/customers/${customerId}/audit?${q}`)
+  },
+
+  getOnboarding: (customerId) =>
+    request(`/api/workspace-security/customers/${customerId}/onboarding`),
+
+  getIntegrationStatus: (customerId) =>
+    request(`/api/workspace-security/customers/${customerId}/integration-status`),
 
   resendOnboardingEmail: (customerId) =>
-    request(`/api/workspace-security/customers/${customerId}/resend-onboarding-email`, { method: 'POST', role: 'integrator' }),
+    request(`/api/workspace-security/customers/${customerId}/resend-onboarding-email`, { method: 'POST' }),
 
   markIntegrationComplete: (customerId) =>
-    request(`/api/workspace-security/customers/${customerId}/mark-integration-complete`, { method: 'POST', role: 'distributor' }),
+    request(`/api/workspace-security/customers/${customerId}/mark-integration-complete`, { method: 'POST' }),
 
-  getPpOverview: ({ integratorId, distributorId, role = 'integrator' } = {}) => {
-    const query = new URLSearchParams()
-    if (integratorId) query.set('integratorId', integratorId)
-    if (distributorId) query.set('distributorId', distributorId)
-    return request(`/api/workspace-security/overview?${query.toString()}`, { role })
+  checkHealth: (customerId) =>
+    request(`/api/workspace-security/customers/${customerId}/health`),
+
+  // ─── Integrators / Distributors ───────────────────────────────────────────
+  getIntegrators: ({ page, limit } = {}) => {
+    const q = new URLSearchParams()
+    if (page) q.set('page', page)
+    if (limit) q.set('limit', limit)
+    return request(`/api/integrators?${q}`)
   },
 
-  getPpCustomersList: ({ integratorId, distributorId, role = 'integrator' } = {}) => {
-    const query = new URLSearchParams()
-    if (integratorId) query.set('integratorId', integratorId)
-    if (distributorId) query.set('distributorId', distributorId)
-    return request(`/api/workspace-security/customers-list?${query.toString()}`, { role })
+  getIntegrator: (id) => request(`/api/integrators/${id}`),
+
+  createIntegrator: (payload) =>
+    request('/api/integrators', { method: 'POST', body: payload }),
+
+  getDistributors: () => request('/api/distributors'),
+
+  getDistributor: (id) => request(`/api/distributors/${id}`),
+
+  // ─── Auth helpers ─────────────────────────────────────────────────────────
+  getDemoUsers: () => {
+    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
+    return fetch(`${base}/api/auth/demo-users`).then((r) => r.json())
   },
-
-  getPpCustomerProfile: (customerId, role = 'integrator') =>
-    request(`/api/workspace-security/customers/${customerId}/profile`, { role }),
-
-  getPpReportsSummary: ({ integratorId, distributorId, role = 'integrator' } = {}) => {
-    const query = new URLSearchParams()
-    if (integratorId) query.set('integratorId', integratorId)
-    if (distributorId) query.set('distributorId', distributorId)
-    return request(`/api/workspace-security/reports-summary?${query.toString()}`, { role })
-  },
-
-  getPpAudit: (customerId, role = 'integrator') =>
-    request(`/api/workspace-security/customers/${customerId}/audit`, { role }),
 }

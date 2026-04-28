@@ -7,6 +7,7 @@ import {
 import { CDataLogo, CDataMark } from '../components/Logos'
 import ProductSwitch from '../components/ProductSwitch'
 import { useProduct } from '../context/ProductContext'
+import { useAuth } from '../context/AuthContext'
 
 const navItems = [
   { icon: LayoutDashboard, labelHe: 'לוח בקרה',   labelEn: 'Dashboard',   path: '/distribution/dashboard' },
@@ -21,6 +22,10 @@ export default function DistributorLayout() {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { product, config } = useProduct()
+  const { user, logout } = useAuth()
+  const orgName = user?.organizationName || 'C-DATA Distribution'
+  const userName = user?.name || 'Admin'
+  const userInitials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const productLabel = product === 'all' ? 'All Products' : (product === 'perception' ? 'Perception Point' : 'Forti SASE')
   const appBackground = `
     radial-gradient(circle at 10% 22%, rgba(${config.glowRgb},0.17) 0%, transparent 34%),
@@ -57,7 +62,7 @@ export default function DistributorLayout() {
                 <Building2 className="w-3.5 h-3.5" style={{ color: config.navActiveColor }} />
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-white truncate">C-DATA Distribution</div>
+                <div className="text-xs font-semibold text-white truncate">{orgName}</div>
                 <div className="text-[10px] px-2 py-0.5 rounded-full inline-flex mt-0.5"
                   style={{ color: config.navActiveColor, background: `${config.primaryColor}1f`, border: `1px solid ${config.primaryColor}33` }}>
                   Distributor
@@ -100,7 +105,7 @@ export default function DistributorLayout() {
 
         {/* Bottom actions */}
         <div className="px-2 py-3 border-t border-white/5 space-y-0.5">
-          <button onClick={() => navigate('/')} className="nav-item w-full text-slate-600 hover:text-slate-400">
+          <button onClick={() => { logout(); navigate('/') }} className="nav-item w-full text-slate-600 hover:text-slate-400">
             <LogOut className="w-4 h-4 flex-shrink-0" />
             {sidebarOpen && <span className="text-xs">יציאה</span>}
           </button>
@@ -125,7 +130,7 @@ export default function DistributorLayout() {
         >
           <div>
             <div className="text-xs text-slate-500">Distribution Portal</div>
-            <div className="text-sm font-semibold text-white">C-DATA Distribution</div>
+            <div className="text-sm font-semibold text-white">{orgName}</div>
             <div className="text-[10px] mt-0.5" style={{ color: config.navActiveColor }}>Channel Management · Orders & Integrators</div>
           </div>
 
@@ -137,14 +142,14 @@ export default function DistributorLayout() {
             </button>
             <div className="flex items-center gap-2.5 pr-3 border-r border-white/5">
               <div className="text-right">
-                <div className="text-xs font-medium text-white">יונתן לוי</div>
-                <div className="text-[10px] text-slate-500">Distributor Admin</div>
+                <div className="text-xs font-medium text-white">{userName}</div>
+                <div className="text-[10px] text-slate-500">{user?.role?.replace(/_/g, ' ') || 'Distributor Admin'}</div>
               </div>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
                 style={{ background: `linear-gradient(135deg,${config.primaryColor},${config.darkColor})`, border: `1px solid ${config.primaryColor}66` }}
               >
-                יל
+                {userInitials}
               </div>
             </div>
           </div>
