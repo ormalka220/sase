@@ -1,179 +1,160 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
-  Home, Users, Monitor, Globe2, ShieldCheck, AlertTriangle,
-  Key, FileText, Settings2, Bell, LogOut, CheckCircle,
-  Mail, ShieldOff
+  LayoutDashboard, Shield, CheckSquare, AlertTriangle, BarChart3, FileText, Settings,
+  ChevronLeft, Bell, LogOut, Lock
 } from 'lucide-react'
-import { CDataLogo, CDataMark } from '../components/Logos'
-import ProductSwitch from '../components/ProductSwitch'
-import { useProduct } from '../context/ProductContext'
 import { useAuth } from '../context/AuthContext'
-import { useCustomerProducts } from '../context/CustomerProductContext'
-import { useLanguage } from '../context/LanguageContext'
 import LanguageSwitch from '../components/LanguageSwitch'
 
-const saseNavItems = [
-  { icon: Home,          label: 'Overview',  labelHe: 'סקירה כללית', path: '/customer/overview' },
-  { icon: Users,         label: 'Users',     labelHe: 'משתמשים',     path: '/customer/users' },
-  { icon: Monitor,       label: 'Devices',   labelHe: 'התקנים',      path: '/customer/devices' },
-  { icon: Globe2,        label: 'Sites',     labelHe: 'אתרים',       path: '/customer/sites' },
-  { icon: ShieldCheck,   label: 'Policies',  labelHe: 'מדיניות',     path: '/customer/policies' },
-  { icon: AlertTriangle, label: 'Alerts',    labelHe: 'התראות',      path: '/customer/alerts' },
-  { icon: Key,           label: 'Licenses',  labelHe: 'רישיונות',    path: '/customer/licenses' },
-  { icon: FileText,      label: 'Reports',   labelHe: 'דוחות',       path: '/customer/reports' },
-  { icon: Settings2,     label: 'Settings',  labelHe: 'הגדרות',      path: '/customer/settings' },
-]
-
-const ppNavItems = [
-  { icon: Home,        label: 'Overview',    labelHe: 'סקירה כללית', path: '/customer/overview' },
-  { icon: ShieldOff,   label: 'Threats',     labelHe: 'איומים',      path: '/customer/threats' },
-  { icon: FileText,    label: 'Reports',     labelHe: 'דוחות',       path: '/customer/reports' },
-  { icon: Settings2,   label: 'Settings',    labelHe: 'הגדרות',      path: '/customer/settings' },
-]
-
-const allNavItems = [
-  { icon: Home,          label: 'Overview',  labelHe: 'סקירה כללית', path: '/customer/overview' },
-  { icon: Users,         label: 'Users',     labelHe: 'משתמשים',     path: '/customer/users' },
-  { icon: Monitor,       label: 'Devices',   labelHe: 'התקנים',      path: '/customer/devices' },
-  { icon: Globe2,        label: 'Sites',     labelHe: 'אתרים',       path: '/customer/sites' },
-  { icon: ShieldCheck,   label: 'Policies',  labelHe: 'מדיניות',     path: '/customer/policies' },
-  { icon: AlertTriangle, label: 'Alerts',    labelHe: 'התראות',      path: '/customer/alerts' },
-  { icon: Key,           label: 'Licenses',  labelHe: 'רישיונות',    path: '/customer/licenses' },
-  { icon: ShieldOff,     label: 'Threats',   labelHe: 'איומים',      path: '/customer/threats' },
-  { icon: Mail,          label: 'Email Scan',labelHe: 'סריקת מייל',  path: '/customer/email-scan' },
-  { icon: FileText,      label: 'Reports',   labelHe: 'דוחות',       path: '/customer/reports' },
-  { icon: Settings2,     label: 'Settings',  labelHe: 'הגדרות',      path: '/customer/settings' },
+const navItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/customer/dashboard' },
+  { icon: Shield, label: 'Security', path: '/customer/security' },
+  { icon: CheckSquare, label: 'Protection', path: '/customer/protection' },
+  { icon: AlertTriangle, label: 'Onboarding', path: '/customer/onboarding' },
+  { icon: BarChart3, label: 'Threats', path: '/customer/threats' },
+  { icon: BarChart3, label: 'Reports', path: '/customer/reports' },
+  { icon: FileText, label: 'Billing', path: '/customer/billing' },
+  { icon: Settings, label: 'Settings', path: '/customer/settings' },
 ]
 
 export default function CustomerLayout() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { product, config } = useProduct()
   const { user, logout } = useAuth()
-  const { tr, isHebrew } = useLanguage()
-  const { hasSase, hasPerception } = useCustomerProducts()
-  const orgName = user?.organizationName || tr('לקוח', 'Customer')
-  const userName = user?.name || tr('משתמש', 'User')
-  const roleLabel = user?.role?.replace(/_/g, ' ') || tr('מנהל לקוח', 'Customer Admin')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  const customer = user?.customer || { name: 'Acme Corporation' }
+  const userName = user?.name || 'Admin User'
   const userInitials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
-  // Filter nav items based on owned products
-  const availableNavItems = allNavItems.filter((item) => {
-    const saseRoutes = ['/customer/users', '/customer/devices', '/customer/sites', '/customer/policies', '/customer/alerts', '/customer/licenses']
-    const ppRoutes = ['/customer/threats', '/customer/email-scan']
-    if (saseRoutes.includes(item.path) && !hasSase) return false
-    if (ppRoutes.includes(item.path) && !hasPerception) return false
-    return true
-  })
-  const navItems = product === 'all' ? availableNavItems : (product === 'perception' ? ppNavItems : saseNavItems)
-  const activeColor = config.navActiveColor
-  const activeBg = config.navActiveBg
-  const activeBorder = config.navActiveBorder
-
-  const productLabel = product === 'all' ? tr('כל המוצרים', 'All Products') : (product === 'perception' ? 'Perception Point' : 'Forti SASE')
-  const statusLabel = product === 'all' ? tr('אבטחה מאוחדת', 'Unified Security') : (product === 'perception' ? tr('דוא"ל מוגן', 'Protected Email') : tr('מוגן', 'Protected'))
-  const statusColor = product === 'all' ? '#A78BFA' : (product === 'perception' ? '#34D399' : '#10B981')
+  const appBackground = `
+    radial-gradient(circle at 20% 50%, rgba(44,106,138,0.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(44,106,138,0.08) 0%, transparent 40%),
+    linear-gradient(160deg, #07111E 0%, #0B1929 100%)
+  `
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'linear-gradient(160deg,#07111E 0%,#0B1929 100%)' }}>
+    <div className="min-h-screen bg-navy-900 flex" style={{ background: appBackground }}>
       {/* Sidebar */}
-      <aside className="w-60 flex-shrink-0 flex flex-col"
+      <aside
+        className={`${sidebarOpen ? 'w-64' : 'w-20'} flex-shrink-0 flex flex-col transition-all duration-300 relative z-20`}
         style={{
-          background: 'rgba(7,17,30,0.95)',
+          background: 'rgba(7,17,30,0.9)',
           backdropFilter: 'blur(20px)',
-          borderLeft: `1px solid ${config.primaryColor}14`,
-        }}>
-
-        {/* Logo */}
-        <div className="px-5 py-4 flex items-center gap-3 border-b border-white/5">
-          <CDataMark className="w-8 h-8 flex-shrink-0" />
-          <div>
-            <div className="font-black text-white text-sm">{tr('מרכז', 'Security')}<span style={{ color: activeColor }}>{tr(' אבטחה', ' Hub')}</span></div>
-            <div className="text-[10px]" style={{ color: config.primaryColor }}>{tr('פורטל לקוח', 'Customer Portal')} · {productLabel}</div>
-          </div>
+          borderRight: '1px solid rgba(44,106,138,0.12)'
+        }}
+      >
+        {/* Logo block */}
+        <div className="px-4 py-6 flex items-center gap-3 border-b border-white/5">
+          <Lock className="w-8 h-8 text-cdata-400 flex-shrink-0" />
+          {sidebarOpen && (
+            <div className="min-w-0 leading-tight">
+              <div className="font-black text-white text-sm tracking-tight">Perception</div>
+              <div className="text-[10px] font-medium text-cdata-400">Point</div>
+            </div>
+          )}
         </div>
 
-        {/* Company badge */}
-        <div className="mx-3 mt-3 mb-1 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0"
-              style={{ background: `${config.primaryColor}20`, border: `1px solid ${config.primaryColor}30`, color: activeColor }}>
-              {userInitials}
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-white">{orgName}</div>
-              <div className="flex items-center gap-1 text-[10px] font-medium" style={{ color: statusColor }}>
-                <CheckCircle className="w-2.5 h-2.5" />
-                {statusLabel}
+        {/* Entity badge */}
+        {sidebarOpen && (
+          <div className="mx-3 mt-4 mb-2 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-cdata-500/20 border border-cdata-500/30">
+                <Shield className="w-3.5 h-3.5 text-cdata-400" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-white truncate">{customer.name}</div>
+                <div className="text-[10px] px-2 py-0.5 rounded-full inline-flex mt-1 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  Protected
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Nav */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5">
-          {navItems.map(item => {
-            const active = location.pathname === item.path
+        {/* Navigation */}
+        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+          {navItems.map((item) => {
+            const active = location.pathname.startsWith(item.path)
+            const Icon = item.icon
             return (
-              <Link key={item.path} to={item.path}
+              <Link
+                key={item.path}
+                to={item.path}
                 className={`nav-item ${active ? 'active' : ''}`}
-                style={active ? { color: activeColor, background: activeBg, borderRight: `2px solid ${activeBorder}` } : {}}>
-                <item.icon className="w-4 h-4 flex-shrink-0" />
-                <div>
-                  <div className="text-xs">{isHebrew ? item.labelHe : item.label}</div>
-                </div>
+                style={active ? { 
+                  color: '#5B9BB8',
+                  background: 'rgba(44,106,138,0.1)',
+                  borderLeft: '2px solid #5B9BB8'
+                } : {}}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {sidebarOpen && <span className="text-sm font-medium">{item.label}</span>}
               </Link>
             )
           })}
         </nav>
 
-        {/* Branding strip */}
-        <div className="mx-3 mb-3 p-2.5 rounded-xl border border-white/5 bg-white/[0.02]">
-          <div className="text-[9px] text-slate-600 mb-1.5 text-center">{tr('מופעל על ידי', 'Powered by')}</div>
-          <CDataLogo className="h-5 mx-auto" />
-        </div>
-
-        <div className="px-2 py-3 border-t border-white/5">
-          <button onClick={() => { logout(); navigate('/') }} className="nav-item w-full text-slate-600 hover:text-slate-400">
+        {/* Bottom actions */}
+        <div className="px-2 py-4 border-t border-white/5 space-y-1">
+          <button 
+            onClick={() => { logout(); navigate('/customer/login') }}
+            className="nav-item w-full text-slate-600 hover:text-slate-400"
+          >
             <LogOut className="w-4 h-4 flex-shrink-0" />
-            <span className="text-xs">{tr('יציאה', 'Logout')}</span>
+            {sidebarOpen && <span className="text-sm">Logout</span>}
           </button>
         </div>
+
+        {/* Toggle button */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="absolute -right-3 top-20 w-6 h-6 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors"
+          style={{ background: '#0B1929', border: '1px solid rgba(44,106,138,0.2)' }}
+        >
+          <ChevronLeft className={`w-3 h-3 transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} />
+        </button>
       </aside>
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="px-6 py-3 flex items-center justify-between flex-shrink-0 border-b border-white/[0.06]"
-          style={{ background: 'rgba(7,17,30,0.8)', backdropFilter: 'blur(16px)' }}>
-          <div>
-            <div className="text-xs text-slate-500">{tr('ברוך הבא,', 'Welcome,')}</div>
-            <div className="text-sm font-semibold text-white">{orgName}</div>
+      {/* Main area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Topbar */}
+        <header
+          className="px-6 py-3 flex items-center justify-between flex-shrink-0 border-b border-white/[0.06]"
+          style={{
+            background: `linear-gradient(90deg, rgba(7,17,30,0.82), rgba(44,106,138,0.08))`,
+            backdropFilter: 'blur(16px)'
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <div>
+              <div className="text-xs text-slate-500">Protected with</div>
+              <div className="text-sm font-semibold text-white">Perception Point</div>
+            </div>
           </div>
+
           <div className="flex items-center gap-3">
-            <ProductSwitch />
             <LanguageSwitch />
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-              style={{ background: `${statusColor}12`, border: `1px solid ${statusColor}30`, color: statusColor }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse-slow inline-block" style={{ background: statusColor }} />
-              {statusLabel}
-            </span>
-            <button className="relative p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-colors">
+            <button className="relative p-2 rounded-lg hover:bg-white/5 transition-colors text-slate-500 hover:text-white">
               <Bell className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-2.5 pr-3 border-r border-white/5">
+            <div className="flex items-center gap-2.5 pl-3 border-l border-white/5">
               <div className="text-right">
                 <div className="text-xs font-medium text-white">{userName}</div>
-                <div className="text-[10px] text-slate-500">{roleLabel}</div>
+                <div className="text-[10px] text-slate-500">Organization Admin</div>
               </div>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
-                style={{ background: `linear-gradient(135deg,${config.primaryColor},${config.darkColor})`, border: `1px solid ${config.primaryColor}40` }}>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
+                style={{ background: 'linear-gradient(135deg, #2C6A8A, #1F5070)', border: '1px solid rgba(44,106,138,0.66)' }}
+              >
                 {userInitials}
               </div>
             </div>
           </div>
         </header>
 
+        {/* Main content */}
         <main className="flex-1 overflow-auto p-6">
           <Outlet />
         </main>
