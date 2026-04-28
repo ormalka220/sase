@@ -8,6 +8,8 @@ import {
 import { CDataLogo, CDataMark } from '../components/Logos'
 import ProductSwitch from '../components/ProductSwitch'
 import { useProduct } from '../context/ProductContext'
+import { useAuth } from '../context/AuthContext'
+import { useCustomerProducts } from '../context/CustomerProductContext'
 
 const saseNavItems = [
   { icon: Home,          label: 'Overview',  labelHe: 'סקירה כללית', path: '/customer/overview' },
@@ -46,8 +48,21 @@ export default function CustomerLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { product, config } = useProduct()
+  const { user, logout } = useAuth()
+  const { hasSase, hasPerception } = useCustomerProducts()
+  const orgName = user?.organizationName || 'Customer'
+  const userName = user?.name || 'User'
+  const userInitials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
-  const navItems = product === 'all' ? allNavItems : (product === 'perception' ? ppNavItems : saseNavItems)
+  // Filter nav items based on owned products
+  const availableNavItems = allNavItems.filter((item) => {
+    const saseRoutes = ['/customer/users', '/customer/devices', '/customer/sites', '/customer/policies', '/customer/alerts', '/customer/licenses']
+    const ppRoutes = ['/customer/threats', '/customer/email-scan']
+    if (saseRoutes.includes(item.path) && !hasSase) return false
+    if (ppRoutes.includes(item.path) && !hasPerception) return false
+    return true
+  })
+  const navItems = product === 'all' ? availableNavItems : (product === 'perception' ? ppNavItems : saseNavItems)
   const activeColor = config.navActiveColor
   const activeBg = config.navActiveBg
   const activeBorder = config.navActiveBorder
@@ -80,10 +95,10 @@ export default function CustomerLayout() {
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs flex-shrink-0"
               style={{ background: `${config.primaryColor}20`, border: `1px solid ${config.primaryColor}30`, color: activeColor }}>
-              TG
+              {userInitials}
             </div>
             <div>
-              <div className="text-xs font-semibold text-white">TechGlobal Ltd.</div>
+              <div className="text-xs font-semibold text-white">{orgName}</div>
               <div className="flex items-center gap-1 text-[10px] font-medium" style={{ color: statusColor }}>
                 <CheckCircle className="w-2.5 h-2.5" />
                 {statusLabel}
@@ -117,7 +132,7 @@ export default function CustomerLayout() {
         </div>
 
         <div className="px-2 py-3 border-t border-white/5">
-          <button onClick={() => navigate('/')} className="nav-item w-full text-slate-600 hover:text-slate-400">
+          <button onClick={() => { logout(); navigate('/') }} className="nav-item w-full text-slate-600 hover:text-slate-400">
             <LogOut className="w-4 h-4 flex-shrink-0" />
             <span className="text-xs">יציאה</span>
           </button>
@@ -130,7 +145,7 @@ export default function CustomerLayout() {
           style={{ background: 'rgba(7,17,30,0.8)', backdropFilter: 'blur(16px)' }}>
           <div>
             <div className="text-xs text-slate-500">ברוך הבא,</div>
-            <div className="text-sm font-semibold text-white">TechGlobal Ltd.</div>
+            <div className="text-sm font-semibold text-white">{orgName}</div>
           </div>
           <div className="flex items-center gap-3">
             <ProductSwitch />
@@ -144,12 +159,12 @@ export default function CustomerLayout() {
             </button>
             <div className="flex items-center gap-2.5 pr-3 border-r border-white/5">
               <div className="text-right">
-                <div className="text-xs font-medium text-white">דנה לוי</div>
-                <div className="text-[10px] text-slate-500">IT Manager</div>
+                <div className="text-xs font-medium text-white">{userName}</div>
+                <div className="text-[10px] text-slate-500">{user?.role?.replace(/_/g, ' ') || 'Customer Admin'}</div>
               </div>
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
                 style={{ background: `linear-gradient(135deg,${config.primaryColor},${config.darkColor})`, border: `1px solid ${config.primaryColor}40` }}>
-                דל
+                {userInitials}
               </div>
             </div>
           </div>

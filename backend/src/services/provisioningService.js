@@ -2,13 +2,15 @@ const { prisma } = require('../prisma')
 const { PerceptionPointClient } = require('./perceptionPointClient')
 const { EmailService } = require('./emailService')
 const { redact } = require('../utils/redact')
+const { auditLog } = require('../utils/audit')
 
 const ppClient = new PerceptionPointClient()
 const emailService = new EmailService()
 
-async function logProvision(orderId, customerId, step, status, reqPayload, resPayload, errorMessage) {
+async function logStep(jobId, orderId, customerId, step, status, reqPayload, resPayload, errorMessage) {
   await prisma.provisioningLog.create({
     data: {
+      jobId,
       orderId,
       customerId,
       step,
@@ -20,73 +22,102 @@ async function logProvision(orderId, customerId, step, status, reqPayload, resPa
   })
 }
 
-async function provisionWorkspaceOrder(order) {
-  if (order.productType !== 'WORKSPACE_SECURITY') return order
+async function provisionWorkspaceSecurity(job, order, customer) {
+  await prisma.provisioningJob.update({
+    where: { id: job.id },
+    data: { status: 'IN_PROGRESS', currentStep: 'create-organization', startedAt: new Date() },
+  })
+  await prisma.order.update({ where: { id: order.id }, data: { status: 'PROVISIONING' } })
 
-  const customer = await prisma.customer.findUnique({ where: { id: order.customerId } })
-  if (!customer) throw new Error('Customer not found for provisioning')
+  // Find or create the CustomerProduct record for workspace security
+  const wsProduct = await prisma.product.findUnique({ where: { code: 'WORKSPACE_SECURITY' } })
+  if (!wsProduct) throw new Error('WORKSPACE_SECURITY product not found in catalog')
 
+  // Derive seats from the first matching order item (or fallback to legacy field)
+  const wsItem = order.items?.find((i) => i.productId === wsProduct.id)
+  const seats = wsItem?.seats || order.seats || 1
+
+  // Check for existing tenant (idempotent re-provision)
   const existingTenant = await prisma.workspaceSecurityTenant.findUnique({ where: { customerId: customer.id } })
-  if (existingTenant && existingTenant.ppOrgId) {
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { status: 'PROVISIONED', provisionedAt: new Date() },
+  if (existingTenant?.ppOrgId) {
+    await prisma.order.update({ where: { id: order.id }, data: { status: 'ACTIVE', provisionedAt: new Date() } })
+    await prisma.provisioningJob.update({
+      where: { id: job.id },
+      data: { status: 'SUCCESS', currentStep: 'already-provisioned', completedAt: new Date() },
     })
     return existingTenant
   }
 
-  await prisma.order.update({ where: { id: order.id }, data: { status: 'PROVISIONING' } })
-
   try {
+    // Step 1: create organization
     const org = await ppClient.createOrganization({
       companyName: customer.companyName,
       domain: customer.domain,
-      seats: order.seats,
+      seats,
       adminEmail: customer.adminEmail,
     })
-    await logProvision(order.id, customer.id, 'create-organization', 'SUCCESS', { companyName: customer.companyName }, org)
+    await logStep(job.id, order.id, customer.id, 'create-organization', 'SUCCESS', { companyName: customer.companyName }, org)
+    await prisma.provisioningJob.update({ where: { id: job.id }, data: { currentStep: 'invite-admin' } })
 
+    // Step 2: invite admin
     const admin = await ppClient.inviteAdmin({
       orgId: org.orgId,
       adminName: customer.adminName,
       adminEmail: customer.adminEmail,
     })
-    await logProvision(order.id, customer.id, 'invite-admin', 'SUCCESS', { orgId: org.orgId, adminEmail: customer.adminEmail }, admin)
+    await logStep(job.id, order.id, customer.id, 'invite-admin', 'SUCCESS', { orgId: org.orgId, adminEmail: customer.adminEmail }, admin)
+    await prisma.provisioningJob.update({ where: { id: job.id }, data: { currentStep: 'assign-seats' } })
 
-    const seats = await ppClient.assignSeats({ orgId: org.orgId, seats: order.seats })
-    await logProvision(order.id, customer.id, 'assign-seats', 'SUCCESS', { seats: order.seats }, seats)
+    // Step 3: assign seats (no-op in mock — done at org creation)
+    const seatsResult = await ppClient.assignSeats({ orgId: org.orgId, seats })
+    await logStep(job.id, order.id, customer.id, 'assign-seats', 'SUCCESS', { seats }, seatsResult)
 
-    const tenant = await prisma.workspaceSecurityTenant.upsert({
+    // Step 4: upsert CustomerProduct + WorkspaceSecurityTenant
+    const customerProduct = await prisma.customerProduct.upsert({
+      where: { customerId_productId: { customerId: customer.id, productId: wsProduct.id } },
+      create: {
+        customerId: customer.id,
+        productId: wsProduct.id,
+        planId: wsItem?.planId || null,
+        seats,
+        status: 'ACTIVE',
+        activatedAt: new Date(),
+      },
+      update: { seats, status: 'ACTIVE', activatedAt: new Date() },
+    })
+
+    await prisma.workspaceSecurityTenant.upsert({
       where: { customerId: customer.id },
       create: {
+        customerProductId: customerProduct.id,
         customerId: customer.id,
         ppOrgId: org.orgId,
         ppOrgName: org.orgName,
         ppRegion: org.region,
         ppAdminUserId: admin.userId,
-        seats: order.seats,
+        seats,
         organizationStatus: 'ORGANIZATION_CREATED',
         adminStatus: 'ADMIN_INVITED',
-        emailServiceStatus: 'EMAIL_SERVICE_NOT_CONNECTED',
-        microsoftConsentStatus: 'MICROSOFT_CONSENT_PENDING',
-        dnsMailFlowStatus: 'DNS_MAIL_FLOW_PENDING',
-        protectionStatus: 'INTEGRATION_IN_PROGRESS',
       },
       update: {
+        customerProductId: customerProduct.id,
         ppOrgId: org.orgId,
         ppOrgName: org.orgName,
         ppRegion: org.region,
         ppAdminUserId: admin.userId,
-        seats: order.seats,
+        seats,
       },
     })
 
+    // Step 5: mark order active & send emails
     await prisma.order.update({
       where: { id: order.id },
-      data: {
-        status: 'ONBOARDING_PENDING',
-        provisionedAt: new Date(),
-      },
+      data: { status: 'ACTIVE', provisionedAt: new Date() },
+    })
+
+    await prisma.provisioningJob.update({
+      where: { id: job.id },
+      data: { status: 'SUCCESS', currentStep: 'completed', completedAt: new Date() },
     })
 
     await emailService.sendCustomerOnboardingEmail({
@@ -96,15 +127,83 @@ async function provisionWorkspaceOrder(order) {
     await emailService.sendIntegratorProvisionedEmail({ integratorId: order.integratorId, orderId: order.id })
     await emailService.sendDistributorProvisionedEmail({ distributorId: order.distributorId, orderId: order.id })
 
-    return tenant
-  } catch (error) {
-    await logProvision(order.id, customer.id, 'provision-failed', 'FAILED', {}, {}, error.message)
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { status: 'FAILED', failureReason: error.message },
+    await auditLog({
+      entityType: 'ORDER',
+      entityId: order.id,
+      action: 'PROVISIONED',
+      actor: { userId: 'system', role: 'SYSTEM' },
+      newState: { status: 'ACTIVE', ppOrgId: org.orgId },
+      orderId: order.id,
+      customerId: customer.id,
     })
-    throw error
+
+    return await prisma.workspaceSecurityTenant.findUnique({ where: { customerId: customer.id } })
+  } catch (err) {
+    await logStep(job.id, order.id, customer.id, 'provision-failed', 'FAILED', {}, {}, err.message)
+    await prisma.order.update({ where: { id: order.id }, data: { status: 'FAILED', failureReason: err.message } })
+    await prisma.provisioningJob.update({
+      where: { id: job.id },
+      data: { status: 'FAILED', errorMessage: err.message, completedAt: new Date() },
+    })
+    await auditLog({
+      entityType: 'ORDER',
+      entityId: order.id,
+      action: 'PROVISION_FAILED',
+      actor: { userId: 'system', role: 'SYSTEM' },
+      newState: { status: 'FAILED', error: err.message },
+      orderId: order.id,
+      customerId: customer.id,
+    })
+    throw err
   }
 }
 
-module.exports = { provisionWorkspaceOrder }
+// Entry point: dispatches provisioning by product type
+async function provisionOrder(order) {
+  const customer = await prisma.customer.findUnique({ where: { id: order.customerId } })
+  if (!customer) throw new Error('Customer not found for provisioning')
+
+  // Resolve product types from order items
+  const items = order.items || (await prisma.orderItem.findMany({ where: { orderId: order.id }, include: { product: true } }))
+  const productCodes = [...new Set(items.map((i) => i.product?.code).filter(Boolean))]
+
+  for (const code of productCodes) {
+    const job = await prisma.provisioningJob.create({
+      data: {
+        orderId: order.id,
+        customerId: customer.id,
+        productType: code,
+        status: 'PENDING',
+      },
+    })
+
+    if (code === 'WORKSPACE_SECURITY') {
+      await provisionWorkspaceSecurity(job, { ...order, items }, customer)
+    } else if (code === 'FORTISASE') {
+      // FortiSASE provisioning is deferred to real API integration
+      await prisma.provisioningJob.update({
+        where: { id: job.id },
+        data: { status: 'SUCCESS', currentStep: 'mock-placeholder', completedAt: new Date() },
+      })
+
+      const saseProduct = await prisma.product.findUnique({ where: { code: 'FORTISASE' } })
+      if (saseProduct) {
+        const saseItem = items.find((i) => i.product?.code === 'FORTISASE')
+        await prisma.customerProduct.upsert({
+          where: { customerId_productId: { customerId: customer.id, productId: saseProduct.id } },
+          create: { customerId: customer.id, productId: saseProduct.id, seats: saseItem?.seats || 0, status: 'ACTIVE', activatedAt: new Date() },
+          update: { seats: saseItem?.seats || 0, status: 'ACTIVE', activatedAt: new Date() },
+        })
+      }
+
+      await prisma.order.update({ where: { id: order.id }, data: { status: 'ACTIVE', provisionedAt: new Date() } })
+    }
+  }
+}
+
+// Kept for backward compat with old route code
+async function provisionWorkspaceOrder(order) {
+  return provisionOrder(order)
+}
+
+module.exports = { provisionOrder, provisionWorkspaceOrder }

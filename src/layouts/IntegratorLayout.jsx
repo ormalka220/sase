@@ -7,6 +7,7 @@ import {
 import { CDataLogo, CDataMark } from '../components/Logos'
 import ProductSwitch from '../components/ProductSwitch'
 import { useProduct } from '../context/ProductContext'
+import { useAuth } from '../context/AuthContext'
 
 const navItems = [
   { icon: LayoutDashboard, labelHe: 'לוח בקרה', path: '/integrator/dashboard' },
@@ -22,6 +23,10 @@ export default function IntegratorLayout() {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { product, config } = useProduct()
+  const { user, logout } = useAuth()
+  const orgName = user?.organizationName || 'Integrator'
+  const userName = user?.name || 'Admin'
+  const userInitials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const showOnboarding = product === 'perception' || product === 'all'
   const productLabel = product === 'all' ? 'כל המוצרים' : (product === 'perception' ? 'Perception Point' : 'FortiSASE')
   const appBackground = `
@@ -59,7 +64,7 @@ export default function IntegratorLayout() {
                 <Users className="w-3.5 h-3.5" style={{ color: config.navActiveColor }} />
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-white truncate">NetSec Solutions</div>
+                <div className="text-xs font-semibold text-white truncate">{orgName}</div>
                 <span
                   className="text-[10px] px-2 py-0.5 rounded-full inline-flex mt-0.5"
                   style={{ color: config.navActiveColor, background: `${config.primaryColor}1f`, border: `1px solid ${config.primaryColor}33` }}
@@ -135,7 +140,7 @@ export default function IntegratorLayout() {
 
         {/* Bottom actions */}
         <div className="px-2 py-3 border-t border-white/5 space-y-0.5">
-          <button onClick={() => navigate('/')} className="nav-item w-full text-slate-600 hover:text-slate-400">
+          <button onClick={() => { logout(); navigate('/') }} className="nav-item w-full text-slate-600 hover:text-slate-400">
             <LogOut className="w-4 h-4 flex-shrink-0" />
             {sidebarOpen && <span className="text-xs">יציאה</span>}
           </button>
@@ -160,7 +165,7 @@ export default function IntegratorLayout() {
         >
           <div>
             <div className="text-xs text-slate-500">פורטל אינטגרטור</div>
-            <div className="text-sm font-semibold text-white">NetSec Solutions</div>
+            <div className="text-sm font-semibold text-white">{orgName}</div>
             <div className="text-[10px] mt-0.5" style={{ color: config.navActiveColor }}>ניהול לקוחות · הזמנות ואונבורדינג</div>
           </div>
 
@@ -173,21 +178,21 @@ export default function IntegratorLayout() {
             <div className="flex items-center gap-2.5 pr-3 border-r border-white/5">
               <div className="text-right">
                 <div className="flex items-center justify-end gap-1.5">
-                  <div className="text-xs font-medium text-white">אלון כהן</div>
+                  <div className="text-xs font-medium text-white">{userName}</div>
                   <span
                     className="text-[9px] px-1.5 py-0.5 rounded-full"
                     style={{ color: config.navActiveColor, background: `${config.primaryColor}1f`, border: `1px solid ${config.primaryColor}33` }}
                   >
-                    CDATA
+                    {user?.orgType || 'INTEGRATOR'}
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-500">מנהל אינטגרטור</div>
+                <div className="text-[10px] text-slate-500">{user?.role?.replace(/_/g, ' ') || 'Integrator Admin'}</div>
               </div>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
                 style={{ background: `linear-gradient(135deg,${config.primaryColor},${config.darkColor})`, border: `1px solid ${config.primaryColor}66` }}
               >
-                אכ
+                {userInitials}
               </div>
             </div>
           </div>

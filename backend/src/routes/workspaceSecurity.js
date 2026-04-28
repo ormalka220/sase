@@ -1,18 +1,29 @@
 const express = require('express')
 const { prisma } = require('../prisma')
-const { requireRole } = require('../middleware/auth')
-const { resolveIntegrationStatus, mapState } = require('../services/integrationStatusService')
-const { EmailService } = require('../services/emailService')
+const { requireRole, requireMinRole, ROLES } = require('../middleware/auth')
+const { mapState } = require('../services/integrationStatusService')
+const {
+  resendOnboardingEmail,
+  checkHealth,
+  checkIntegrationStatus,
+  markManualComplete,
+} = require('../services/workspaceSecurityService')
+const { NotFoundError, ForbiddenError } = require('../utils/errors')
+const { parsePagination, paginatedResponse } = require('../utils/pagination')
 
 const router = express.Router()
-const emailService = new EmailService()
-const PP_PRODUCT = 'WORKSPACE_SECURITY'
 
-function mapCustomerHealth(tenant) {
-  if (!tenant) return { complianceScore: 0, alertsCount: 0 }
-  if (tenant.protectionStatus === 'PROTECTION_ACTIVE') return { complianceScore: 96, alertsCount: 0 }
-  if (tenant.emailServiceStatus === 'EMAIL_SERVICE_CONFIGURATION_STARTED') return { complianceScore: 74, alertsCount: 1 }
-  return { complianceScore: 42, alertsCount: 2 }
+const PP_CODE = 'WORKSPACE_SECURITY'
+
+// ─── Ownership helpers ────────────────────────────────────────────────────────
+
+function buildCustomerWhere(auth) {
+  const { role, orgId } = auth
+  if (role === ROLES.SUPER_ADMIN) return {}
+  if (role === ROLES.DISTRIBUTOR_ADMIN) return { distributorId: orgId }
+  if (role === ROLES.INTEGRATOR_ADMIN) return { integratorId: orgId }
+  if (role === ROLES.CUSTOMER_ADMIN || role === ROLES.CUSTOMER_VIEWER) return { id: orgId }
+  throw new ForbiddenError()
 }
 
 function mapOnboardingStage(tenant) {
@@ -23,262 +34,343 @@ function mapOnboardingStage(tenant) {
   return 'created'
 }
 
-router.get('/overview', requireRole(['integrator', 'distributor', 'customer']), async (req, res) => {
-  const { integratorId, distributorId } = req.query
-  const where = {
-    integratorId: integratorId || undefined,
-    distributorId: distributorId || undefined,
-  }
-  const customers = await prisma.customer.findMany({
-    where,
-    include: { workspaceTenant: true, orders: { where: { productType: PP_PRODUCT } } },
-    orderBy: { createdAt: 'desc' },
-  })
-  const orders = await prisma.order.findMany({
-    where: {
-      productType: PP_PRODUCT,
-      integratorId: integratorId || undefined,
-      distributorId: distributorId || undefined,
-    },
-  })
+function mapHealth(tenant) {
+  if (!tenant) return { complianceScore: 0, alertsCount: 0 }
+  if (tenant.protectionStatus === 'PROTECTION_ACTIVE') return { complianceScore: 96, alertsCount: 0 }
+  if (tenant.emailServiceStatus === 'EMAIL_SERVICE_CONFIGURATION_STARTED') return { complianceScore: 74, alertsCount: 1 }
+  return { complianceScore: 42, alertsCount: 2 }
+}
 
-  const totalCustomers = customers.length
-  const activeCustomers = customers.filter((c) => c.workspaceTenant?.protectionStatus === 'PROTECTION_ACTIVE').length
-  const pendingOnboarding = customers.filter((c) => c.workspaceTenant?.protectionStatus !== 'PROTECTION_ACTIVE').length
-  const openAlerts = customers.reduce((sum, c) => sum + mapCustomerHealth(c.workspaceTenant).alertsCount, 0)
+// ─── Overview ─────────────────────────────────────────────────────────────────
 
-  const monthMap = new Map()
-  const now = new Date()
-  for (let i = 5; i >= 0; i -= 1) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    monthMap.set(key, { month: d.toLocaleDateString('en-US', { month: 'short' }), customers: 0 })
-  }
-  customers.forEach((c) => {
-    const d = new Date(c.createdAt)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    if (monthMap.has(key)) {
-      monthMap.get(key).customers += 1
-    }
-  })
-
-  return res.json({
-    kpis: { totalCustomers, activeCustomers, pendingOnboarding, openAlerts, totalOrders: orders.length },
-    growthData: Array.from(monthMap.values()),
-    customerHealth: customers.slice(0, 8).map((c) => ({
-      customerId: c.id,
-      companyName: c.companyName,
-      onboardingStatus: mapOnboardingStage(c.workspaceTenant),
-      ...mapCustomerHealth(c.workspaceTenant),
-    })),
-    recentCustomers: customers.slice(0, 5).map((c) => ({
-      id: c.id,
-      companyName: c.companyName,
-      domain: c.domain,
-      onboardingStatus: mapOnboardingStage(c.workspaceTenant),
-      complianceScore: mapCustomerHealth(c.workspaceTenant).complianceScore,
-    })),
-  })
-})
-
-router.get('/customers-list', requireRole(['integrator', 'distributor']), async (req, res) => {
-  const { integratorId, distributorId } = req.query
-  const customers = await prisma.customer.findMany({
-    where: {
-      integratorId: integratorId || undefined,
-      distributorId: distributorId || undefined,
-    },
-    include: {
-      workspaceTenant: true,
-      orders: {
-        where: { productType: PP_PRODUCT },
-        orderBy: { createdAt: 'desc' },
+router.get('/overview', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, next) => {
+  try {
+    const where = buildCustomerWhere(req.auth)
+    const customers = await prisma.customer.findMany({
+      where,
+      include: {
+        products: { where: { product: { code: PP_CODE } }, include: { workspaceTenant: true } },
+        orders: { where: { items: { some: { product: { code: PP_CODE } } } } },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
-  return res.json(customers.map((c) => ({
-    id: c.id,
-    companyName: c.companyName,
-    domain: c.domain,
-    adminEmail: c.adminEmail,
-    status: c.status,
-    onboardingStatus: mapOnboardingStage(c.workspaceTenant),
-    seats: c.workspaceTenant?.seats || c.orders[0]?.seats || 0,
-    productType: PP_PRODUCT,
-    ppOrgId: c.workspaceTenant?.ppOrgId || null,
-    ppAdminUserId: c.workspaceTenant?.ppAdminUserId || null,
-    complianceScore: mapCustomerHealth(c.workspaceTenant).complianceScore,
-    alertsCount: mapCustomerHealth(c.workspaceTenant).alertsCount,
-    createdAt: c.createdAt,
-  })))
+      orderBy: { createdAt: 'desc' },
+    })
+
+    const ppCustomers = customers.filter((c) => c.products.length > 0)
+    const totalCustomers = ppCustomers.length
+    const activeCustomers = ppCustomers.filter(
+      (c) => c.products[0]?.workspaceTenant?.protectionStatus === 'PROTECTION_ACTIVE'
+    ).length
+
+    const monthMap = new Map()
+    const now = new Date()
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      monthMap.set(key, { month: d.toLocaleDateString('en-US', { month: 'short' }), customers: 0 })
+    }
+    ppCustomers.forEach((c) => {
+      const d = new Date(c.createdAt)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      if (monthMap.has(key)) monthMap.get(key).customers++
+    })
+
+    return res.json({
+      kpis: {
+        totalCustomers,
+        activeCustomers,
+        pendingOnboarding: totalCustomers - activeCustomers,
+        openAlerts: ppCustomers.reduce((s, c) => s + mapHealth(c.products[0]?.workspaceTenant).alertsCount, 0),
+        totalOrders: ppCustomers.reduce((s, c) => s + c.orders.length, 0),
+      },
+      growthData: Array.from(monthMap.values()),
+      customerHealth: ppCustomers.slice(0, 8).map((c) => ({
+        customerId: c.id,
+        companyName: c.companyName,
+        onboardingStatus: mapOnboardingStage(c.products[0]?.workspaceTenant),
+        ...mapHealth(c.products[0]?.workspaceTenant),
+      })),
+      recentCustomers: ppCustomers.slice(0, 5).map((c) => ({
+        id: c.id,
+        companyName: c.companyName,
+        domain: c.domain,
+        onboardingStatus: mapOnboardingStage(c.products[0]?.workspaceTenant),
+        complianceScore: mapHealth(c.products[0]?.workspaceTenant).complianceScore,
+      })),
+    })
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.get('/customers/:customerId/profile', requireRole(['integrator', 'distributor', 'customer']), async (req, res) => {
-  const customer = await prisma.customer.findUnique({
-    where: { id: req.params.customerId },
-    include: {
-      workspaceTenant: true,
-      orders: { where: { productType: PP_PRODUCT }, orderBy: { createdAt: 'desc' } },
-      integrationStatusLog: { orderBy: { createdAt: 'desc' }, take: 20 },
-    },
-  })
-  if (!customer) return res.status(404).json({ error: 'Customer not found' })
+// ─── Customers list ───────────────────────────────────────────────────────────
 
-  const tenant = customer.workspaceTenant
-  const health = mapCustomerHealth(tenant)
-  return res.json({
-    customer: {
-      id: customer.id,
-      companyName: customer.companyName,
-      domain: customer.domain,
-      adminName: customer.adminName,
-      adminEmail: customer.adminEmail,
-      adminPhone: customer.adminPhone,
-      status: customer.status,
-      onboardingStatus: mapOnboardingStage(tenant),
-      createdAt: customer.createdAt,
-    },
-    tenant,
-    metrics: {
-      protectedUsers: tenant?.seats || 0,
-      complianceScore: health.complianceScore,
-      alertsCount: health.alertsCount,
-      activeOrders: customer.orders.length,
-    },
-    recentActivity: customer.integrationStatusLog.map((l) => ({
-      id: l.id,
-      status: l.status,
-      source: l.source,
-      details: l.details,
-      createdAt: l.createdAt,
-    })),
-  })
+router.get('/customers-list', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
+  try {
+    const where = buildCustomerWhere(req.auth)
+    const { page, limit, skip } = parsePagination(req.query)
+
+    const [customers, total] = await Promise.all([
+      prisma.customer.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          products: {
+            where: { product: { code: PP_CODE } },
+            include: { workspaceTenant: true, product: { select: { code: true } } },
+          },
+          orders: {
+            where: { items: { some: { product: { code: PP_CODE } } } },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            include: { items: { include: { product: { select: { code: true } } } } },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.customer.count({ where }),
+    ])
+
+    const data = customers.map((c) => {
+      const cp = c.products[0]
+      const tenant = cp?.workspaceTenant
+      return {
+        id: c.id,
+        companyName: c.companyName,
+        domain: c.domain,
+        adminEmail: c.adminEmail,
+        status: c.status,
+        onboardingStatus: mapOnboardingStage(tenant),
+        hasWorkspaceSecurity: Boolean(cp),
+        seats: cp?.seats || 0,
+        ppOrgId: tenant?.ppOrgId || null,
+        ppAdminUserId: tenant?.ppAdminUserId || null,
+        complianceScore: mapHealth(tenant).complianceScore,
+        alertsCount: mapHealth(tenant).alertsCount,
+        createdAt: c.createdAt,
+      }
+    })
+
+    return res.json(paginatedResponse(data, total, { page, limit }))
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.get('/reports-summary', requireRole(['integrator', 'distributor']), async (req, res) => {
-  const { integratorId, distributorId } = req.query
-  const orders = await prisma.order.findMany({
-    where: {
-      productType: PP_PRODUCT,
-      integratorId: integratorId || undefined,
-      distributorId: distributorId || undefined,
-    },
-    orderBy: { createdAt: 'desc' },
-  })
-  const customers = await prisma.customer.findMany({
-    where: {
-      integratorId: integratorId || undefined,
-      distributorId: distributorId || undefined,
-    },
-    include: { workspaceTenant: true },
-  })
-  const activeCount = customers.filter((c) => c.workspaceTenant?.protectionStatus === 'PROTECTION_ACTIVE').length
-  return res.json({
-    totals: {
-      customers: customers.length,
-      activeCustomers: activeCount,
-      orders: orders.length,
-      provisionedOrders: orders.filter((o) => ['PROVISIONED', 'ONBOARDING_PENDING', 'ACTIVE'].includes(o.status)).length,
-    },
-    recentOrders: orders.slice(0, 10),
-    downloadableReports: [
-      { id: 'security-monthly', title: 'Perception Point Monthly Security Summary', type: 'PDF' },
-      { id: 'onboarding-status', title: 'Perception Point Onboarding Status', type: 'CSV' },
-    ],
-  })
+// ─── Customer profile ─────────────────────────────────────────────────────────
+
+router.get('/customers/:customerId/profile', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, next) => {
+  try {
+    const where = buildCustomerWhere(req.auth)
+    const customer = await prisma.customer.findFirst({
+      where: { id: req.params.customerId, ...where },
+      include: {
+        products: {
+          where: { product: { code: PP_CODE } },
+          include: { workspaceTenant: true },
+        },
+        orders: {
+          where: { items: { some: { product: { code: PP_CODE } } } },
+          orderBy: { createdAt: 'desc' },
+          include: { items: { include: { product: { select: { code: true, name: true } } } } },
+        },
+        integrationStatusLog: { orderBy: { createdAt: 'desc' }, take: 20 },
+      },
+    })
+    if (!customer) throw new NotFoundError('Customer')
+
+    const cp = customer.products[0]
+    const tenant = cp?.workspaceTenant
+    const health = mapHealth(tenant)
+
+    return res.json({
+      customer: {
+        id: customer.id,
+        companyName: customer.companyName,
+        domain: customer.domain,
+        adminName: customer.adminName,
+        adminEmail: customer.adminEmail,
+        adminPhone: customer.adminPhone,
+        status: customer.status,
+        onboardingStatus: mapOnboardingStage(tenant),
+        createdAt: customer.createdAt,
+      },
+      tenant,
+      customerProduct: cp ? { id: cp.id, seats: cp.seats, status: cp.status, activatedAt: cp.activatedAt } : null,
+      metrics: {
+        protectedUsers: cp?.seats || 0,
+        complianceScore: health.complianceScore,
+        alertsCount: health.alertsCount,
+        activeOrders: customer.orders.length,
+      },
+      recentActivity: customer.integrationStatusLog.map((l) => ({
+        id: l.id,
+        status: l.status,
+        source: l.source,
+        details: l.details,
+        createdAt: l.createdAt,
+      })),
+    })
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.get('/customers/:customerId/audit', requireRole(['integrator', 'distributor', 'customer']), async (req, res) => {
-  const logs = await prisma.integrationStatusLog.findMany({
-    where: { customerId: req.params.customerId },
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  })
-  return res.json({
-    customerId: req.params.customerId,
-    entries: logs.map((l) => ({
-      id: l.id,
-      status: l.status,
-      source: l.source,
-      details: l.details,
-      createdBy: l.createdBy,
-      createdAt: l.createdAt,
-    })),
-  })
+// ─── Reports ──────────────────────────────────────────────────────────────────
+
+router.get('/reports-summary', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
+  try {
+    const where = buildCustomerWhere(req.auth)
+    const customers = await prisma.customer.findMany({
+      where,
+      include: {
+        products: { where: { product: { code: PP_CODE } }, include: { workspaceTenant: true } },
+        orders: { where: { items: { some: { product: { code: PP_CODE } } } }, orderBy: { createdAt: 'desc' } },
+      },
+    })
+
+    const ppCustomers = customers.filter((c) => c.products.length > 0)
+    const allOrders = ppCustomers.flatMap((c) => c.orders)
+
+    return res.json({
+      totals: {
+        customers: ppCustomers.length,
+        activeCustomers: ppCustomers.filter((c) => c.products[0]?.workspaceTenant?.protectionStatus === 'PROTECTION_ACTIVE').length,
+        orders: allOrders.length,
+        activeOrders: allOrders.filter((o) => o.status === 'ACTIVE').length,
+      },
+      recentOrders: allOrders.slice(0, 10),
+      downloadableReports: [
+        { id: 'security-monthly', title: 'Perception Point Monthly Security Summary', type: 'PDF' },
+        { id: 'onboarding-status', title: 'Perception Point Onboarding Status', type: 'CSV' },
+      ],
+    })
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.get('/customers/:customerId/onboarding', requireRole(['integrator', 'customer', 'distributor']), async (req, res) => {
-  const tenant = await prisma.workspaceSecurityTenant.findUnique({
-    where: { customerId: req.params.customerId },
-    include: { customer: true },
-  })
-  if (!tenant) return res.status(404).json({ error: 'Workspace tenant not found' })
-  const state = mapState(tenant)
+// ─── Audit logs ───────────────────────────────────────────────────────────────
 
-  return res.json({
-    title: 'Connect Microsoft 365 to activate Perception Point',
-    subtitle:
-      'Your organization has been created. For now, onboarding is completed only in the Perception Point portal through the Email Service Configuration wizard.',
-    checklist: {
-      organizationCreated: tenant.organizationStatus === 'ORGANIZATION_CREATED',
-      adminUserInvited: tenant.adminStatus !== 'ADMIN_NOT_INVITED',
-      licensesAssigned: tenant.seats > 0,
-      emailServiceNotConnected: tenant.emailServiceStatus === 'EMAIL_SERVICE_NOT_CONNECTED',
-      microsoftConsentPending: tenant.microsoftConsentStatus === 'MICROSOFT_CONSENT_PENDING',
-      dnsMailFlowPending: tenant.dnsMailFlowStatus === 'DNS_MAIL_FLOW_PENDING',
-      protectionActive: tenant.protectionStatus === 'PROTECTION_ACTIVE',
-    },
-    state: state.state,
-    message: state.message,
-    portalUrl: process.env.PP_PORTAL_URL || 'https://app.perception-point.io',
-    deepLinkUrl: tenant.ppOrgId ? `${process.env.PP_PORTAL_URL || 'https://app.perception-point.io'}/org/${tenant.ppOrgId}` : null,
-  })
+router.get('/customers/:customerId/audit', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, next) => {
+  try {
+    const where = buildCustomerWhere(req.auth)
+    const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
+    if (!customer) throw new NotFoundError('Customer')
+
+    const { page, limit, skip } = parsePagination(req.query)
+    const [logs, total] = await Promise.all([
+      prisma.integrationStatusLog.findMany({
+        where: { customerId: customer.id },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.integrationStatusLog.count({ where: { customerId: customer.id } }),
+    ])
+
+    return res.json(paginatedResponse(logs, total, { page, limit }))
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.get('/customers/:customerId/integration-status', requireRole(['integrator', 'customer', 'distributor']), async (req, res) => {
-  const status = await resolveIntegrationStatus(req.params.customerId)
-  return res.json(status)
+// ─── Onboarding state ─────────────────────────────────────────────────────────
+
+router.get('/customers/:customerId/onboarding', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, next) => {
+  try {
+    const where = buildCustomerWhere(req.auth)
+    const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
+    if (!customer) throw new NotFoundError('Customer')
+
+    const tenant = await prisma.workspaceSecurityTenant.findUnique({
+      where: { customerId: customer.id },
+    })
+    if (!tenant) return res.status(404).json({ error: 'Workspace tenant not found' })
+
+    const state = mapState(tenant)
+    const ppPortal = process.env.PP_PORTAL_URL || 'https://app.perception-point.io'
+
+    return res.json({
+      title: 'Connect Microsoft 365 to activate Perception Point',
+      subtitle: 'Your organization has been created. Onboarding is completed in the Perception Point portal through the Email Service Configuration wizard.',
+      checklist: {
+        organizationCreated: tenant.organizationStatus === 'ORGANIZATION_CREATED',
+        adminUserInvited: tenant.adminStatus !== 'ADMIN_NOT_INVITED',
+        licensesAssigned: tenant.seats > 0,
+        emailServiceConnected: tenant.emailServiceStatus === 'EMAIL_SERVICE_CONFIGURATION_STARTED',
+        microsoftConsentCompleted: tenant.microsoftConsentStatus === 'MICROSOFT_CONSENT_COMPLETED',
+        dnsMailFlowCompleted: tenant.dnsMailFlowStatus === 'DNS_MAIL_FLOW_COMPLETED',
+        protectionActive: tenant.protectionStatus === 'PROTECTION_ACTIVE',
+      },
+      state: state.state,
+      message: state.message,
+      portalUrl: ppPortal,
+      deepLinkUrl: tenant.ppOrgId ? `${ppPortal}/org/${tenant.ppOrgId}` : null,
+    })
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.post('/customers/:customerId/resend-onboarding-email', requireRole(['integrator', 'distributor']), async (req, res) => {
-  const customer = await prisma.customer.findUnique({ where: { id: req.params.customerId } })
-  if (!customer) return res.status(404).json({ error: 'Customer not found' })
-  const result = await emailService.sendCustomerOnboardingEmail({
-    customer,
-    portalUrl: process.env.PP_PORTAL_URL || 'https://app.perception-point.io',
-  })
-  return res.json({ sent: true, result })
+// ─── Integration status ───────────────────────────────────────────────────────
+
+router.get('/customers/:customerId/integration-status', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, next) => {
+  try {
+    const where = buildCustomerWhere(req.auth)
+    const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
+    if (!customer) throw new NotFoundError('Customer')
+
+    const status = await checkIntegrationStatus({ customerId: customer.id, actor: req.auth })
+    return res.json(status)
+  } catch (err) {
+    next(err)
+  }
 })
 
-router.post('/customers/:customerId/mark-integration-complete', requireRole(['distributor', 'integrator']), async (req, res) => {
-  const tenant = await prisma.workspaceSecurityTenant.findUnique({ where: { customerId: req.params.customerId } })
-  if (!tenant) return res.status(404).json({ error: 'Workspace tenant not found' })
-  const updated = await prisma.workspaceSecurityTenant.update({
-    where: { customerId: req.params.customerId },
-    data: {
-      protectionStatus: 'PROTECTION_ACTIVE',
-      microsoftConsentStatus: 'MICROSOFT_CONSENT_COMPLETED',
-      dnsMailFlowStatus: 'DNS_MAIL_FLOW_COMPLETED',
-      emailServiceStatus: 'EMAIL_SERVICE_CONFIGURATION_STARTED',
-      manualCompletedBy: req.auth.userId,
-      manualCompletedAt: new Date(),
-      lastSuccessfulScanAt: tenant.lastSuccessfulScanAt || new Date(),
-      lastHealthCheckAt: tenant.lastHealthCheckAt || new Date(),
-    },
-  })
+// ─── Resend onboarding email ──────────────────────────────────────────────────
 
-  await prisma.integrationStatusLog.create({
-    data: {
-      customerId: req.params.customerId,
-      status: 'active',
-      source: 'MANUAL',
-      details: 'Marked complete by admin fallback',
-      createdBy: req.auth.userId,
-    },
-  })
+router.post('/customers/:customerId/resend-onboarding-email', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
+  try {
+    const where = buildCustomerWhere(req.auth)
+    const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
+    if (!customer) throw new NotFoundError('Customer')
 
-  return res.json({ success: true, tenant: updated })
+    const result = await resendOnboardingEmail({ customerId: customer.id, actor: req.auth })
+    return res.json(result)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── Mark integration complete (admin override) ───────────────────────────────
+
+router.post('/customers/:customerId/mark-integration-complete', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
+  try {
+    const where = buildCustomerWhere(req.auth)
+    const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
+    if (!customer) throw new NotFoundError('Customer')
+
+    const result = await markManualComplete({ customerId: customer.id, actor: req.auth })
+    return res.json(result)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── Health check ─────────────────────────────────────────────────────────────
+
+router.get('/customers/:customerId/health', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
+  try {
+    const where = buildCustomerWhere(req.auth)
+    const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
+    if (!customer) throw new NotFoundError('Customer')
+
+    const result = await checkHealth({ customerId: customer.id })
+    return res.json(result)
+  } catch (err) {
+    next(err)
+  }
 })
 
 module.exports = router
