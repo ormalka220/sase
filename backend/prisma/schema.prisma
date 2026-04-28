@@ -34,6 +34,11 @@ enum BillingType {
   MONTHLY_INVOICE
 }
 
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
 enum OrderStatus {
   DRAFT
   SUBMITTED
@@ -45,6 +50,14 @@ enum OrderStatus {
   ACTIVE
   FAILED
   CANCELLED
+  // PP-specific approval & provisioning lifecycle
+  PENDING_CDATA_APPROVAL
+  APPROVED_BY_CDATA
+  REJECTED_BY_CDATA
+  PROVISIONING_STARTED
+  PP_ORG_CREATED
+  PP_ADMIN_INVITED
+  READY_FOR_ONBOARDING
 }
 
 enum PaymentStatus {
@@ -265,20 +278,23 @@ model Order {
   distributorId  String
   integratorId   String
   customerId     String
-  billingType    BillingType
-  totalAmount    Float
-  currency       String         @default("USD")
-  status         OrderStatus    @default(DRAFT)
-  paymentStatus  PaymentStatus  @default(PENDING)
-  approvalStatus ApprovalStatus @default(PENDING)
-  notes          String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  submittedAt    DateTime?
-  approvedAt     DateTime?
-  provisionedAt  DateTime?
-  rejectedAt     DateTime?
-  failureReason  String?
+  billingType            BillingType
+  billingCycle           BillingCycle?
+  totalAmount            Float
+  currency               String         @default("USD")
+  status                 OrderStatus    @default(DRAFT)
+  paymentStatus          PaymentStatus  @default(PENDING)
+  approvalStatus         ApprovalStatus @default(PENDING)
+  notes                  String?
+  estimatedUsers         Int?
+  actualProtectedUsers   Int?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  submittedAt            DateTime?
+  approvedAt             DateTime?
+  provisionedAt          DateTime?
+  rejectedAt             DateTime?
+  failureReason          String?
 
   customer     Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
   distributor  Distributor @relation(fields: [distributorId], references: [id])

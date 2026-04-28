@@ -36,6 +36,9 @@ export const workspaceApi = {
   createOrder: (payload) =>
     request('/api/orders', { method: 'POST', body: payload }),
 
+  createPPOrder: (payload) =>
+    request('/api/orders/pp', { method: 'POST', body: payload }),
+
   payOrder: (orderId) =>
     request(`/api/orders/${orderId}/pay`, { method: 'POST' }),
 

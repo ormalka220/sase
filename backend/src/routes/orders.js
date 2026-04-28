@@ -19,8 +19,10 @@ const orderItemSchema = z.object({
 const createOrderSchema = z.object({
   customerId: z.string(),
   billingType: z.enum(['CREDIT_CARD', 'MONTHLY_INVOICE']),
+  billingCycle: z.enum(['MONTHLY', 'ANNUAL']).optional(),
   currency: z.string().default('USD'),
   notes: z.string().optional(),
+  estimatedUsers: z.number().int().positive().optional(),
   items: z.array(orderItemSchema).min(1, 'At least one item is required'),
 })
 
@@ -74,12 +76,29 @@ router.post('/', requireRole([ROLES.INTEGRATOR_ADMIN, ROLES.SUPER_ADMIN]), async
     const products = await prisma.product.findMany({ where: { id: { in: productIds } } })
     if (products.length !== new Set(productIds).size) throw new ValidationError('One or more products not found')
 
+    // Detect if this is a PP-only (Workspace Security) order
+    const productCodeMap = Object.fromEntries(products.map((p) => [p.id, p.code]))
+    const allCodes = payload.items.map((i) => productCodeMap[i.productId])
+    const isPPOrder = allCodes.length > 0 && allCodes.every((c) => c === 'WORKSPACE_SECURITY')
+
+    // PP orders must use invoice billing (no credit card)
+    if (isPPOrder && payload.billingType === 'CREDIT_CARD') {
+      throw new ValidationError('Perception Point orders are invoice-only. Use billingType MONTHLY_INVOICE.')
+    }
+
     // Compute total
     const totalAmount = payload.items.reduce((sum, item) => sum + item.seats * item.unitPrice, 0)
 
-    // Initial status depends on billing type
+    // Initial status depends on billing type and product
     const isCreditCard = payload.billingType === 'CREDIT_CARD'
-    const status = isCreditCard ? 'PAYMENT_PENDING' : 'PENDING_APPROVAL'
+    let status
+    if (isPPOrder) {
+      status = 'PENDING_CDATA_APPROVAL'
+    } else if (isCreditCard) {
+      status = 'PAYMENT_PENDING'
+    } else {
+      status = 'PENDING_APPROVAL'
+    }
     const paymentStatus = isCreditCard ? 'PENDING' : 'NOT_REQUIRED'
     const approvalStatus = isCreditCard ? 'NOT_REQUIRED' : 'PENDING'
 
@@ -89,12 +108,14 @@ router.post('/', requireRole([ROLES.INTEGRATOR_ADMIN, ROLES.SUPER_ADMIN]), async
         integratorId: customer.integratorId,
         customerId: customer.id,
         billingType: payload.billingType,
+        billingCycle: payload.billingCycle || null,
         totalAmount,
         currency: payload.currency,
         status,
         paymentStatus,
         approvalStatus,
         notes: payload.notes,
+        estimatedUsers: payload.estimatedUsers || null,
         submittedAt: new Date(),
         items: {
           create: payload.items.map((item) => ({
@@ -131,6 +152,91 @@ router.post('/', requireRole([ROLES.INTEGRATOR_ADMIN, ROLES.SUPER_ADMIN]), async
     })
 
     await logOrderTransition(order, 'CREATED', req.auth, { status, totalAmount })
+
+    return res.status(201).json(order)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST /api/orders/pp  — simplified PP order creation endpoint
+router.post('/pp', requireRole([ROLES.INTEGRATOR_ADMIN, ROLES.SUPER_ADMIN]), async (req, res, next) => {
+  try {
+    const ppOrderSchema = z.object({
+      customerId: z.string(),
+      packageCode: z.enum(['ADES', 'EMSB']),
+      billingCycle: z.enum(['MONTHLY', 'ANNUAL']).default('MONTHLY'),
+      estimatedUsers: z.number().int().positive(),
+      pricePerMailbox: z.number().positive(),
+      notes: z.string().optional(),
+      currency: z.string().default('USD'),
+    })
+
+    const parsed = ppOrderSchema.safeParse(req.body)
+    if (!parsed.success) throw new ValidationError('Invalid input', parsed.error.flatten())
+
+    const { role, orgId } = req.auth
+    const payload = parsed.data
+
+    const customer = await prisma.customer.findUnique({ where: { id: payload.customerId } })
+    if (!customer) throw new NotFoundError('Customer')
+    if (role === ROLES.INTEGRATOR_ADMIN && customer.integratorId !== orgId) throw new ForbiddenError()
+
+    const wsProduct = await prisma.product.findUnique({ where: { code: 'WORKSPACE_SECURITY' } })
+    if (!wsProduct) throw new NotFoundError('WORKSPACE_SECURITY product not in catalog')
+
+    const seats = payload.estimatedUsers
+    const unitPrice = payload.pricePerMailbox
+    const totalAmount = seats * unitPrice
+
+    const order = await prisma.order.create({
+      data: {
+        distributorId: customer.distributorId,
+        integratorId: customer.integratorId,
+        customerId: customer.id,
+        billingType: 'MONTHLY_INVOICE',
+        billingCycle: payload.billingCycle,
+        totalAmount,
+        currency: payload.currency,
+        status: 'PENDING_CDATA_APPROVAL',
+        paymentStatus: 'NOT_REQUIRED',
+        approvalStatus: 'PENDING',
+        notes: payload.notes || null,
+        estimatedUsers: seats,
+        submittedAt: new Date(),
+        items: {
+          create: [{
+            productId: wsProduct.id,
+            seats,
+            unitPrice,
+            totalPrice: totalAmount,
+          }],
+        },
+        invoice: {
+          create: {
+            invoiceNumber: `INV-PP-${Date.now()}`,
+            amount: totalAmount,
+            currency: payload.currency,
+            status: 'PENDING',
+            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          },
+        },
+      },
+      include: {
+        items: { include: { product: { select: { code: true, name: true } } } },
+        invoice: true,
+      },
+    })
+
+    await auditLog({
+      entityType: 'ORDER',
+      entityId: order.id,
+      action: 'PP_ORDER_CREATED',
+      actor: req.auth,
+      newState: { status: 'PENDING_CDATA_APPROVAL', estimatedUsers: seats, packageCode: payload.packageCode },
+      orderId: order.id,
+      customerId: customer.id,
+    })
 
     return res.status(201).json(order)
   } catch (err) {
@@ -226,24 +332,32 @@ router.post('/:id/pay', requireRole([ROLES.INTEGRATOR_ADMIN, ROLES.SUPER_ADMIN])
   }
 })
 
-// POST /api/orders/:id/approve  (distributor approves invoice order)
+// POST /api/orders/:id/approve  (distributor/CData approves invoice order)
 router.post('/:id/approve', requireRole([ROLES.DISTRIBUTOR_ADMIN, ROLES.SUPER_ADMIN]), async (req, res, next) => {
   try {
     const order = await getOwnedOrder(req.params.id, req.auth)
     if (order.billingType !== 'MONTHLY_INVOICE') throw new AppError('Not an invoice order', 400)
-    if (order.approvalStatus !== 'PENDING') throw new AppError(`Order is already ${order.approvalStatus}`, 400)
+
+    const approvableStatuses = ['PENDING_APPROVAL', 'PENDING_CDATA_APPROVAL']
+    if (!approvableStatuses.includes(order.status)) {
+      throw new AppError(`Order status '${order.status}' is not pending approval`, 400)
+    }
+
+    // PP orders transition to APPROVED_BY_CDATA; legacy orders to APPROVED
+    const isPPOrder = order.status === 'PENDING_CDATA_APPROVAL'
+    const newStatus = isPPOrder ? 'APPROVED_BY_CDATA' : 'APPROVED'
 
     const updated = await prisma.order.update({
       where: { id: order.id },
       data: {
         approvalStatus: 'APPROVED',
-        status: 'APPROVED',
+        status: newStatus,
         approvedAt: new Date(),
         invoice: { update: { status: 'PAID', paidAt: new Date() } },
       },
     })
 
-    await logOrderTransition(order, 'APPROVED', req.auth, { status: 'APPROVED' })
+    await logOrderTransition(order, 'APPROVED', req.auth, { status: newStatus })
 
     await provisionOrder(updated)
 
@@ -260,11 +374,15 @@ router.post('/:id/reject', requireRole([ROLES.DISTRIBUTOR_ADMIN, ROLES.SUPER_ADM
     const order = await getOwnedOrder(req.params.id, req.auth)
     const reason = req.body?.reason || 'Rejected by distributor'
 
+    // PP orders get REJECTED_BY_CDATA; legacy orders get CANCELLED
+    const isPPOrder = order.status === 'PENDING_CDATA_APPROVAL'
+    const newStatus = isPPOrder ? 'REJECTED_BY_CDATA' : 'CANCELLED'
+
     const updated = await prisma.order.update({
       where: { id: order.id },
       data: {
         approvalStatus: 'REJECTED',
-        status: 'CANCELLED',
+        status: newStatus,
         rejectedAt: new Date(),
         failureReason: reason,
       },
@@ -282,7 +400,7 @@ router.post('/:id/reject', requireRole([ROLES.DISTRIBUTOR_ADMIN, ROLES.SUPER_ADM
 router.post('/:id/cancel', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
   try {
     const order = await getOwnedOrder(req.params.id, req.auth)
-    const cancelable = ['DRAFT', 'PAYMENT_PENDING', 'PENDING_APPROVAL']
+    const cancelable = ['DRAFT', 'PAYMENT_PENDING', 'PENDING_APPROVAL', 'PENDING_CDATA_APPROVAL']
     if (!cancelable.includes(order.status)) throw new AppError(`Cannot cancel order in status ${order.status}`, 400)
 
     const updated = await prisma.order.update({

@@ -27,7 +27,9 @@ async function provisionWorkspaceSecurity(job, order, customer) {
     where: { id: job.id },
     data: { status: 'IN_PROGRESS', currentStep: 'create-organization', startedAt: new Date() },
   })
-  await prisma.order.update({ where: { id: order.id }, data: { status: 'PROVISIONING' } })
+  // PP orders step through granular statuses; legacy orders use PROVISIONING
+  const isPPFlow = ['APPROVED_BY_CDATA', 'PROVISIONING_STARTED', 'PP_ORG_CREATED', 'PP_ADMIN_INVITED'].includes(order.status)
+  await prisma.order.update({ where: { id: order.id }, data: { status: isPPFlow ? 'PROVISIONING_STARTED' : 'PROVISIONING' } })
 
   // Find or create the CustomerProduct record for workspace security
   const wsProduct = await prisma.product.findUnique({ where: { code: 'WORKSPACE_SECURITY' } })
@@ -58,6 +60,10 @@ async function provisionWorkspaceSecurity(job, order, customer) {
     })
     await logStep(job.id, order.id, customer.id, 'create-organization', 'SUCCESS', { companyName: customer.companyName }, org)
     await prisma.provisioningJob.update({ where: { id: job.id }, data: { currentStep: 'invite-admin' } })
+    // Advance PP order status
+    if (isPPFlow) {
+      await prisma.order.update({ where: { id: order.id }, data: { status: 'PP_ORG_CREATED' } })
+    }
 
     // Step 2: invite admin
     const admin = await ppClient.inviteAdmin({
@@ -67,6 +73,10 @@ async function provisionWorkspaceSecurity(job, order, customer) {
     })
     await logStep(job.id, order.id, customer.id, 'invite-admin', 'SUCCESS', { orgId: org.orgId, adminEmail: customer.adminEmail }, admin)
     await prisma.provisioningJob.update({ where: { id: job.id }, data: { currentStep: 'assign-seats' } })
+    // Advance PP order status
+    if (isPPFlow) {
+      await prisma.order.update({ where: { id: order.id }, data: { status: 'PP_ADMIN_INVITED' } })
+    }
 
     // Step 3: assign seats (no-op in mock — done at org creation)
     const seatsResult = await ppClient.assignSeats({ orgId: org.orgId, seats })
@@ -109,10 +119,11 @@ async function provisionWorkspaceSecurity(job, order, customer) {
       },
     })
 
-    // Step 5: mark order active & send emails
+    // Step 5: for PP orders mark READY_FOR_ONBOARDING (customer still needs to connect), else ACTIVE
+    const finalStatus = isPPFlow ? 'READY_FOR_ONBOARDING' : 'ACTIVE'
     await prisma.order.update({
       where: { id: order.id },
-      data: { status: 'ACTIVE', provisionedAt: new Date() },
+      data: { status: finalStatus, provisionedAt: new Date() },
     })
 
     await prisma.provisioningJob.update({
