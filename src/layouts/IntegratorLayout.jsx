@@ -4,8 +4,10 @@ import {
   LayoutDashboard, Users, ShoppingCart, FileText, CheckSquare, BarChart3, Settings,
   ChevronLeft, Bell, LogOut, Menu, X, Zap
 } from 'lucide-react'
-import { CDataLogo } from '../components/Logos'
+import { CDataLogo, CDataMark } from '../components/Logos'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
+import ProductSwitch from '../components/ProductSwitch'
 import LanguageSwitch from '../components/LanguageSwitch'
 
 const navItems = [
@@ -22,6 +24,7 @@ export default function IntegratorLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { tr } = useLanguage()
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const integrator = user?.integrator || { name: 'Channel Partner Inc' }
@@ -47,7 +50,7 @@ export default function IntegratorLayout() {
       >
         {/* Logo block */}
         <div className="px-4 py-6 flex items-center gap-3 border-b border-white/5">
-          <Zap className="w-8 h-8 text-cdata-400 flex-shrink-0" />
+          <CDataMark className={sidebarOpen ? 'w-8 h-8 flex-shrink-0' : 'w-8 h-8'} />
           {sidebarOpen && (
             <div className="min-w-0 leading-tight">
               <div className="font-black text-white text-sm tracking-tight">Integrator</div>
@@ -96,6 +99,14 @@ export default function IntegratorLayout() {
           })}
         </nav>
 
+        {/* Branding strip */}
+        {sidebarOpen && (
+          <div className="mx-3 mb-3 p-2.5 rounded-xl border border-white/5 bg-white/[0.02]">
+            <div className="text-[9px] text-slate-600 mb-1.5 text-center">Powered by</div>
+            <CDataLogo className="h-5 mx-auto" />
+          </div>
+        )}
+
         {/* Bottom actions */}
         <div className="px-2 py-4 border-t border-white/5 space-y-1">
           <button 
@@ -143,6 +154,7 @@ export default function IntegratorLayout() {
           </div>
 
           <div className="flex items-center gap-3">
+            <ProductSwitch />
             <LanguageSwitch />
             <button className="relative p-2 rounded-lg hover:bg-white/5 transition-colors text-slate-500 hover:text-white">
               <Bell className="w-4 h-4" />

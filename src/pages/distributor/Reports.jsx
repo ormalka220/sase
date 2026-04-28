@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart3, Download, Banknote, Users, TrendingUp, AlertTriangle } from 'lucide-react'
-import { 
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, 
-  CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
+import {
+  AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis,
+  CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts'
 import { integrators, customers, getOrdersByDistributor } from '../../data/mockData'
 import PageHeader from '../../components/distribution/PageHeader'
@@ -106,7 +106,7 @@ export default function Reports() {
               <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 12 }} />
               <YAxis hide />
               <Tooltip contentStyle={{ background: '#0B1929', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 8 }} />
-              <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fill="url(#grad1)" />
             </AreaChart>
           </ResponsiveContainer>
         </motion.div>

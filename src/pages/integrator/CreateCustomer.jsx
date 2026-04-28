@@ -29,7 +29,6 @@ export default function CreateCustomer() {
     adminEmail: '',
     phone: '',
     contactName: '',
-    requiresStaticIp: false,
     notes: '',
   })
 
@@ -108,33 +107,6 @@ export default function CreateCustomer() {
           <option value="Other">{tr('אחר', 'Other')}</option>
         </select>
       </div>
-      {/* Static IP */}
-      <div className="col-span-2">
-        <button
-          type="button"
-          onClick={() => set('requiresStaticIp', !form.requiresStaticIp)}
-          className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all text-right ${
-            form.requiresStaticIp
-              ? 'border-cdata-500/50 bg-cdata-500/10 ring-1 ring-cdata-500/20'
-              : 'border-white/10 hover:border-white/20 bg-white/[0.02]'
-          }`}
-        >
-          <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 border transition-all ${
-            form.requiresStaticIp ? 'bg-cdata-500 border-cdata-500' : 'border-white/20 bg-white/5'
-          }`}>
-            {form.requiresStaticIp && <CheckCircle className="w-3.5 h-3.5 text-white" />}
-          </div>
-          <div>
-            <div className={`text-sm font-medium ${form.requiresStaticIp ? 'text-white' : 'text-slate-400'}`}>
-              {tr('נדרשת כתובת IP קבועה (Static IP)', 'Static IP address is required')}
-            </div>
-            <div className="text-[11px] text-slate-600 mt-0.5">
-              {tr('הסביבה תקבל כתובת IP ייעודית וקבועה לצורך חיבורי VPN וזיהוי', 'The environment will receive a dedicated static IP for VPN connections and identification')}
-            </div>
-          </div>
-        </button>
-      </div>
-
     </div>
   )
 
@@ -179,8 +151,9 @@ export default function CreateCustomer() {
       { label: tr('חברה', 'Company'), value: form.companyName || '—' },
       { label: tr('דומיין', 'Domain'), value: form.domain || '—' },
       { label: tr('אדמין', 'Admin'), value: form.adminEmail || '—' },
+      { label: tr('איש קשר', 'Contact'), value: form.contactName || '—' },
+      { label: tr('טלפון', 'Phone'), value: form.phone || '—' },
       { label: tr('מדינה', 'Country'), value: form.country },
-      { label: tr('כתובת IP קבועה', 'Static IP'), value: form.requiresStaticIp ? tr('כן — נדרשת IP קבועה', 'Yes — static IP required') : tr('לא', 'No') },
     ]
     return (
       <div className="space-y-4">
@@ -233,7 +206,6 @@ export default function CreateCustomer() {
     setForm({
       companyName: '', domain: '', country: 'Israel',
       adminEmail: '', phone: '', contactName: '',
-      requiresStaticIp: false,
       notes: '',
     })
     setStep(0)
