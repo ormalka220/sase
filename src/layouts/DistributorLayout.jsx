@@ -40,11 +40,16 @@ export default function DistributorLayout() {
   `
 
   return (
-    <div className="min-h-screen bg-navy-900 flex" style={{ background: appBackground }}>
+    <div className="min-h-screen bg-navy-900 flex rtl:flex-row-reverse" style={{ background: appBackground }}>
       {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? 'w-60' : 'w-16'} flex-shrink-0 flex flex-col transition-all duration-300 relative z-20 sidebar-cdata`}
-        style={{ background: 'rgba(7,17,30,0.9)', backdropFilter: 'blur(20px)', borderLeft: `1px solid ${config.primaryColor}20` }}
+        style={{
+          background: 'rgba(7,17,30,0.9)',
+          backdropFilter: 'blur(20px)',
+          borderLeft: isHebrew ? 'none' : `1px solid ${config.primaryColor}20`,
+          borderRight: isHebrew ? `1px solid ${config.primaryColor}20` : 'none'
+        }}
       >
         {/* Logo block */}
         <div className="px-4 py-4 flex items-center gap-3 border-b border-white/5">
@@ -87,7 +92,12 @@ export default function DistributorLayout() {
                 key={item.path}
                 to={item.path}
                 className={`nav-item ${active ? 'active' : ''}`}
-                style={active ? { color: config.navActiveColor, background: config.navActiveBg, borderRight: `2px solid ${config.navActiveBorder}` } : {}}
+                style={active ? {
+                  color: config.navActiveColor,
+                  background: config.navActiveBg,
+                  borderRight: isHebrew ? 'none' : `2px solid ${config.navActiveBorder}`,
+                  borderLeft: isHebrew ? `2px solid ${config.navActiveBorder}` : 'none'
+                } : {}}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
                 {sidebarOpen && (
@@ -119,7 +129,7 @@ export default function DistributorLayout() {
         {/* Toggle button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute -left-3 top-14 w-6 h-6 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors"
+          className={`absolute top-14 w-6 h-6 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors ${isHebrew ? '-right-3 rtl:rotate-180' : '-left-3'}`}
           style={{ background: '#0B1929', border: '1px solid rgba(44,106,138,0.2)' }}
         >
           <ChevronLeft className={`w-3 h-3 transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} />
