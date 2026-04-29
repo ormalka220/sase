@@ -144,7 +144,7 @@ export default function IntegratorCustomersList() {
           <div>{tr('פורטל', 'Portal')}</div>
           <div>{tr('סטטוס', 'Status')}</div>
           <div>{tr('קליטה', 'Onboarding')}</div>
-          <div>PP Admin</div>
+          <div>{tr('PP Admin (מייל)', 'PP Admin (Email)')}</div>
           <div>{tr('בריאות / פעולות', 'Health / Actions')}</div>
         </div>
 
@@ -201,7 +201,7 @@ export default function IntegratorCustomersList() {
                   <span className="badge-steel">{c.onboardingStatus}</span>
                 </div>
 
-                <div className="text-xs text-slate-400 truncate">{c.ppAdminUserId || '—'}</div>
+                <div className="text-xs text-slate-400 truncate">{c.adminEmail || '—'}</div>
 
                 {/* Health + action */}
                 <div className="flex items-center justify-between">

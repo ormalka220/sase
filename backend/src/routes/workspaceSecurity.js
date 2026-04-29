@@ -53,7 +53,8 @@ async function buildCustomerWhere(auth) {
   throw new ForbiddenError()
 }
 
-function mapOnboardingStage(tenant) {
+function mapOnboardingStage(tenant, latestOrderStatus) {
+  if (latestOrderStatus === 'PENDING_SPOTNET_ASSIGNMENT') return 'bundle_assignment_pending'
   if (!tenant) return 'created'
   if (tenant.protectionStatus === 'PROTECTION_ACTIVE') return 'active'
   if (tenant.microsoftConsentStatus === 'MICROSOFT_CONSENT_COMPLETED') return 'configured'
@@ -113,14 +114,14 @@ router.get('/overview', requireMinRole(ROLES.CUSTOMER_VIEWER), async (req, res, 
       customerHealth: ppCustomers.slice(0, 8).map((c) => ({
         customerId: c.id,
         companyName: c.companyName,
-        onboardingStatus: mapOnboardingStage(c.products[0]?.workspaceTenant),
+        onboardingStatus: mapOnboardingStage(c.products[0]?.workspaceTenant, c.orders?.[0]?.status),
         ...mapHealth(c.products[0]?.workspaceTenant),
       })),
       recentCustomers: ppCustomers.slice(0, 5).map((c) => ({
         id: c.id,
         companyName: c.companyName,
         domain: c.domain,
-        onboardingStatus: mapOnboardingStage(c.products[0]?.workspaceTenant),
+        onboardingStatus: mapOnboardingStage(c.products[0]?.workspaceTenant, c.orders?.[0]?.status),
         complianceScore: mapHealth(c.products[0]?.workspaceTenant).complianceScore,
       })),
     })
@@ -165,12 +166,14 @@ router.get('/customers-list', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req
         id: c.id,
         companyName: c.companyName,
         domain: c.domain,
+        adminName: c.adminName,
         adminEmail: c.adminEmail,
         status: c.status,
-        onboardingStatus: mapOnboardingStage(tenant),
+        onboardingStatus: mapOnboardingStage(tenant, c.orders?.[0]?.status),
         hasWorkspaceSecurity: Boolean(cp),
         seats: cp?.seats || 0,
         ppOrgId: tenant?.ppOrgId || null,
+        ppOrgName: tenant?.ppOrgName || null,
         ppAdminUserId: tenant?.ppAdminUserId || null,
         complianceScore: mapHealth(tenant).complianceScore,
         alertsCount: mapHealth(tenant).alertsCount,
@@ -219,7 +222,7 @@ router.get('/customers/:customerId/profile', requireMinRole(ROLES.CUSTOMER_VIEWE
         adminEmail: customer.adminEmail,
         adminPhone: customer.adminPhone,
         status: customer.status,
-        onboardingStatus: mapOnboardingStage(tenant),
+        onboardingStatus: mapOnboardingStage(tenant, customer.orders?.[0]?.status),
         createdAt: customer.createdAt,
       },
       tenant,
@@ -314,9 +317,22 @@ router.get('/customers/:customerId/onboarding', requireMinRole(ROLES.CUSTOMER_VI
       where: { customerId: customer.id },
     })
     if (!tenant) return res.status(404).json({ error: 'Workspace tenant not found' })
+    const latestPpOrder = await prisma.order.findFirst({
+      where: {
+        customerId: customer.id,
+        items: { some: { product: { code: PP_CODE } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { status: true },
+    })
+    const bundleBlocked = latestPpOrder?.status === 'PENDING_SPOTNET_ASSIGNMENT'
 
     const state = mapState(tenant)
     const ppPortal = process.env.PP_PORTAL_URL || 'https://app.perception-point.io'
+    const effectiveState = bundleBlocked ? 'bundle_assignment_pending' : state.state
+    const effectiveMessage = bundleBlocked
+      ? 'Waiting for SpotNet bundle assignment before channel onboarding can start.'
+      : state.message
 
     return res.json({
       title: 'Connect Microsoft 365 to activate Perception Point',
@@ -324,14 +340,15 @@ router.get('/customers/:customerId/onboarding', requireMinRole(ROLES.CUSTOMER_VI
       checklist: {
         organizationCreated: tenant.organizationStatus === 'ORGANIZATION_CREATED',
         adminUserInvited: tenant.adminStatus !== 'ADMIN_NOT_INVITED',
+        bundleAssigned: !bundleBlocked,
         licensesAssigned: tenant.seats > 0,
         emailServiceConnected: tenant.emailServiceStatus === 'EMAIL_SERVICE_CONFIGURATION_STARTED',
         microsoftConsentCompleted: tenant.microsoftConsentStatus === 'MICROSOFT_CONSENT_COMPLETED',
         dnsMailFlowCompleted: tenant.dnsMailFlowStatus === 'DNS_MAIL_FLOW_COMPLETED',
         protectionActive: tenant.protectionStatus === 'PROTECTION_ACTIVE',
       },
-      state: state.state,
-      message: state.message,
+      state: effectiveState,
+      message: effectiveMessage,
       portalUrl: ppPortal,
       deepLinkUrl: tenant.ppOrgId ? `${ppPortal}/org/${tenant.ppOrgId}` : null,
     })
@@ -347,6 +364,22 @@ router.get('/customers/:customerId/integration-status', requireMinRole(ROLES.CUS
     const where = await buildCustomerWhere(req.auth)
     const customer = await prisma.customer.findFirst({ where: { id: req.params.customerId, ...where } })
     if (!customer) throw new NotFoundError('Customer')
+
+    const latestPpOrder = await prisma.order.findFirst({
+      where: {
+        customerId: customer.id,
+        items: { some: { product: { code: PP_CODE } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { status: true },
+    })
+    if (latestPpOrder?.status === 'PENDING_SPOTNET_ASSIGNMENT') {
+      return res.json({
+        state: 'bundle_assignment_pending',
+        message: 'Waiting for SpotNet bundle assignment before email service connection can begin.',
+        manualCompletionAvailable: false,
+      })
+    }
 
     const status = await checkIntegrationStatus({ customerId: customer.id, actor: req.auth })
     return res.json(status)

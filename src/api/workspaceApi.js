@@ -20,6 +20,12 @@ export const workspaceApi = {
   updateCustomer: (id, data) =>
     request(`/api/customers/${id}`, { method: 'PATCH', body: data }),
 
+  checkAdminEmailAvailability: (email, { customerId } = {}) =>
+    request(`/api/customers/admin-email-availability?email=${encodeURIComponent(email || '')}${customerId ? `&customerId=${encodeURIComponent(customerId)}` : ''}`),
+
+  deleteCustomer: (id) =>
+    request(`/api/customers/${id}`, { method: 'DELETE' }),
+
   // ─── Orders ───────────────────────────────────────────────────────────────
   getOrders: ({ status, customerId, productCode, page, limit } = {}) => {
     const q = new URLSearchParams()
@@ -53,6 +59,12 @@ export const workspaceApi = {
 
   provisionOrder: (orderId) =>
     request(`/api/orders/${orderId}/provision`, { method: 'POST' }),
+
+  markSpotnetSent: (orderId) =>
+    request(`/api/orders/${orderId}/spotnet-sent`, { method: 'POST' }),
+
+  markSpotnetAssigned: (orderId) =>
+    request(`/api/orders/${orderId}/spotnet-assigned`, { method: 'POST' }),
 
   // ─── Workspace Security (Perception Point) ────────────────────────────────
   getPpOverview: () => request('/api/workspace-security/overview'),
@@ -101,6 +113,9 @@ export const workspaceApi = {
   },
 
   getIntegrator: (id) => request(`/api/integrators/${id}`),
+
+  deleteIntegrator: (id) =>
+    request(`/api/integrators/${id}`, { method: 'DELETE' }),
 
   createIntegrator: (payload) =>
     request('/api/integrators', { method: 'POST', body: payload }),

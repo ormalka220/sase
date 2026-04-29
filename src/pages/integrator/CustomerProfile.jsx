@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, CheckCircle, Circle, Globe, AlertTriangle,
   ExternalLink, ChevronRight, Mail, Phone, Calendar,
-  ShoppingCart, Clock, Send, PackageCheck, Zap, ShieldCheck
+  ShoppingCart, Clock, Send, PackageCheck, Zap, ShieldCheck, Trash2
 } from 'lucide-react'
 import { workspaceApi } from '../../api/workspaceApi'
 import { useLanguage } from '../../context/LanguageContext'
@@ -11,13 +11,14 @@ import { getCommonLabels } from '../../i18n/labels'
 
 // ── Order lifecycle for PP ─────────────────────────────────────────────────────
 
-function getPpStatusConfig(labels) {
+function getPpStatusConfig(labels, tr) {
   return {
     PENDING_CDATA_APPROVAL: { label: labels.statuses.PENDING_CDATA_APPROVAL, color: '#f59e0b', icon: Clock },
     APPROVED_BY_CDATA:      { label: labels.statuses.APPROVED_BY_CDATA, color: '#6366f1', icon: CheckCircle },
     PROVISIONING_STARTED:   { label: labels.statuses.PROVISIONING_STARTED, color: '#6366f1', icon: Zap },
     PP_ORG_CREATED:         { label: labels.statuses.PP_ORG_CREATED, color: '#0ea5e9', icon: PackageCheck },
     PP_ADMIN_INVITED:       { label: labels.statuses.PP_ADMIN_INVITED, color: '#0ea5e9', icon: Send },
+    PENDING_SPOTNET_ASSIGNMENT: { label: tr('ממתין להקצאת חבילה ע״י CData', 'Pending CData Bundle Assignment'), color: '#8b5cf6', icon: Clock },
     READY_FOR_ONBOARDING:   { label: labels.statuses.READY_FOR_ONBOARDING, color: '#10b981', icon: CheckCircle },
     ACTIVE:                 { label: labels.statuses.ACTIVE, color: '#10b981', icon: CheckCircle },
     FAILED:                 { label: labels.statuses.FAILED, color: '#ef4444', icon: AlertTriangle },
@@ -35,6 +36,7 @@ const PP_LIFECYCLE = [
   'PROVISIONING_STARTED',
   'PP_ORG_CREATED',
   'PP_ADMIN_INVITED',
+  'PENDING_SPOTNET_ASSIGNMENT',
   'READY_FOR_ONBOARDING',
   'ACTIVE',
 ]
@@ -141,6 +143,15 @@ function PPOrderTimeline({ order, ppStatusConfig, tr }) {
           </p>
         </div>
       ) : null}
+      {order.status === 'PENDING_SPOTNET_ASSIGNMENT' && (
+        <div className="mt-3 p-3 rounded-lg text-xs leading-relaxed"
+          style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
+          <div className="font-semibold text-violet-300 mb-1">{tr('נדרשת הקצאת חבילה', 'Bundle assignment required')}</div>
+          <p className="text-slate-500">
+            {tr('יש להמתין להקצאת החבילה ע״י CData לפני שניתן להתחיל חיבור Microsoft 365/Gmail.', 'Wait for CData bundle assignment before Microsoft 365/Gmail onboarding can start.')}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -162,11 +173,12 @@ export default function CustomerProfile() {
   const { id } = useParams()
   const { tr } = useLanguage()
   const labels = getCommonLabels(tr)
-  const ppStatusConfig = getPpStatusConfig(labels)
+  const ppStatusConfig = getPpStatusConfig(labels, tr)
   const [customer, setCustomer] = useState(null)
   const [ppOrder, setPPOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -223,6 +235,32 @@ export default function CustomerProfile() {
   const ppActive = ppOrder && ['READY_FOR_ONBOARDING', 'ACTIVE'].includes(ppOrder.status)
   const ppPending = ppOrder && ['PENDING_CDATA_APPROVAL', 'APPROVED_BY_CDATA', 'PROVISIONING_STARTED', 'PP_ORG_CREATED', 'PP_ADMIN_INVITED'].includes(ppOrder.status)
 
+  async function handleDeleteCustomer() {
+    const ok = window.confirm(
+      tr(
+        `למחוק את הלקוח ${customer.companyName}? הפעולה אינה הפיכה.`,
+        `Delete customer ${customer.companyName}? This action cannot be undone.`
+      )
+    )
+    if (!ok) return
+
+    try {
+      setDeleting(true)
+      setError('')
+      await workspaceApi.deleteCustomer(id)
+      navigate('/integrator/customers')
+    } catch (e) {
+      const msg = String(e?.message || '')
+      if (msg.includes('existing orders')) {
+        setError(tr('לא ניתן למחוק לקוח שיש לו הזמנות קיימות. אפשר להשעות אותו במקום זאת.', 'Cannot delete customer with existing orders. Suspend it instead.'))
+      } else {
+        setError(e.message || tr('נכשל במחיקת הלקוח', 'Failed to delete customer'))
+      }
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -243,6 +281,14 @@ export default function CustomerProfile() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleDeleteCustomer}
+            disabled={deleting}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border border-red-500/30 text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-60"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {deleting ? tr('מוחק...', 'Deleting...') : tr('מחק לקוח', 'Delete Customer')}
+          </button>
           {!hasPPOrder && (
             <button
               onClick={() => navigate(`/integrator/orders/new?customerId=${id}`)}
@@ -353,43 +399,6 @@ export default function CustomerProfile() {
           </div>
         )}
       </div>
-
-      {/* Onboarding instructions panel — shown once provisioned */}
-      {(ppOrder?.status === 'READY_FOR_ONBOARDING' || ppOrder?.status === 'ACTIVE') && (
-        <div className="glass rounded-2xl p-5" style={{ border: '1px solid rgba(16,185,129,0.18)' }}>
-          <div className="text-sm font-semibold text-white mb-4">{tr('צ׳קליסט קליטה', 'Onboarding Checklist')}</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Microsoft 365 */}
-            <div className="p-4 rounded-xl space-y-2"
-              style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.15)' }}>
-              <div className="text-xs font-semibold text-sky-400">{tr('חיבור Microsoft 365', 'Microsoft 365 Connection')}</div>
-              <ol className="space-y-1.5 text-[10px] text-slate-400">
-                <li className="flex gap-2"><span className="font-bold text-sky-400">1.</span>{tr('אשרו את הזמנת האדמין של Perception Point במייל.', 'Accept the Perception Point admin email invitation.')}</li>
-                <li className="flex gap-2"><span className="font-bold text-sky-400">2.</span>{tr('התחברו לפורטל PP ועברו ל-Settings → Integrations → Microsoft 365.', 'Log in to the PP portal and go to Settings → Integrations → Microsoft 365.')}</li>
-                <li className="flex gap-2"><span className="font-bold text-sky-400">3.</span>{tr('תנו הרשאת consent עם חשבון Microsoft Global Admin.', 'Grant consent with a Microsoft Global Admin account.')}</li>
-                <li className="flex gap-2"><span className="font-bold text-sky-400">4.</span>{tr('עדכנו רשומת MX כדי לנתב דואר דרך PP.', 'Update MX record to route mail through PP.')}</li>
-                <li className="flex gap-2"><span className="font-bold text-sky-400">5.</span>{tr('ודאו שההגנה פעילה בדשבורד האיומים.', 'Verify protection is active in the threat dashboard.')}</li>
-              </ol>
-            </div>
-            {/* Gmail */}
-            <div className="p-4 rounded-xl space-y-2"
-              style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.15)' }}>
-              <div className="text-xs font-semibold text-yellow-400">{tr('חיבור Google Workspace', 'Google Workspace Connection')}</div>
-              <ol className="space-y-1.5 text-[10px] text-slate-400">
-                <li className="flex gap-2"><span className="font-bold text-yellow-400">1.</span>{tr('אשרו את הזמנת האדמין של Perception Point במייל.', 'Accept the Perception Point admin email invitation.')}</li>
-                <li className="flex gap-2"><span className="font-bold text-yellow-400">2.</span>{tr('התחברו לפורטל PP ועברו ל-Settings → Integrations → Google Workspace.', 'Log in to the PP portal and go to Settings → Integrations → Google Workspace.')}</li>
-                <li className="flex gap-2"><span className="font-bold text-yellow-400">3.</span>{tr('בצעו הרשאה עם Google Workspace Super Admin.', 'Authorize with a Google Workspace Super Admin.')}</li>
-                <li className="flex gap-2"><span className="font-bold text-yellow-400">4.</span>{tr('הגדירו Inbound Gateway ב-Google Admin Console.', 'Configure inbound gateway in Google Admin Console.')}</li>
-                <li className="flex gap-2"><span className="font-bold text-yellow-400">5.</span>{tr('ודאו שההגנה פעילה בדשבורד האיומים.', 'Verify protection is active in the threat dashboard.')}</li>
-              </ol>
-            </div>
-          </div>
-          <div className="mt-3 text-[10px] text-slate-600 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-            {tr('החשבונית הסופית תחושב לפי מספר התיבות המוגנות בפועל שמחוברות ב-Perception Point.', 'Final invoice will be calculated by actual protected mailboxes connected in Perception Point.')}
-          </div>
-        </div>
-      )}
 
       {/* Recent orders */}
       <div className="glass glow-border rounded-2xl overflow-hidden">

@@ -6,6 +6,7 @@ import {
   CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts'
 import { integrators, customers, getOrdersByDistributor } from '../../data/mockData'
+import { useLanguage } from '../../context/LanguageContext'
 import PageHeader from '../../components/distribution/PageHeader'
 import DarkTable from '../../components/distribution/DarkTable'
 
@@ -32,11 +33,16 @@ const itemVariants = {
 }
 
 export default function Reports() {
+  const { tr, isHebrew } = useLanguage()
   const orders = getOrdersByDistributor('d1')
   const activeOrders = orders.filter(o => o.status === 'ACTIVE')
   const totalRevenue = activeOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0)
   const totalMailboxes = orders.reduce((sum, o) => sum + (o.estimatedUsers || 0), 0)
   const avgRevenuePerCustomer = customers.length > 0 ? totalRevenue / customers.length : 0
+  const monthLabels = isHebrew
+    ? { Jan: 'ינו', Feb: 'פבר', Mar: 'מרץ', Apr: 'אפר', May: 'מאי', Jun: 'יונ' }
+    : { Jan: 'Jan', Feb: 'Feb', Mar: 'Mar', Apr: 'Apr', May: 'May', Jun: 'Jun' }
+  const localizedChartData = chartData.map((m) => ({ ...m, month: monthLabels[m.month] || m.month }))
 
   return (
     <motion.div
@@ -47,9 +53,9 @@ export default function Reports() {
     >
       {/* Page Header */}
       <PageHeader
-        title="Reports"
-        subtitle="Analytics & Insights"
-        description="Business intelligence and operational reports"
+        title={tr('דוחות', 'Reports')}
+        subtitle={tr('אנליטיקה ותובנות', 'Analytics & Insights')}
+        description={tr('בינה עסקית ודוחות תפעוליים', 'Business intelligence and operational reports')}
         icon={BarChart3}
       />
 
@@ -59,10 +65,10 @@ export default function Reports() {
         variants={pageVariants}
       >
         {[
-          { label: 'Total Customers', value: customers.length, icon: Users, color: 'text-blue-400' },
-          { label: 'Protected Mailboxes', value: (totalMailboxes / 1000).toFixed(1) + 'k', icon: TrendingUp, color: 'text-emerald-400' },
-          { label: 'Monthly Est. Revenue', value: '$' + (totalRevenue / 1000).toFixed(1) + 'k', icon: Banknote, color: 'text-amber-400' },
-          { label: 'Avg Revenue/Customer', value: '$' + Math.round(avgRevenuePerCustomer), icon: TrendingUp, color: 'text-purple-400' },
+          { label: tr('סה״כ לקוחות', 'Total Customers'), value: customers.length, icon: Users, color: 'text-blue-400' },
+          { label: tr('תיבות דואר מוגנות', 'Protected Mailboxes'), value: (totalMailboxes / 1000).toFixed(1) + 'k', icon: TrendingUp, color: 'text-emerald-400' },
+          { label: tr('הכנסה חודשית משוערת', 'Monthly Est. Revenue'), value: '$' + (totalRevenue / 1000).toFixed(1) + 'k', icon: Banknote, color: 'text-amber-400' },
+          { label: tr('ממוצע הכנסה ללקוח', 'Avg Revenue/Customer'), value: '$' + Math.round(avgRevenuePerCustomer), icon: TrendingUp, color: 'text-purple-400' },
         ].map((item, idx) => {
           const Icon = item.icon
           return (
@@ -93,9 +99,9 @@ export default function Reports() {
           className="glass rounded-xl p-6 border border-white/10"
           variants={itemVariants}
         >
-          <h3 className="text-sm font-semibold text-white mb-4">Revenue Trend</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">{tr('מגמת הכנסות', 'Revenue Trend')}</h3>
           <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={chartData}>
+            <AreaChart data={localizedChartData}>
               <defs>
                 <linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
@@ -116,7 +122,7 @@ export default function Reports() {
           className="glass rounded-xl p-6 border border-white/10"
           variants={itemVariants}
         >
-          <h3 className="text-sm font-semibold text-white mb-4">Customer Distribution</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">{tr('התפלגות לקוחות', 'Customer Distribution')}</h3>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie
@@ -153,23 +159,23 @@ export default function Reports() {
         >
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-semibold text-white">Integrator Performance</h3>
-              <p className="text-xs text-slate-400 mt-1">Revenue and customer metrics by partner</p>
+              <h3 className="text-sm font-semibold text-white">{tr('ביצועי אינטגרטורים', 'Integrator Performance')}</h3>
+              <p className="text-xs text-slate-400 mt-1">{tr('מדדי הכנסות ולקוחות לפי שותף', 'Revenue and customer metrics by partner')}</p>
             </div>
             <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-300 transition-colors">
               <Download className="w-3.5 h-3.5" />
-              Export
+              {tr('ייצוא', 'Export')}
             </button>
           </div>
           <DarkTable
             columns={[
-              { key: 'name', label: 'Integrator', width: '35%' },
-              { key: 'customers', label: 'Customers', width: '20%' },
-              { key: 'revenue', label: 'Monthly Revenue', width: '20%' },
-              { key: 'status', label: 'Status', width: '25%', render: (val) => (
+              { key: 'name', label: tr('אינטגרטור', 'Integrator'), width: '35%' },
+              { key: 'customers', label: tr('לקוחות', 'Customers'), width: '20%' },
+              { key: 'revenue', label: tr('הכנסה חודשית', 'Monthly Revenue'), width: '20%' },
+              { key: 'status', label: tr('סטטוס', 'Status'), width: '25%', render: () => (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  Active
+                  {tr('פעיל', 'Active')}
                 </span>
               )}
             ]}
@@ -188,20 +194,20 @@ export default function Reports() {
         >
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-sm font-semibold text-white">Onboarding Status Summary</h3>
-              <p className="text-xs text-slate-400 mt-1">Customer provisioning pipeline</p>
+              <h3 className="text-sm font-semibold text-white">{tr('סיכום סטטוס קליטה', 'Onboarding Status Summary')}</h3>
+              <p className="text-xs text-slate-400 mt-1">{tr('צנרת הקמת לקוחות', 'Customer provisioning pipeline')}</p>
             </div>
             <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-300 transition-colors">
               <Download className="w-3.5 h-3.5" />
-              Export
+              {tr('ייצוא', 'Export')}
             </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: 'Not Started', count: 3, color: 'text-slate-400' },
-              { label: 'In Progress', count: 15, color: 'text-blue-400' },
-              { label: 'Active', count: 24, color: 'text-emerald-400' },
-              { label: 'Failed', count: 2, color: 'text-red-400' },
+              { label: tr('לא התחיל', 'Not Started'), count: 3, color: 'text-slate-400' },
+              { label: tr('בתהליך', 'In Progress'), count: 15, color: 'text-blue-400' },
+              { label: tr('פעיל', 'Active'), count: 24, color: 'text-emerald-400' },
+              { label: tr('נכשל', 'Failed'), count: 2, color: 'text-red-400' },
             ].map((item, idx) => (
               <div key={idx} className="p-4 rounded-lg bg-white/[0.03] border border-white/5">
                 <div className={`text-lg font-black mb-1 ${item.color}`}>{item.count}</div>

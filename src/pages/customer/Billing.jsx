@@ -2,12 +2,20 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { FileText, Download, DollarSign, Calendar, AlertCircle } from 'lucide-react'
 import { useLanguage } from '../../context/LanguageContext'
+import { useProduct } from '../../context/ProductContext'
 
-const mockInvoices = [
-  { id: 'INV-2024-001', period: 'Jan 2024', mailboxes: 245, amount: 208.25, status: 'PAID', dueDate: '2024-02-15' },
-  { id: 'INV-2024-002', period: 'Feb 2024', mailboxes: 251, amount: 213.35, status: 'PAID', dueDate: '2024-03-15' },
-  { id: 'INV-2024-003', period: 'Mar 2024', mailboxes: 248, amount: 210.80, status: 'PENDING', dueDate: '2024-04-15' },
-]
+const mockInvoicesByProduct = {
+  perception: [
+    { id: 'PP-INV-2024-001', period: 'Jan 2024', units: 245, unitLabel: 'mailboxes', unitPrice: '$0.85/mailbox/month', amount: 208.25, status: 'PAID', dueDate: '2024-02-15' },
+    { id: 'PP-INV-2024-002', period: 'Feb 2024', units: 251, unitLabel: 'mailboxes', unitPrice: '$0.85/mailbox/month', amount: 213.35, status: 'PAID', dueDate: '2024-03-15' },
+    { id: 'PP-INV-2024-003', period: 'Mar 2024', units: 248, unitLabel: 'mailboxes', unitPrice: '$0.85/mailbox/month', amount: 210.80, status: 'PENDING', dueDate: '2024-04-15' },
+  ],
+  sase: [
+    { id: 'SASE-INV-2024-001', period: 'Jan 2024', units: 310, unitLabel: 'users', unitPrice: '$1.95/user/month', amount: 604.50, status: 'PAID', dueDate: '2024-02-15' },
+    { id: 'SASE-INV-2024-002', period: 'Feb 2024', units: 325, unitLabel: 'users', unitPrice: '$1.95/user/month', amount: 633.75, status: 'PAID', dueDate: '2024-03-15' },
+    { id: 'SASE-INV-2024-003', period: 'Mar 2024', units: 332, unitLabel: 'users', unitPrice: '$1.95/user/month', amount: 647.40, status: 'PENDING', dueDate: '2024-04-15' },
+  ],
+}
 
 const pageVariants = {
   hidden: { opacity: 0 },
@@ -21,10 +29,20 @@ const itemVariants = {
 
 export default function CustomerBilling() {
   const { tr } = useLanguage()
+  const { product } = useProduct()
   const [expandedId, setExpandedId] = useState(null)
+  const billingProduct = product === 'all' ? 'all' : product
+  const mockInvoices = billingProduct === 'all'
+    ? [...mockInvoicesByProduct.perception, ...mockInvoicesByProduct.sase]
+    : mockInvoicesByProduct[billingProduct] || mockInvoicesByProduct.perception
 
   const totalAmount = mockInvoices.reduce((sum, i) => sum + i.amount, 0)
   const avgMonthly = (totalAmount / mockInvoices.length).toFixed(2)
+  const billingTitle = billingProduct === 'sase'
+    ? tr('חיוב FortiSASE', 'FortiSASE Billing')
+    : billingProduct === 'all'
+      ? tr('חיוב רב-מוצרי', 'Multi-Product Billing')
+      : tr('חיוב Perception Point', 'Perception Point Billing')
 
   return (
     <motion.div
@@ -35,7 +53,7 @@ export default function CustomerBilling() {
     >
       {/* Header */}
       <motion.div variants={itemVariants}>
-        <h1 className="text-3xl font-black text-white mb-2">{tr('חיוב', 'Billing')}</h1>
+        <h1 className="text-3xl font-black text-white mb-2">{billingTitle}</h1>
         <p className="text-slate-400">{tr('צפה בחשבוניותיך וניהל את החיוב', 'View your invoices and manage billing')}</p>
       </motion.div>
 
@@ -89,7 +107,7 @@ export default function CustomerBilling() {
                       {invoice.status === 'PAID' ? tr('משולם', 'Paid') : tr('ממתין', 'Pending')}
                     </span>
                   </div>
-                  <div className="text-xs text-slate-500">{invoice.period} • {invoice.mailboxes} {tr('תיבות מוגנות', 'protected mailboxes')}</div>
+                  <div className="text-xs text-slate-500">{invoice.period} • {invoice.units} {invoice.unitLabel}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-black text-white">${invoice.amount.toFixed(2)}</div>
@@ -110,8 +128,8 @@ export default function CustomerBilling() {
                       <div className="space-y-2 text-xs">
                         {[
                           { label: tr('תקופה', 'Period'), value: invoice.period },
-                          { label: tr('תיבות מוגנות', 'Protected Mailboxes'), value: `${invoice.mailboxes} ${tr('תיבות', 'mailboxes')}` },
-                          { label: tr('מחיר ליחידה', 'Unit Price'), value: '$0.85/mailbox/month' },
+                          { label: tr('יחידות', 'Units'), value: `${invoice.units} ${invoice.unitLabel}` },
+                          { label: tr('מחיר ליחידה', 'Unit Price'), value: invoice.unitPrice },
                           { label: tr('סכום', 'Amount'), value: `$${invoice.amount.toFixed(2)}` },
                         ].map(item => (
                           <div key={item.label} className="flex justify-between p-2.5 rounded-lg bg-white/[0.03]">
@@ -125,7 +143,11 @@ export default function CustomerBilling() {
                     {/* Info */}
                     <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-slate-400">
                       <div className="font-semibold text-indigo-400 mb-1">{tr('הערה חשובה', 'Important')}</div>
-                      {tr('החיוב מבוסס על מספר התיבות המוגנות בפועל המחוברות ב-Perception Point.', 'Billing is based on actual protected mailboxes connected in Perception Point.')}
+                      {billingProduct === 'sase'
+                        ? tr('חיוב SASE מבוסס משתמשים פעילים ורישוי מדיניות.', 'SASE billing is based on active users and policy licensing.')
+                        : billingProduct === 'all'
+                          ? tr('החיוב המאוחד מציג את Perception Point + FortiSASE יחד.', 'Combined billing includes Perception Point + FortiSASE together.')
+                          : tr('החיוב מבוסס על מספר התיבות המוגנות בפועל המחוברות ב-Perception Point.', 'Billing is based on actual protected mailboxes connected in Perception Point.')}
                     </div>
 
                     {/* Actions */}
@@ -148,7 +170,9 @@ export default function CustomerBilling() {
           <div>
             <h4 className="text-sm font-semibold text-white mb-2">{tr('כיצד מחושב החיוב?', 'How is billing calculated?')}</h4>
             <ul className="space-y-2 text-xs text-slate-400">
-              <li>• {tr('תיבות בפועל - מחושבות לפי חיבורים ב-Perception Point', '• Actual mailboxes - calculated from Perception Point connections')}</li>
+              <li>• {billingProduct === 'sase'
+                ? tr('משתמשים ורישוי SASE מחושבים לפי שימוש פעיל', '• SASE users and licensing are calculated by active usage')
+                : tr('תיבות בפועל - מחושבות לפי חיבורים ב-Perception Point', '• Actual mailboxes - calculated from Perception Point connections')}</li>
               <li>• {tr('חיוב חודשי - בתוך ה-10 ימים הראשונים של החודש הבא', '• Monthly billing - within 10 days of following month')}</li>
               <li>• {tr('אין צורך אשראי - חשבונית בלבד', '• No credit card - invoice only')}</li>
             </ul>

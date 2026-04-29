@@ -3,6 +3,7 @@ const { PerceptionPointClient } = require('./perceptionPointClient')
 const { EmailService } = require('./emailService')
 const { auditLog } = require('../utils/audit')
 const { NotFoundError } = require('../utils/errors')
+const { syncWorkspaceCustomerActivation } = require('./workspaceActivationService')
 
 const ppClient = new PerceptionPointClient()
 const emailService = new EmailService()
@@ -158,14 +159,7 @@ async function markManualComplete({ customerId, actor }) {
     customerId,
   })
 
-  // Update the linked CustomerProduct status too
-  const wsProduct = await prisma.product.findUnique({ where: { code: 'WORKSPACE_SECURITY' } })
-  if (wsProduct) {
-    await prisma.customerProduct.updateMany({
-      where: { customerId, productId: wsProduct.id },
-      data: { status: 'ACTIVE', activatedAt: new Date() },
-    })
-  }
+  await syncWorkspaceCustomerActivation({ customerId, actor })
 
   return { success: true, tenant: updated }
 }

@@ -1,14 +1,18 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { ChevronRight, Building2, Mail, Phone, TrendingUp } from 'lucide-react'
+import { useLanguage } from '../../context/LanguageContext'
 
 export default function IntegratorCard({
   integrator,
   customerCount = 0,
   revenueEstimate = 0,
   pendingOrders = 0,
-  onClick = null
+  onClick = null,
+  onDelete = null,
 }) {
+  const { tr, isHebrew } = useLanguage()
+
   return (
     <motion.div
       className="glass rounded-xl p-6 border border-white/10 cursor-pointer transition-all"
@@ -25,7 +29,7 @@ export default function IntegratorCard({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-bold text-white truncate">{integrator.companyName}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">ID: {integrator.id}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{tr('מזהה', 'ID')}: {integrator.id}</p>
           </div>
         </div>
         <ChevronRight className="w-5 h-5 text-slate-500 flex-shrink-0 group-hover:text-slate-300 transition-colors" />
@@ -51,15 +55,15 @@ export default function IntegratorCard({
       <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/5">
         <div>
           <div className="text-sm font-black text-white mb-0.5">{customerCount}</div>
-          <div className="text-[10px] text-slate-500">Active Customers</div>
+          <div className="text-[10px] text-slate-500">{tr('לקוחות פעילים', 'Active Customers')}</div>
         </div>
         <div>
           <div className="text-sm font-black text-emerald-400 mb-0.5">${(revenueEstimate / 1000).toFixed(1)}k</div>
-          <div className="text-[10px] text-slate-500">Monthly Revenue</div>
+          <div className="text-[10px] text-slate-500">{tr('הכנסה חודשית', 'Monthly Revenue')}</div>
         </div>
         <div>
           <div className="text-sm font-black text-amber-400 mb-0.5">{pendingOrders}</div>
-          <div className="text-[10px] text-slate-500">Pending Orders</div>
+          <div className="text-[10px] text-slate-500">{tr('הזמנות ממתינות', 'Pending Orders')}</div>
         </div>
       </div>
 
@@ -71,12 +75,29 @@ export default function IntegratorCard({
             : 'bg-slate-500/15 text-slate-400 border border-slate-500/30'
         }`}>
           <span className="w-2 h-2 rounded-full bg-current" />
-          {integrator.status?.charAt(0).toUpperCase() + integrator.status?.slice(1) || 'Active'}
+          {integrator.status === 'active'
+            ? tr('פעיל', 'Active')
+            : integrator.status === 'inactive'
+              ? tr('לא פעיל', 'Inactive')
+              : integrator.status === 'suspended'
+                ? tr('מושהה', 'Suspended')
+                : tr('פעיל', 'Active')}
         </span>
         {pendingOrders > 0 && (
-          <span className="text-[10px] text-amber-400 font-semibold">⚠ Action needed</span>
+          <span className="text-[10px] text-amber-400 font-semibold">{tr('⚠ פעולה נדרשת', '⚠ Action needed')}</span>
         )}
       </div>
+
+      {onDelete && (
+        <div className="mt-3">
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(integrator) }}
+            className="w-full px-3 py-2 rounded-lg text-xs font-semibold text-red-300 border border-red-500/30 hover:bg-red-500/10 transition-colors"
+          >
+            {tr('מחק אינטגרטור', 'Delete Integrator')}
+          </button>
+        </div>
+      )}
     </motion.div>
   )
 }

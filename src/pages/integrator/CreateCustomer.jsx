@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, CheckCircle, ChevronRight,
@@ -22,6 +22,8 @@ export default function CreateCustomer() {
   const [createdCustomerId, setCreatedCustomerId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [emailValidationError, setEmailValidationError] = useState('')
+  const [checkingEmail, setCheckingEmail] = useState(false)
   const [form, setForm] = useState({
     companyName: '',
     domain: '',
@@ -33,6 +35,44 @@ export default function CreateCustomer() {
   })
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const validateAdminEmail = async () => {
+    const email = form.adminEmail.trim()
+    if (!email) {
+      setEmailValidationError('')
+      return true
+    }
+    try {
+      setCheckingEmail(true)
+      const result = await workspaceApi.checkAdminEmailAvailability(email)
+      if (!result?.ok) {
+        setEmailValidationError(
+          result?.reason || tr('המייל כבר קיים כאדמין במערכת או ב-Perception Point', 'Email already exists as an admin in the system or Perception Point')
+        )
+        return false
+      }
+      setEmailValidationError('')
+      return true
+    } catch (e) {
+      setEmailValidationError(e.message || tr('נכשלה בדיקת מייל אדמין', 'Failed to validate admin email'))
+      return false
+    } finally {
+      setCheckingEmail(false)
+    }
+  }
+
+  useEffect(() => {
+    if (step !== 1) return
+    const email = form.adminEmail.trim()
+    if (!email) {
+      setEmailValidationError('')
+      return
+    }
+    const timer = setTimeout(() => {
+      validateAdminEmail()
+    }, 450)
+    return () => clearTimeout(timer)
+  }, [form.adminEmail, step])
 
   // Step indicator
   const StepBar = () => (
@@ -120,8 +160,18 @@ export default function CreateCustomer() {
           type="email"
           placeholder="admin@company.co.il"
           value={form.adminEmail}
-          onChange={e => set('adminEmail', e.target.value)}
+          onChange={e => {
+            set('adminEmail', e.target.value)
+            setEmailValidationError('')
+          }}
+          onBlur={validateAdminEmail}
         />
+        {checkingEmail && (
+          <p className="text-[11px] text-slate-500 mt-1">{tr('בודק זמינות מייל אדמין...', 'Checking admin email availability...')}</p>
+        )}
+        {emailValidationError && (
+          <p className="text-[11px] text-red-400 mt-1">{emailValidationError}</p>
+        )}
       </div>
       <div>
         <label className={labelClass}>{tr('שם איש קשר', 'Contact Name')}</label>
@@ -183,6 +233,8 @@ export default function CreateCustomer() {
     try {
       setLoading(true)
       setError('')
+      const emailOk = await validateAdminEmail()
+      if (!emailOk) return
       const payload = {
         integratorId: INTEGRATOR_ID,
         distributorId: DISTRIBUTOR_ID,
@@ -309,7 +361,13 @@ export default function CreateCustomer() {
             {step < 2 ? (
               <button
                 className="btn-primary flex items-center gap-2"
-                onClick={() => setStep(s => s + 1)}
+                onClick={async () => {
+                  if (step === 1) {
+                    const emailOk = await validateAdminEmail()
+                    if (!emailOk) return
+                  }
+                  setStep(s => s + 1)
+                }}
               >
                 {tr('הבא', 'Next')}
                 <ChevronRight className="w-4 h-4" />

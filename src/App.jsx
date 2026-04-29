@@ -26,6 +26,7 @@ const IntegratorProfile     = lazy(() => import('./pages/distributor/IntegratorP
 const DistributorReports    = lazy(() => import('./pages/distributor/Reports'))
 const DistributorSettings   = lazy(() => import('./pages/distributor/Settings'))
 const OrdersApproval        = lazy(() => import('./pages/distributor/OrdersApproval'))
+const SpotnetAssignments    = lazy(() => import('./pages/distributor/SpotnetAssignments'))
 
 // Integrator pages
 const IntegratorDashboard       = lazy(() => import('./pages/integrator/Dashboard'))
@@ -73,6 +74,11 @@ function RequireAuth({ allowedRoles, redirectTo = '/' }) {
 
 function DistributorRoute({ children }) {
   const err = RequireAuth({ allowedRoles: ['SUPER_ADMIN', 'DISTRIBUTOR_ADMIN'] })
+  return err || children
+}
+
+function SuperAdminRoute({ children }) {
+  const err = RequireAuth({ allowedRoles: ['SUPER_ADMIN'] })
   return err || children
 }
 
@@ -149,6 +155,7 @@ export default function App() {
                 <Route path="integrators/new" element={<CreateIntegrator />} />
                 <Route path="integrators/:id" element={<IntegratorProfile />} />
                 <Route path="orders"          element={<OrdersApproval />} />
+                <Route path="spotnet-assignments" element={<SuperAdminRoute><SpotnetAssignments /></SuperAdminRoute>} />
                 <Route path="reports"         element={<DistributorReports />} />
                 <Route path="settings"        element={<DistributorSettings />} />
               </Route>

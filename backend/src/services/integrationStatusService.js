@@ -1,9 +1,16 @@
 const { prisma } = require('../prisma')
 const { PerceptionPointClient } = require('./perceptionPointClient')
+const { syncWorkspaceCustomerActivation } = require('./workspaceActivationService')
 
 const ppClient = new PerceptionPointClient()
 
-function mapState(tenant) {
+function mapState(tenant, { bundleAssignmentPending = false } = {}) {
+  if (bundleAssignmentPending) {
+    return {
+      state: 'bundle_assignment_pending',
+      message: 'Waiting for SpotNet bundle assignment before email service connection can begin.',
+    }
+  }
   if (tenant.protectionStatus === 'PROTECTION_ACTIVE') {
     return { state: 'active', message: 'Microsoft 365 is connected and Perception Point is active.' }
   }
@@ -20,6 +27,31 @@ async function resolveIntegrationStatus(customerId) {
   const tenant = await prisma.workspaceSecurityTenant.findUnique({ where: { customerId } })
   if (!tenant) {
     return { state: 'not_started', message: 'Organization is not created yet.' }
+  }
+  const latestPpOrder = await prisma.order.findFirst({
+    where: {
+      customerId,
+      items: { some: { product: { code: 'WORKSPACE_SECURITY' } } },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { status: true },
+  })
+  if (latestPpOrder?.status === 'PENDING_SPOTNET_ASSIGNMENT') {
+    const state = mapState(tenant, { bundleAssignmentPending: true })
+    await prisma.integrationStatusLog.create({
+      data: {
+        customerId,
+        status: state.state,
+        source: 'SYSTEM',
+        details: JSON.stringify({ orderStatus: latestPpOrder.status }),
+        createdBy: 'system',
+      },
+    })
+    return {
+      ...state,
+      tenant,
+      manualCompletionAvailable: false,
+    }
   }
 
   const signals = await ppClient.fetchSignals({ orgId: tenant.ppOrgId })
@@ -55,6 +87,10 @@ async function resolveIntegrationStatus(customerId) {
       createdBy: 'system',
     },
   })
+
+  if (saved.protectionStatus === 'PROTECTION_ACTIVE') {
+    await syncWorkspaceCustomerActivation({ customerId, actor: { userId: 'system', role: 'SYSTEM' } })
+  }
 
   return {
     ...state,

@@ -6,6 +6,7 @@ const { NotFoundError, ForbiddenError, ValidationError, AppError } = require('..
 const { auditLog } = require('../utils/audit')
 const { parsePagination, paginatedResponse } = require('../utils/pagination')
 const { provisionOrder } = require('../services/provisioningService')
+const { validateAdminEmailForPP } = require('../services/adminEmailValidationService')
 
 const router = express.Router()
 
@@ -207,12 +208,19 @@ router.post('/pp', requireRole([ROLES.INTEGRATOR_ADMIN, ROLES.SUPER_ADMIN]), asy
     if (!customer) throw new NotFoundError('Customer')
     if (role === ROLES.INTEGRATOR_ADMIN && customer.integratorId !== orgId) throw new ForbiddenError()
 
+    const adminEmailValidation = await validateAdminEmailForPP(customer.adminEmail, { ignoreCustomerId: customer.id })
+    if (!adminEmailValidation.ok) {
+      throw new ValidationError(adminEmailValidation.reason || 'Invalid admin email for Perception Point')
+    }
+
     const wsProduct = await prisma.product.findUnique({ where: { code: 'WORKSPACE_SECURITY' } })
     if (!wsProduct) throw new NotFoundError('WORKSPACE_SECURITY product not in catalog')
 
     const seats = payload.estimatedUsers
     const unitPrice = payload.pricePerMailbox
     const totalAmount = seats * unitPrice
+    const packageToken = `[PP_PACKAGE:${payload.packageCode}]`
+    const mergedNotes = payload.notes ? `${payload.notes}\n${packageToken}` : packageToken
 
     const order = await prisma.order.create({
       data: {
@@ -226,7 +234,7 @@ router.post('/pp', requireRole([ROLES.INTEGRATOR_ADMIN, ROLES.SUPER_ADMIN]), asy
         status: 'PENDING_CDATA_APPROVAL',
         paymentStatus: 'NOT_REQUIRED',
         approvalStatus: 'PENDING',
-        notes: payload.notes || null,
+        notes: mergedNotes,
         estimatedUsers: seats,
         submittedAt: new Date(),
         items: {
@@ -383,11 +391,26 @@ router.post('/:id/approve', requireRole([ROLES.DISTRIBUTOR_ADMIN, ROLES.SUPER_AD
     })
 
     await logOrderTransition(order, 'APPROVED', req.auth, { status: newStatus })
-
-    await provisionOrder(updated)
+    let provisioningError = null
+    try {
+      await provisionOrder(updated)
+    } catch (err) {
+      // Provisioning can fail due to external vendor APIs (PP). Approval should still persist.
+      provisioningError = err
+      console.warn('[orders.approve] provisioning failed after approval', {
+        orderId: order.id,
+        status: newStatus,
+        error: err?.message,
+      })
+    }
 
     const latest = await prisma.order.findUnique({ where: { id: order.id }, include: { items: true, invoice: true } })
-    return res.json(latest)
+    if (!provisioningError) return res.json(latest)
+
+    return res.status(200).json({
+      ...latest,
+      provisioningWarning: provisioningError.message || 'Provisioning failed after approval',
+    })
   } catch (err) {
     next(err)
   }
@@ -436,6 +459,76 @@ router.post('/:id/cancel', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, r
     await logOrderTransition(order, 'CANCELLED', req.auth, { status: 'CANCELLED' })
 
     return res.json(updated)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST /api/orders/:id/spotnet-sent (manual ops handoff marker)
+router.post('/:id/spotnet-sent', requireRole([ROLES.SUPER_ADMIN]), async (req, res, next) => {
+  try {
+    const order = await getOwnedOrder(req.params.id, req.auth)
+    const allowed = ['PP_ADMIN_INVITED', 'PENDING_SPOTNET_ASSIGNMENT']
+    if (!allowed.includes(order.status)) {
+      throw new AppError(`Cannot send order to SpotNet in status ${order.status}`, 400)
+    }
+
+    if (order.status !== 'PENDING_SPOTNET_ASSIGNMENT') {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { status: 'PENDING_SPOTNET_ASSIGNMENT' },
+      })
+    }
+
+    await auditLog({
+      entityType: 'ORDER',
+      entityId: order.id,
+      action: 'SPOTNET_ASSIGNMENT_REQUESTED',
+      actor: req.auth,
+      oldState: { status: order.status },
+      newState: { status: 'PENDING_SPOTNET_ASSIGNMENT' },
+      orderId: order.id,
+      customerId: order.customerId,
+    })
+
+    const latest = await prisma.order.findUnique({ where: { id: order.id }, include: { items: true, customer: true } })
+    return res.json(latest)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST /api/orders/:id/spotnet-assigned (manual confirmation to unlock onboarding)
+router.post('/:id/spotnet-assigned', requireRole([ROLES.SUPER_ADMIN]), async (req, res, next) => {
+  try {
+    const order = await getOwnedOrder(req.params.id, req.auth)
+    const idempotentReady = ['READY_FOR_ONBOARDING', 'ACTIVE']
+    if (idempotentReady.includes(order.status)) {
+      const latestReady = await prisma.order.findUnique({ where: { id: order.id }, include: { items: true, customer: true } })
+      return res.json(latestReady)
+    }
+    if (order.status !== 'PENDING_SPOTNET_ASSIGNMENT') {
+      throw new AppError(`Cannot mark SpotNet assignment in status ${order.status}`, 400)
+    }
+
+    const updated = await prisma.order.update({
+      where: { id: order.id },
+      data: { status: 'READY_FOR_ONBOARDING' },
+    })
+
+    await auditLog({
+      entityType: 'ORDER',
+      entityId: updated.id,
+      action: 'SPOTNET_ASSIGNMENT_COMPLETED',
+      actor: req.auth,
+      oldState: { status: order.status },
+      newState: { status: 'READY_FOR_ONBOARDING' },
+      orderId: updated.id,
+      customerId: updated.customerId,
+    })
+
+    const latest = await prisma.order.findUnique({ where: { id: updated.id }, include: { items: true, customer: true } })
+    return res.json(latest)
   } catch (err) {
     next(err)
   }

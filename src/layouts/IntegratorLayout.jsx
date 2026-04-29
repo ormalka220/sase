@@ -25,7 +25,7 @@ export default function IntegratorLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
-  const { tr } = useLanguage()
+  const { tr, isHebrew } = useLanguage()
   const labels = getCommonLabels(tr)
   const navItems = createNavItems(labels)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -41,14 +41,18 @@ export default function IntegratorLayout() {
   `
 
   return (
-    <div className="min-h-screen bg-navy-900 flex" style={{ background: appBackground }}>
+    <div
+      className="min-h-screen bg-navy-900 flex"
+      style={{ background: appBackground, flexDirection: 'row' }}
+    >
       {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? 'w-64' : 'w-20'} flex-shrink-0 flex flex-col transition-all duration-300 relative z-20`}
         style={{
           background: 'rgba(7,17,30,0.9)',
           backdropFilter: 'blur(20px)',
-          borderRight: '1px solid rgba(44,106,138,0.12)'
+          borderRight: isHebrew ? 'none' : '1px solid rgba(44,106,138,0.12)',
+          borderLeft: isHebrew ? '1px solid rgba(44,106,138,0.12)' : 'none',
         }}
       >
         {/* Logo block */}
@@ -92,7 +96,6 @@ export default function IntegratorLayout() {
                 style={active ? { 
                   color: '#5B9BB8',
                   background: 'rgba(44,106,138,0.1)',
-                  borderLeft: '2px solid #5B9BB8'
                 } : {}}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
@@ -124,7 +127,7 @@ export default function IntegratorLayout() {
         {/* Toggle button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors"
+          className={`absolute top-20 w-6 h-6 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors ${isHebrew ? '-left-3' : '-right-3'}`}
           style={{ background: '#0B1929', border: '1px solid rgba(44,106,138,0.2)' }}
         >
           <ChevronLeft className={`w-3 h-3 transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} />
@@ -166,7 +169,7 @@ export default function IntegratorLayout() {
             <div className="flex items-center gap-2.5 pl-3 border-l border-white/5">
               <div className="text-right">
                 <div className="text-xs font-medium text-white">{userName}</div>
-                <div className="text-[10px] text-slate-500">{labels.roles.distributorAdmin}</div>
+                <div className="text-[10px] text-slate-500">{tr('מנהל אינטגרטור', 'Integrator Admin')}</div>
               </div>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"

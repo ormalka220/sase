@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Settings2, Building2, Bell, Shield, CheckCircle, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 import PageHeader from '../../components/distribution/PageHeader'
 
 const pageVariants = {
@@ -76,6 +77,7 @@ const Toggle = ({ label, description, checked, onChange }) => (
 
 export default function Settings() {
   const { user } = useAuth()
+  const { tr, isHebrew } = useLanguage()
   const [profile, setProfile] = useState({
     companyName: 'C-DATA Distribution',
     contactName: user?.name || 'Admin User',
@@ -114,42 +116,42 @@ export default function Settings() {
     >
       {/* Page Header */}
       <PageHeader
-        title="Settings"
-        subtitle="Configuration"
-        description="Manage distributor profile and system settings"
+        title={tr('הגדרות', 'Settings')}
+        subtitle={tr('תצורה', 'Configuration')}
+        description={tr('ניהול פרופיל המפיץ והגדרות מערכת', 'Manage distributor profile and system settings')}
         icon={Settings2}
         status={saved && (
           <div className="px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-semibold text-emerald-400">Saved</span>
+            <span className="text-xs font-semibold text-emerald-400">{tr('נשמר', 'Saved')}</span>
           </div>
         )}
       />
 
       {/* Distributor Profile */}
       <SettingsSection
-        title="Distributor Profile"
-        description="Update your organization information"
+        title={tr('פרופיל מפיץ', 'Distributor Profile')}
+        description={tr('עדכון פרטי הארגון שלך', 'Update your organization information')}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <FormField
-            label="Company Name"
+            label={tr('שם חברה', 'Company Name')}
             value={profile.companyName}
             onChange={(e) => setProfile({ ...profile, companyName: e.target.value })}
           />
           <FormField
-            label="Contact Name"
+            label={tr('שם איש קשר', 'Contact Name')}
             value={profile.contactName}
             onChange={(e) => setProfile({ ...profile, contactName: e.target.value })}
           />
           <FormField
-            label="Email"
+            label={tr('אימייל', 'Email')}
             type="email"
             value={profile.email}
             onChange={(e) => setProfile({ ...profile, email: e.target.value })}
           />
           <FormField
-            label="Phone"
+            label={tr('טלפון', 'Phone')}
             type="tel"
             value={profile.phone}
             onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
@@ -159,44 +161,44 @@ export default function Settings() {
           onClick={handleSave}
           className="px-4 py-2.5 rounded-lg bg-cdata-500 hover:bg-cdata-400 text-white font-semibold text-sm transition-all"
         >
-          Save Profile
+          {tr('שמור פרופיל', 'Save Profile')}
         </button>
       </SettingsSection>
 
       {/* Product Settings */}
       <SettingsSection
-        title="Product Settings"
-        description="Configure Perception Point and FortiSASE settings"
+        title={tr('הגדרות מוצר', 'Product Settings')}
+        description={tr('הגדרות Perception Point ו-FortiSASE', 'Configure Perception Point and FortiSASE settings')}
       >
         <div className="space-y-4 mb-6">
           <div className="p-4 rounded-lg bg-white/[0.03] border border-white/5">
             <h4 className="text-sm font-semibold text-white mb-4">Perception Point</h4>
             <Toggle
-              label="Enable Perception Point Sales"
-              description="Allow integrators to sell Perception Point to customers"
+              label={tr('אפשר מכירות Perception Point', 'Enable Perception Point Sales')}
+              description={tr('לאפשר לאינטגרטורים למכור Perception Point ללקוחות', 'Allow integrators to sell Perception Point to customers')}
               checked={ppSettings.enablePP}
               onChange={(val) => setPpSettings({ ...ppSettings, enablePP: val })}
             />
             {ppSettings.enablePP && (
               <>
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-4">
-                  <div className="text-xs font-semibold text-amber-300">Invoice Billing Only</div>
-                  <div className="text-xs text-amber-200 mt-1">Perception Point uses invoice-only billing with no credit card charges.</div>
+                  <div className="text-xs font-semibold text-amber-300">{tr('חיוב חשבונית בלבד', 'Invoice Billing Only')}</div>
+                  <div className="text-xs text-amber-200 mt-1">{tr('Perception Point עובד בחיוב חשבונית בלבד ללא חיובי אשראי.', 'Perception Point uses invoice-only billing with no credit card charges.')}</div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-2">Default Billing Cycle</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-2">{tr('מחזור חיוב ברירת מחדל', 'Default Billing Cycle')}</label>
                     <select
                       value={ppSettings.billingCycle}
                       onChange={(e) => setPpSettings({ ...ppSettings, billingCycle: e.target.value })}
                       className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white focus:outline-none"
                     >
-                      <option value="monthly">Monthly</option>
-                      <option value="annual">Annual</option>
+                      <option value="monthly">{tr('חודשי', 'Monthly')}</option>
+                      <option value="annual">{tr('שנתי', 'Annual')}</option>
                     </select>
                   </div>
                   <FormField
-                    label="Price Per Mailbox"
+                    label={tr('מחיר לכל תיבת דואר', 'Price Per Mailbox')}
                     type="number"
                     placeholder="2.50"
                     value={ppSettings.pricePerMailbox}
@@ -210,8 +212,8 @@ export default function Settings() {
           <div className="p-4 rounded-lg bg-white/[0.03] border border-white/5">
             <h4 className="text-sm font-semibold text-white mb-4">FortiSASE</h4>
             <div className="p-3 rounded-lg bg-slate-500/10 border border-slate-500/30">
-              <div className="text-xs font-semibold text-slate-300">API Integration Pending</div>
-              <div className="text-xs text-slate-400 mt-1">FortiSASE integration is currently in development.</div>
+              <div className="text-xs font-semibold text-slate-300">{tr('אינטגרציית API בהמתנה', 'API Integration Pending')}</div>
+              <div className="text-xs text-slate-400 mt-1">{tr('אינטגרציית FortiSASE נמצאת כרגע בפיתוח.', 'FortiSASE integration is currently in development.')}</div>
             </div>
           </div>
         </div>
@@ -219,32 +221,32 @@ export default function Settings() {
 
       {/* Notification Settings */}
       <SettingsSection
-        title="Notification Settings"
-        description="Control which events trigger notifications"
+        title={tr('הגדרות התראות', 'Notification Settings')}
+        description={tr('שליטה באירועים שמפעילים התראות', 'Control which events trigger notifications')}
       >
         <div className="space-y-2 mb-6">
           <Toggle
-            label="New Integrator Activity"
+            label={tr('פעילות אינטגרטור חדשה', 'New Integrator Activity')}
             checked={notifications.newIntegrator}
             onChange={(val) => setNotifications({ ...notifications, newIntegrator: val })}
           />
           <Toggle
-            label="New Customer Created"
+            label={tr('לקוח חדש נוצר', 'New Customer Created')}
             checked={notifications.newCustomer}
             onChange={(val) => setNotifications({ ...notifications, newCustomer: val })}
           />
           <Toggle
-            label="Order Waiting Approval"
+            label={tr('הזמנה ממתינה לאישור', 'Order Waiting Approval')}
             checked={notifications.orderApproval}
             onChange={(val) => setNotifications({ ...notifications, orderApproval: val })}
           />
           <Toggle
-            label="Provisioning Failed"
+            label={tr('הקמה נכשלה', 'Provisioning Failed')}
             checked={notifications.provisioningFailed}
             onChange={(val) => setNotifications({ ...notifications, provisioningFailed: val })}
           />
           <Toggle
-            label="Monthly Report Generated"
+            label={tr('דוח חודשי הופק', 'Monthly Report Generated')}
             checked={notifications.monthlyReport}
             onChange={(val) => setNotifications({ ...notifications, monthlyReport: val })}
           />
@@ -253,20 +255,20 @@ export default function Settings() {
 
       {/* Approval Rules */}
       <SettingsSection
-        title="Approval Rules"
-        description="Configure automatic approval thresholds"
+        title={tr('כללי אישור', 'Approval Rules')}
+        description={tr('הגדרת ספי אישור אוטומטיים', 'Configure automatic approval thresholds')}
       >
         <div className="space-y-4 mb-6">
           <FormField
-            label="Auto-Approve Orders Below (Mailboxes)"
+            label={tr('אישור אוטומטי להזמנות מתחת ל־(תיבות דואר)', 'Auto-Approve Orders Below (Mailboxes)')}
             type="number"
             placeholder="100"
             value={approvalRules.autoApproveBelow}
             onChange={(e) => setApprovalRules({ ...approvalRules, autoApproveBelow: parseInt(e.target.value) })}
           />
           <Toggle
-            label="Require Internal Approval Note"
-            description="All approvals must include a note from the approver"
+            label={tr('דרוש הערת אישור פנימית', 'Require Internal Approval Note')}
+            description={tr('כל אישור חייב לכלול הערה מהמאשר', 'All approvals must include a note from the approver')}
             checked={approvalRules.requireNote}
             onChange={(val) => setApprovalRules({ ...approvalRules, requireNote: val })}
           />
@@ -275,23 +277,29 @@ export default function Settings() {
 
       {/* Audit & Security */}
       <SettingsSection
-        title="Audit & Security"
-        description="Security and compliance information"
+        title={tr('ביקורת ואבטחה', 'Audit & Security')}
+        description={tr('מידע אבטחה ותאימות', 'Security and compliance information')}
       >
         <div className="space-y-3 mb-6">
           <div className="p-4 rounded-lg bg-white/[0.03] border border-white/5">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Current User</div>
-            <div className="text-sm text-white font-semibold">{user?.name || 'System Admin'}</div>
-            <div className="text-xs text-slate-500 mt-1">{user?.role?.replace(/_/g, ' ') || 'Distributor Admin'}</div>
+            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{tr('משתמש נוכחי', 'Current User')}</div>
+            <div className="text-sm text-white font-semibold">{user?.name || tr('מנהל מערכת', 'System Admin')}</div>
+            <div className="text-xs text-slate-500 mt-1">
+              {user?.role
+                ? (isHebrew
+                  ? (user.role === 'DISTRIBUTOR_ADMIN' ? 'מנהל מפיץ' : user.role)
+                  : user.role.replace(/_/g, ' '))
+                : tr('מנהל מפיץ', 'Distributor Admin')}
+            </div>
           </div>
           <div className="p-4 rounded-lg bg-white/[0.03] border border-white/5">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Last Login</div>
+            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{tr('כניסה אחרונה', 'Last Login')}</div>
             <div className="text-sm text-white">{new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</div>
           </div>
         </div>
         <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white font-semibold text-sm transition-all">
           <Shield className="w-4 h-4" />
-          View Audit Log
+          {tr('הצג יומן ביקורת', 'View Audit Log')}
         </button>
       </SettingsSection>
 
@@ -304,7 +312,7 @@ export default function Settings() {
           onClick={handleSave}
           className="flex-1 px-6 py-3 rounded-lg bg-cdata-500 hover:bg-cdata-400 text-white font-bold transition-all"
         >
-          Save All Settings
+          {tr('שמור את כל ההגדרות', 'Save All Settings')}
         </button>
       </motion.div>
     </motion.div>

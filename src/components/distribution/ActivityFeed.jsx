@@ -2,7 +2,6 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { Clock, CheckCircle, Mail, Zap, Building2, FileText } from 'lucide-react'
 import { useLanguage } from '../../context/LanguageContext'
-import { getCommonLabels } from '../../i18n/labels'
 
 const itemVariants = {
   hidden: { opacity: 0, x: -10 },
@@ -25,45 +24,75 @@ const activities = [
     type: 'order_approved', 
     customer: 'TechCorp Ltd', 
     integrator: 'Global Systems', 
-    description: 'Order approved by CData',
-    time: '2 hours ago',
+    timeKey: '2_hours',
     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
   },
   { 
     type: 'admin_invited', 
     customer: 'DataFlow Inc', 
     integrator: 'Tech Partners',
-    description: 'Admin invited to Perception Point', 
-    time: '5 hours ago',
+    timeKey: '5_hours',
     timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000)
   },
   { 
     type: 'ms365_connected', 
     customer: 'SecureNet', 
     integrator: 'Enterprise Solutions',
-    description: 'Microsoft 365 connected',
-    time: '8 hours ago',
+    timeKey: '8_hours',
     timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000)
   },
   { 
     type: 'pp_org_created', 
     customer: 'CloudFirst', 
     integrator: 'Digital Leaders',
-    description: 'PP organization created',
-    time: '1 day ago',
+    timeKey: '1_day',
     timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000)
   },
   { 
     type: 'order_submitted', 
     customer: 'NextGen Corp', 
     integrator: 'Growth Partners',
-    description: 'New order submitted',
-    time: '2 days ago',
+    timeKey: '2_days',
     timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000)
   },
 ]
 
 export default function ActivityFeed() {
+  const { tr, isHebrew } = useLanguage()
+
+  const descriptionFor = (type) => {
+    switch (type) {
+      case 'order_approved': return tr('הזמנה אושרה', 'Order approved by CData')
+      case 'admin_invited': return tr('אדמין הוזמן', 'Admin invited to Perception Point')
+      case 'ms365_connected': return tr('Microsoft 365 מחובר', 'Microsoft 365 connected')
+      case 'pp_org_created': return tr('ארגון PP נוצר', 'PP organization created')
+      case 'order_submitted': return tr('הזמנה חדשה הוגשה', 'New order submitted')
+      default: return ''
+    }
+  }
+
+  const timeFor = (timeKey) => {
+    if (!isHebrew) {
+      switch (timeKey) {
+        case '2_hours': return '2 hours ago'
+        case '5_hours': return '5 hours ago'
+        case '8_hours': return '8 hours ago'
+        case '1_day': return '1 day ago'
+        case '2_days': return '2 days ago'
+        default: return timeKey
+      }
+    }
+
+    switch (timeKey) {
+      case '2_hours': return tr('לפני שעתיים', '2 hours ago')
+      case '5_hours': return tr('לפני 5 שעות', '5 hours ago')
+      case '8_hours': return tr('לפני 8 שעות', '8 hours ago')
+      case '1_day': return tr('לפני יום', '1 day ago')
+      case '2_days': return tr('לפני יומיים', '2 days ago')
+      default: return timeKey
+    }
+  }
+
   return (
     <motion.div
       className="glass rounded-xl p-6 border border-white/10 col-span-full lg:col-span-1"
@@ -77,8 +106,8 @@ export default function ActivityFeed() {
           <Clock className="w-5 h-5 text-slate-400" />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-white">Recent Activity</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Latest onboarding events</p>
+          <h3 className="text-sm font-semibold text-white">{tr('פעילות אחרונה', 'Recent Activity')}</h3>
+          <p className="text-xs text-slate-400 mt-0.5">{tr('אירועי קליטה אחרונים', 'Latest onboarding events')}</p>
         </div>
       </div>
 
@@ -114,13 +143,13 @@ export default function ActivityFeed() {
                 <div className="text-xs font-semibold text-white group-hover:text-cdata-400 transition-colors">
                   {activity.customer}
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">{activity.description}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">{descriptionFor(activity.type)}</div>
                 <div className="text-[9px] text-slate-600 mt-1">{activity.integrator}</div>
               </div>
 
               {/* Time */}
               <div className="text-[10px] text-slate-600 flex-shrink-0 text-right whitespace-nowrap">
-                {activity.time}
+                {timeFor(activity.timeKey)}
               </div>
             </motion.div>
           )

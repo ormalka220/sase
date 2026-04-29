@@ -10,6 +10,20 @@ import { useLanguage } from '../../context/LanguageContext'
 
 const INTEGRATOR_ID = 'i1'
 
+const STATUS_ALIASES = {
+  SUBMITTED: 'PENDING_DISTRIBUTOR_APPROVAL',
+  PENDING_APPROVAL: 'PENDING_DISTRIBUTOR_APPROVAL',
+  PENDING_CDATA_APPROVAL: 'PENDING_DISTRIBUTOR_APPROVAL',
+  PAID: 'APPROVED',
+  APPROVED_BY_CDATA: 'APPROVED',
+  PROVISIONING_STARTED: 'PROVISIONING',
+  PP_ORG_CREATED: 'PROVISIONED',
+  PP_ADMIN_INVITED: 'ONBOARDING_PENDING',
+  PENDING_SPOTNET_ASSIGNMENT: 'ONBOARDING_PENDING',
+  READY_FOR_ONBOARDING: 'INTEGRATION_IN_PROGRESS',
+  CANCELLED: 'REJECTED',
+}
+
 function getStatusConfig(tr) {
   return {
     DRAFT: { label: tr('טיוטה', 'Draft'), color: '#6b7280', bg: 'rgba(107,114,128,0.12)', icon: FileText },
@@ -62,6 +76,25 @@ function fmt(dt, locale) {
   return new Date(dt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
+function normalizeOrderStatus(order) {
+  const raw = String(order?.status || '').trim().toUpperCase() || 'DRAFT'
+
+  // Backward-compat for older records where status stayed DRAFT despite transitions.
+  if (raw === 'DRAFT') {
+    if (order?.approvedAt || order?.approvalStatus === 'APPROVED' || order?.paymentStatus === 'PAID') {
+      return 'APPROVED'
+    }
+    if (order?.paymentStatus === 'PENDING') {
+      return 'PAYMENT_PENDING'
+    }
+    if (order?.submittedAt || order?.approvalStatus === 'PENDING') {
+      return 'PENDING_DISTRIBUTOR_APPROVAL'
+    }
+  }
+
+  return STATUS_ALIASES[raw] || raw
+}
+
 export default function OrdersList() {
   const navigate = useNavigate()
   const { product } = useProduct()
@@ -105,15 +138,16 @@ export default function OrdersList() {
   }, [orders, product])
 
   const filtered = productOrders.filter(o => {
+    const normalizedStatus = normalizeOrderStatus(o)
     const matchSearch = !search ||
       o.id.toLowerCase().includes(search.toLowerCase()) ||
       o.customerId.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === 'all' || o.status === statusFilter
+    const matchStatus = statusFilter === 'all' || normalizedStatus === statusFilter
     return matchSearch && matchStatus
   })
 
   const statusCounts = Object.keys(statusConfig).reduce((acc, k) => {
-    acc[k] = productOrders.filter(o => o.status === k).length
+    acc[k] = productOrders.filter((o) => normalizeOrderStatus(o) === k).length
     return acc
   }, {})
 
@@ -202,7 +236,7 @@ export default function OrdersList() {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-bold text-white">{order.id.slice(0, 8).toUpperCase()}</span>
-                        <StatusBadge status={order.status} statusConfig={statusConfig} />
+                        <StatusBadge status={normalizeOrderStatus(order)} statusConfig={statusConfig} />
                         <ProductBadge product={getOrderProductCodes(order)[0]} productConfig={productConfig} />
                       </div>
                       <div className="flex items-center gap-3">

@@ -3,6 +3,7 @@ const { PerceptionPointClient } = require('./perceptionPointClient')
 const { EmailService } = require('./emailService')
 const { redact } = require('../utils/redact')
 const { auditLog } = require('../utils/audit')
+const { syncWorkspaceCustomerActivation } = require('./workspaceActivationService')
 
 const ppClient = new PerceptionPointClient()
 const emailService = new EmailService()
@@ -28,7 +29,13 @@ async function provisionWorkspaceSecurity(job, order, customer) {
     data: { status: 'IN_PROGRESS', currentStep: 'create-organization', startedAt: new Date() },
   })
   // PP orders step through granular statuses; legacy orders use PROVISIONING
-  const isPPFlow = ['APPROVED_BY_CDATA', 'PROVISIONING_STARTED', 'PP_ORG_CREATED', 'PP_ADMIN_INVITED'].includes(order.status)
+  const isPPFlow = [
+    'APPROVED_BY_CDATA',
+    'PROVISIONING_STARTED',
+    'PP_ORG_CREATED',
+    'PP_ADMIN_INVITED',
+    'PENDING_SPOTNET_ASSIGNMENT',
+  ].includes(order.status)
   await prisma.order.update({ where: { id: order.id }, data: { status: isPPFlow ? 'PROVISIONING_STARTED' : 'PROVISIONING' } })
 
   // Find or create the CustomerProduct record for workspace security
@@ -43,6 +50,7 @@ async function provisionWorkspaceSecurity(job, order, customer) {
   const existingTenant = await prisma.workspaceSecurityTenant.findUnique({ where: { customerId: customer.id } })
   if (existingTenant?.ppOrgId) {
     await prisma.order.update({ where: { id: order.id }, data: { status: 'ACTIVE', provisionedAt: new Date() } })
+    await syncWorkspaceCustomerActivation({ customerId: customer.id, actor: { userId: 'system', role: 'SYSTEM' } })
     await prisma.provisioningJob.update({
       where: { id: job.id },
       data: { status: 'SUCCESS', currentStep: 'already-provisioned', completedAt: new Date() },
@@ -119,12 +127,23 @@ async function provisionWorkspaceSecurity(job, order, customer) {
       },
     })
 
-    // Step 5: for PP orders mark READY_FOR_ONBOARDING (customer still needs to connect), else ACTIVE
-    const finalStatus = isPPFlow ? 'READY_FOR_ONBOARDING' : 'ACTIVE'
+    // Step 5: PP orders wait for manual SpotNet bundle assignment before onboarding can start.
+    const finalStatus = isPPFlow ? 'PENDING_SPOTNET_ASSIGNMENT' : 'ACTIVE'
     await prisma.order.update({
       where: { id: order.id },
       data: { status: finalStatus, provisionedAt: new Date() },
     })
+    if (isPPFlow) {
+      await logStep(
+        job.id,
+        order.id,
+        customer.id,
+        'wait-spotnet-bundle-assignment',
+        'SUCCESS',
+        { orderStatus: finalStatus },
+        { message: 'Waiting for manual SpotNet bundle assignment before onboarding' }
+      )
+    }
 
     await prisma.provisioningJob.update({
       where: { id: job.id },

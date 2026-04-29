@@ -20,12 +20,51 @@ class PerceptionPointClient {
     })
 
     if (!response.ok) {
-      const details = await response.text()
-      throw new Error(`Perception Point API error (${response.status}): ${details}`)
+      const rawDetails = await response.text()
+      const cleanDetails = this.sanitizeErrorDetails(rawDetails)
+      // Keep full upstream payload in server logs for debugging.
+      console.error('[PerceptionPointClient] upstream error', {
+        status: response.status,
+        path,
+        details: rawDetails,
+      })
+      throw new Error(`Perception Point API error (${response.status}): ${cleanDetails}`)
     }
 
     if (response.status === 204) return null
     return response.json()
+  }
+
+  sanitizeErrorDetails(raw) {
+    if (!raw) return 'Unknown upstream error'
+    const trimmed = String(raw).trim()
+    // Try JSON error payload first.
+    try {
+      const parsed = JSON.parse(trimmed)
+      if (typeof parsed === 'string') return parsed
+      if (parsed?.error) return String(parsed.error)
+      if (parsed?.message) return String(parsed.message)
+      // Handle validation payloads like: { "email": ["..."] }
+      if (parsed && typeof parsed === 'object') {
+        const firstKey = Object.keys(parsed)[0]
+        const value = firstKey ? parsed[firstKey] : null
+        if (Array.isArray(value) && value.length > 0) {
+          return `${firstKey}: ${String(value[0])}`
+        }
+        if (typeof value === 'string' && value.trim()) {
+          return `${firstKey}: ${value}`
+        }
+      }
+      return 'Upstream service error'
+    } catch {
+      // not JSON
+    }
+
+    // Strip HTML and normalize whitespace for user-facing messages.
+    const noHtml = trimmed.replace(/<[^>]+>/g, ' ')
+    const normalized = noHtml.replace(/\s+/g, ' ').trim()
+    if (!normalized) return 'Upstream service error'
+    return normalized.length > 220 ? `${normalized.slice(0, 220)}...` : normalized
   }
 
   async createOrganization({ companyName, domain, seats, adminEmail }) {
@@ -47,10 +86,30 @@ class PerceptionPointClient {
       client_alert_admin_email_addresses: adminEmail,
     }
 
-    const result = await this.request('/api/organizations/', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
+    let result
+    try {
+      result = await this.request('/api/organizations/', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+    } catch (err) {
+      const msg = String(err?.message || '')
+      // Idempotency: org already exists in PP, reuse it instead of failing provisioning.
+      if (msg.includes('organization with this name already exists')) {
+        const orgs = await this.request('/api/organizations/')
+        const list = Array.isArray(orgs?.results) ? orgs.results : Array.isArray(orgs) ? orgs : []
+        const existing = list.find((o) => String(o?.name || '').trim().toLowerCase() === String(companyName).trim().toLowerCase())
+        if (existing) {
+          return {
+            orgId: String(existing.id),
+            orgName: existing.name || companyName,
+            region: 'eu',
+            domain,
+          }
+        }
+      }
+      throw err
+    }
 
     return {
       orgId: String(result.id),
@@ -80,14 +139,26 @@ class PerceptionPointClient {
     const groups = await this.getPermissionGroups()
     const adminGroup = groups.find((g) => /admin/i.test(g.name)) || groups[0]
 
-    const result = await this.request('/api/v1/users/invite_user/', {
-      method: 'POST',
-      body: JSON.stringify({
-        email: adminEmail,
-        user_organization: Number(orgId),
-        user_groups: adminGroup ? [adminGroup.id] : [],
-      }),
-    })
+    let result
+    try {
+      result = await this.request('/api/v1/users/invite_user/', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: adminEmail,
+          user_organization: Number(orgId),
+          user_groups: adminGroup ? [adminGroup.id] : [],
+        }),
+      })
+    } catch (err) {
+      const msg = String(err?.message || '')
+      // Invitation already exists for this email — caller should ask for a new admin email and retry.
+      if (msg.includes('invitation with this e-mail address already exists')) {
+        const invitationErr = new Error('Perception Point admin invitation already exists for this email. Provide a different admin email and retry.')
+        invitationErr.code = 'PP_ADMIN_EMAIL_INVITATION_EXISTS'
+        throw invitationErr
+      }
+      throw err
+    }
 
     return {
       userId: String(result.id),

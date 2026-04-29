@@ -47,14 +47,34 @@ export const PRODUCTS = {
 }
 
 const ProductContext = createContext(null)
+const PRODUCT_STORAGE_KEY = 'customerPortal.selectedProduct'
+const VALID_PRODUCTS = new Set(Object.keys(PRODUCTS))
 
 export function ProductProvider({ children }) {
   const { user } = useAuth()
-  const [product, setProduct] = useState('perception')
+  const [product, setProductState] = useState(() => {
+    if (typeof window === 'undefined') return 'all'
+    const saved = window.localStorage.getItem(PRODUCT_STORAGE_KEY) || 'all'
+    return VALID_PRODUCTS.has(saved) ? saved : 'all'
+  })
 
-  // When the user changes (login/logout), reset product selection
+  const setProduct = (nextProduct) => {
+    const normalized = VALID_PRODUCTS.has(nextProduct) ? nextProduct : 'all'
+    setProductState(normalized)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(PRODUCT_STORAGE_KEY, normalized)
+    }
+  }
+
+  // Keep a stable default across user changes; do not force perception.
   useEffect(() => {
-    setProduct('perception')
+    if (typeof window === 'undefined') return
+    const saved = window.localStorage.getItem(PRODUCT_STORAGE_KEY)
+    if (saved && VALID_PRODUCTS.has(saved)) {
+      setProductState(saved)
+      return
+    }
+    setProductState('all')
   }, [user?.id])
 
   return (

@@ -32,7 +32,7 @@ export default function IntegratorDashboard() {
       {/* Page Header */}
       <PageHeader
         title={labels.navigation.dashboard}
-        subtitle={labels.integratorDashboard.salesAndOpsHub}
+        subtitle={labels.integrator.salesAndOpsHub}
         description={tr('סקירה כללית של הלקוחות, ההזמנות והקליטה שלך', 'Overview of your customers, orders, and onboarding progress')}
         icon={ShoppingCart}
       />
@@ -111,7 +111,7 @@ export default function IntegratorDashboard() {
         className="glass rounded-xl p-6 border border-white/10"
         variants={itemVariants}
       >
-        <h3 className="text-base font-semibold text-white mb-4">{labels.integratorDashboard.recentActivity}</h3>
+        <h3 className="text-base font-semibold text-white mb-4">{labels.integrator.recentActivity}</h3>
         <div className="space-y-3">
           {[
             { event: tr('הזמנה אושרה', 'Order Approved'), customer: 'Acme Corp', time: tr('לפני שעתיים', '2 hours ago'), icon: CheckCircle },

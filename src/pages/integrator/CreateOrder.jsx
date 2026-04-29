@@ -85,6 +85,19 @@ export default function CreateOrder() {
       setLoading(true)
       setError('')
 
+      if (selectedCustomer?.adminEmail) {
+        const emailCheck = await workspaceApi.checkAdminEmailAvailability(
+          selectedCustomer.adminEmail,
+          { customerId: selectedCustomer.id }
+        )
+        if (!emailCheck?.ok) {
+          setError(
+            emailCheck?.reason || tr('מייל האדמין חסום להזמנת PP. יש לעדכן מייל אדמין ללקוח לפני שליחה.', 'Admin email is blocked for PP order. Update customer admin email before submitting.')
+          )
+          return
+        }
+      }
+
       const pricePerMailbox = form.billingCycle === 'ANNUAL'
         ? selectedPkg.annualPricePerMailbox
         : selectedPkg.monthlyPricePerMailbox

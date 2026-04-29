@@ -143,6 +143,7 @@ export function getCommonLabels(tr) {
       PROVISIONED: tr('הוקם', 'Provisioned'),
       PP_ORG_CREATED: tr('ארגון PP נוצר', 'PP Organization Created'),
       PP_ADMIN_INVITED: tr('משתמש אדמין הוזמן', 'PP Admin Invited'),
+      PENDING_SPOTNET_ASSIGNMENT: tr('ממתין להקצאת חבילה ע״י SpotNet', 'Pending SpotNet Bundle Assignment'),
       INTEGRATION_IN_PROGRESS: tr('אינטגרציה בתהליך', 'Integration in Progress'),
       READY_FOR_ONBOARDING: tr('מוכן לקליטה', 'Ready for Onboarding'),
       ONBOARDING_PENDING: tr('ממתין לקליטה', 'Onboarding Pending'),

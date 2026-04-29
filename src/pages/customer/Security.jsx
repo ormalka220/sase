@@ -1,9 +1,9 @@
 import React from 'react'
 import { Shield, CheckCircle, AlertTriangle, Lock, Globe, Zap, Mail, Eye } from 'lucide-react'
-import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts'
 import { useLanguage } from '../../context/LanguageContext'
+import { useProduct } from '../../context/ProductContext'
 
-const protections = [
+const perceptionProtections = [
   {
     name: 'Email Security',
     nameHe: 'אבטחת אימייל',
@@ -33,20 +33,6 @@ const protections = [
     details: 'Chrome Extension · פעיל',
   },
   {
-    name: 'Network Access (SASE)',
-    nameHe: 'גישה לרשת',
-    icon: Zap,
-    status: 'active',
-    score: 96,
-    color: '#8b5cf6',
-    stats: [
-      { label: 'חיבורים פעילים', value: '89' },
-      { label: 'חיבורים חסומים', value: '3' },
-      { label: 'Data Transferred', value: '14.2 GB' },
-    ],
-    details: 'Sovereign SASE · Israel DC',
-  },
-  {
     name: 'Cloud Storage',
     nameHe: 'אחסון ענן',
     icon: Lock,
@@ -62,12 +48,83 @@ const protections = [
   },
 ]
 
+const saseProtections = [
+  {
+    name: 'Secure Access Sessions',
+    nameHe: 'סשנים מאובטחים',
+    icon: Shield,
+    status: 'active',
+    score: 97,
+    color: '#6366f1',
+    stats: [
+      { label: 'Active Sessions', value: '412' },
+      { label: 'Blocked Connections', value: '17' },
+      { label: 'ZTNA Policies', value: '24' },
+    ],
+    details: 'FortiSASE Access · Active',
+  },
+  {
+    name: 'VPN / ZTNA',
+    nameHe: 'גישה מאובטחת',
+    icon: Lock,
+    status: 'active',
+    score: 96,
+    color: '#8b5cf6',
+    stats: [
+      { label: 'Remote Users', value: '289' },
+      { label: 'MFA Verified', value: '100%' },
+      { label: 'Denied Attempts', value: '4' },
+    ],
+    details: 'Zero Trust Policies Applied',
+  },
+  {
+    name: 'Network Traffic Control',
+    nameHe: 'בקרת תעבורה',
+    icon: Globe,
+    status: 'active',
+    score: 95,
+    color: '#3b82f6',
+    stats: [
+      { label: 'Bandwidth Usage', value: '1.4 TB' },
+      { label: 'Apps Accessed', value: '63' },
+      { label: 'Countries', value: '9' },
+    ],
+    details: 'Secure Web Gateway · Active',
+  },
+  {
+    name: 'Gateway Health',
+    nameHe: 'בריאות Gateway',
+    icon: Zap,
+    status: 'active',
+    score: 98,
+    color: '#06b6d4',
+    stats: [
+      { label: 'Gateways Online', value: '7' },
+      { label: 'Devices Connected', value: '534' },
+      { label: 'Latency Avg', value: '24ms' },
+    ],
+    details: 'Regional Gateways · Healthy',
+  },
+]
+
 export default function CustomerSecurity() {
   const { tr } = useLanguage()
+  const { product } = useProduct()
+  const protections = product === 'all'
+    ? [...perceptionProtections.slice(0, 2), ...saseProtections.slice(0, 2)]
+    : product === 'sase'
+      ? saseProtections
+      : perceptionProtections
+  const overallScore = product === 'sase' ? 96 : product === 'all' ? 97 : 98
+  const securityTitle = product === 'sase'
+    ? tr('סטטוס אבטחת FortiSASE', 'FortiSASE Security Status')
+    : product === 'all'
+      ? tr('סטטוס אבטחה רב-מוצרי', 'Multi-Product Security Status')
+      : tr('סטטוס אבטחת Perception Point', 'Perception Point Security Status')
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">סטטוס הגנה</h1>
+        <h1 className="text-2xl font-bold text-white">{securityTitle}</h1>
         <p className="text-slate-500 text-sm mt-0.5">{tr('סטטוס אבטחה — בזמן אמת', 'Security Status - Real Time')}</p>
       </div>
 
@@ -81,13 +138,13 @@ export default function CustomerSecurity() {
               fill="none"
               stroke="#10b981"
               strokeWidth="10"
-              strokeDasharray={`${2 * Math.PI * 50 * 0.98} ${2 * Math.PI * 50}`}
+              strokeDasharray={`${2 * Math.PI * 50 * (overallScore / 100)} ${2 * Math.PI * 50}`}
               strokeLinecap="round"
               style={{ filter: 'drop-shadow(0 0 8px rgba(16,185,129,0.5))' }}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-black text-white">98</span>
+            <span className="text-3xl font-black text-white">{overallScore}</span>
             <span className="text-xs text-slate-500">{tr('ציון', 'Score')}</span>
           </div>
         </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { useLanguage } from '../../context/LanguageContext'
+import { workspaceApi } from '../../api/workspaceApi'
 
 const inputCls = 'w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-cdata-500/40 focus:bg-white/[0.06] transition-colors'
 const labelCls = 'text-xs text-slate-400 mb-1.5 block'
@@ -23,6 +24,8 @@ export default function CreateIntegrator() {
   const [sendInvite, setSendInvite] = useState(false)
   const [errors, setErrors] = useState({})
   const [success, setSuccess] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
 
@@ -35,11 +38,30 @@ export default function CreateIntegrator() {
     return Object.keys(e).length === 0
   }
 
-  const handleSubmit = e => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) return
-    setSuccess(true)
-    setTimeout(() => navigate('/distribution/integrators'), 1500)
+    try {
+      setSubmitting(true)
+      setSubmitError('')
+      const authUser = JSON.parse(localStorage.getItem('auth_user') || 'null')
+      const distributorId = authUser?.orgId || 'd1'
+
+      await workspaceApi.createIntegrator({
+        organizationName: form.companyName.trim(),
+        contactEmail: form.contactEmail.trim(),
+        contactPhone: form.phone.trim() || undefined,
+        country: form.country || undefined,
+        distributorId,
+      })
+
+      setSuccess(true)
+      setTimeout(() => navigate('/distribution/integrators'), 1200)
+    } catch (err) {
+      setSubmitError(err?.message || tr('יצירת אינטגרטור נכשלה', 'Failed to create integrator'))
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -56,6 +78,7 @@ export default function CreateIntegrator() {
         <div>
           <h1 className="text-2xl font-bold text-white">{tr('אינטגרטור חדש', 'New Integrator')}</h1>
           <p className="text-slate-500 text-sm mt-0.5">{tr('הוסף שותף חדש למערכת', 'Add a new partner to the system')}</p>
+          {submitError && <p className="text-xs text-red-400 mt-1">{submitError}</p>}
         </div>
       </div>
 
@@ -227,9 +250,9 @@ export default function CreateIntegrator() {
           <button
             type="submit"
             className="btn-primary text-sm"
-            disabled={success}
+            disabled={success || submitting}
           >
-            {tr('שמור אינטגרטור', 'Save Integrator')}
+            {submitting ? tr('שומר...', 'Saving...') : tr('שמור אינטגרטור', 'Save Integrator')}
           </button>
         </div>
       </form>

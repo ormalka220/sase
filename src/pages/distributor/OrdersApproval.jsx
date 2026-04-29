@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import {
   ShoppingCart, CheckCircle2, XCircle, Clock, Mail, ShieldCheck,
-  AlertTriangle, Search, RotateCcw, FileText, Users, Info,
+  AlertTriangle, Search, RotateCcw, FileText, Users, Info, Loader2,
   Building2, Zap
 } from 'lucide-react'
 import { useProduct } from '../../context/ProductContext'
+import { useAuth } from '../../context/AuthContext'
 import { workspaceApi } from '../../api/workspaceApi'
 import { useLanguage } from '../../context/LanguageContext'
 import { getCommonLabels } from '../../i18n/labels'
@@ -23,6 +24,7 @@ function getStatusConfig(labels) {
     PROVISIONING_STARTED:   { label: labels.statuses.PROVISIONING_STARTED, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
     PP_ORG_CREATED:         { label: labels.statuses.PP_ORG_CREATED, color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)' },
     PP_ADMIN_INVITED:       { label: labels.statuses.PP_ADMIN_INVITED, color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)' },
+    PENDING_SPOTNET_ASSIGNMENT: { label: labels.statuses.PENDING_SPOTNET_ASSIGNMENT, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
     READY_FOR_ONBOARDING:   { label: labels.statuses.READY_FOR_ONBOARDING, color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
     ACTIVE:                 { label: labels.statuses.ACTIVE, color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
     REJECTED:               { label: labels.statuses.REJECTED, color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
@@ -54,7 +56,7 @@ function fmtUsd(amount) {
 
 // ── PP Order Detail Panel ─────────────────────────────────────────────────────
 
-function PPOrderDetail({ order, isHebrew }) {
+function PPOrderDetail({ order, isHebrew, tr }) {
   const customer = order.customer || {}
   const items = order.items || []
   const productName = items[0]?.product?.name || 'Perception Point'
@@ -63,7 +65,7 @@ function PPOrderDetail({ order, isHebrew }) {
     <div className="mt-4 pt-4 border-t border-white/[0.06] grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Customer info */}
       <div className="space-y-2">
-        <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Customer</div>
+        <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">{tr('לקוח', 'Customer')}</div>
         <div className="flex items-center gap-2">
           <Building2 className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
           <span className="text-xs text-white font-semibold">{customer.companyName || order.customerId}</span>
@@ -84,32 +86,32 @@ function PPOrderDetail({ order, isHebrew }) {
         <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Perception Point</div>
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <div className="text-slate-600 mb-0.5">Package</div>
+            <div className="text-slate-600 mb-0.5">{tr('חבילה', 'Package')}</div>
             <div className="text-white font-semibold">{productName}</div>
           </div>
           <div>
-            <div className="text-slate-600 mb-0.5">Billing Cycle</div>
+            <div className="text-slate-600 mb-0.5">{tr('מחזור חיוב', 'Billing Cycle')}</div>
             <div className="text-white font-semibold">{order.billingCycle || '—'}</div>
           </div>
           <div>
-            <div className="text-slate-600 mb-0.5">Est. Mailboxes</div>
+            <div className="text-slate-600 mb-0.5">{tr('תיבות דואר משוערות', 'Est. Mailboxes')}</div>
             <div className="text-white font-semibold">
               {order.estimatedUsers ? order.estimatedUsers.toLocaleString() : '—'}
             </div>
           </div>
           <div>
-            <div className="text-slate-600 mb-0.5">Est. Monthly</div>
+            <div className="text-slate-600 mb-0.5">{tr('משוער חודשי', 'Est. Monthly')}</div>
             <div className="text-emerald-400 font-semibold">{fmtUsd(order.totalAmount)}</div>
           </div>
           <div>
-            <div className="text-slate-600 mb-0.5">Billing Method</div>
+            <div className="text-slate-600 mb-0.5">{tr('שיטת חיוב', 'Billing Method')}</div>
             <div className="text-indigo-300 font-semibold flex items-center gap-1">
               <FileText className="w-3 h-3" />
-              Invoice Only
+              {tr('חשבונית בלבד', 'Invoice Only')}
             </div>
           </div>
           <div>
-            <div className="text-slate-600 mb-0.5">Submitted</div>
+            <div className="text-slate-600 mb-0.5">{tr('נשלח', 'Submitted')}</div>
             <div className="text-white font-semibold">{fmt(order.submittedAt, isHebrew ? 'he-IL' : 'en-US')}</div>
           </div>
         </div>
@@ -120,15 +122,17 @@ function PPOrderDetail({ order, isHebrew }) {
         style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}>
         <Info className="w-3 h-3 flex-shrink-0 mt-0.5 text-indigo-400" />
         <span>
-          <span className="text-indigo-300 font-semibold">Usage-Based Billing: </span>
-          Final invoice is calculated by actual protected mailboxes connected in Perception Point,
-          not by the estimate above. No credit card payment required — invoice only.
+          <span className="text-indigo-300 font-semibold">{tr('חיוב על בסיס שימוש:', 'Usage-Based Billing:')} </span>
+          {isHebrew
+            ? `החשבונית הסופית מחושבת לפי תיבות דואר מוגנות בפועל המחוברות ב-Perception Point, ולא לפי ההערכה לעיל. אין צורך בתשלום בכרטיס אשראי — חשבונית בלבד.`
+            : `Final invoice is calculated by actual protected mailboxes connected in Perception Point, not by the estimate above. No credit card payment required — invoice only.`
+          }
         </span>
       </div>
 
       {order.notes && (
         <div className="md:col-span-2">
-          <div className="text-[10px] text-slate-600 mb-1">Notes from integrator</div>
+          <div className="text-[10px] text-slate-600 mb-1">{tr('הערות מהאינטגרטור', 'Notes from integrator')}</div>
           <p className="text-xs text-slate-400">{order.notes}</p>
         </div>
       )}
@@ -142,6 +146,7 @@ const PENDING_APPROVAL_STATUSES = ['PENDING_APPROVAL', 'PENDING_CDATA_APPROVAL']
 
 export default function OrdersApproval() {
   const { product, config } = useProduct()
+  const { user } = useAuth()
   const { tr, isHebrew } = useLanguage()
   const labels = getCommonLabels(tr)
   const statusConfig = getStatusConfig(labels)
@@ -153,6 +158,9 @@ export default function OrdersApproval() {
   const [rejectReason, setRejectReason] = useState('')
   const [expandedOrderId, setExpandedOrderId] = useState(null)
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
+  const [actionLoading, setActionLoading] = useState({})
+  const [retryModal, setRetryModal] = useState({ open: false, order: null, email: '', error: '' })
 
   async function loadOrders() {
     try {
@@ -177,24 +185,134 @@ export default function OrdersApproval() {
 
   useEffect(() => { loadOrders() }, [])
 
-  async function approveOrder(orderId) {
+  async function approveOrder(order) {
     try {
-      await workspaceApi.approveOrder(orderId)
+      setActionLoading((prev) => ({ ...prev, [order.id]: 'approve' }))
+      const res = await workspaceApi.approveOrder(order.id)
+      const warning = String(res?.provisioningWarning || '')
+      if (warning.includes('admin invitation already exists')) {
+        setRetryModal({
+          open: true,
+          order,
+          email: order?.customer?.adminEmail || '',
+          error: '',
+        })
+      }
       await loadOrders()
     } catch (e) {
       setError(e.message)
+      // Even on API error, refresh to reflect the latest server-side status transition.
+      await loadOrders()
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [order.id]: null }))
     }
   }
 
   async function rejectOrder(orderId) {
     if (!rejectReason.trim()) return
     try {
+      setActionLoading((prev) => ({ ...prev, [orderId]: 'reject' }))
       await workspaceApi.rejectOrder(orderId, rejectReason)
       await loadOrders()
       setRejectTarget(null)
       setRejectReason('')
     } catch (e) {
       setError(e.message)
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [orderId]: null }))
+    }
+  }
+
+  async function retryProvision(order) {
+    try {
+      setError('')
+      setActionLoading((prev) => ({ ...prev, [order.id]: 'retry' }))
+      await workspaceApi.provisionOrder(order.id)
+      await loadOrders()
+    } catch (e) {
+      const msg = String(e?.message || '')
+      if (msg.includes('PP_ADMIN_EMAIL_INVITATION_EXISTS') || msg.includes('admin invitation already exists')) {
+        setRetryModal({
+          open: true,
+          order,
+          email: order?.customer?.adminEmail || '',
+          error: '',
+        })
+      } else {
+        setError(e.message)
+        await loadOrders()
+      }
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [order.id]: null }))
+    }
+  }
+
+  async function submitRetryWithNewEmail() {
+    const order = retryModal.order
+    if (!order) return
+    const customerId = order.customerId || order?.customer?.id
+    if (!customerId) {
+      setRetryModal((prev) => ({
+        ...prev,
+        error: tr('לא נמצא מזהה לקוח להזמנה הזו. רענן את הדף ונסה שוב.', 'Could not resolve customer id for this order. Refresh and try again.'),
+      }))
+      return
+    }
+    const email = retryModal.email.trim()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setRetryModal((prev) => ({
+        ...prev,
+        error: tr('יש להזין כתובת אימייל תקינה.', 'Please enter a valid email address.'),
+      }))
+      return
+    }
+
+    try {
+      setError('')
+      setInfo('')
+      setActionLoading((prev) => ({ ...prev, [order.id]: 'retry' }))
+      setRetryModal((prev) => ({ ...prev, error: '' }))
+      await workspaceApi.updateCustomer(customerId, { adminEmail: email })
+      await workspaceApi.provisionOrder(order.id)
+      await loadOrders()
+      setInfo(tr('האימייל עודכן והמערכת ניסתה שוב לבצע הקמה.', 'Admin email updated and provisioning retry was triggered.'))
+      setRetryModal({ open: false, order: null, email: '', error: '' })
+    } catch (e) {
+      setRetryModal((prev) => ({ ...prev, error: e.message || tr('הפעולה נכשלה.', 'Action failed.') }))
+      await loadOrders()
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [order.id]: null }))
+    }
+  }
+
+  async function markSpotnetSent(orderId) {
+    try {
+      setError('')
+      setInfo('')
+      setActionLoading((prev) => ({ ...prev, [orderId]: 'spotnet-sent' }))
+      await workspaceApi.markSpotnetSent(orderId)
+      await loadOrders()
+      setInfo(tr('ההזמנה סומנה כנשלחה ל-SpotNet להקצאת חבילה.', 'Order was marked as sent to SpotNet for bundle assignment.'))
+    } catch (e) {
+      setError(e.message || tr('הפעולה נכשלה.', 'Action failed.'))
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [orderId]: null }))
+    }
+  }
+
+  async function markSpotnetAssigned(orderId) {
+    try {
+      setError('')
+      setInfo('')
+      setActionLoading((prev) => ({ ...prev, [orderId]: 'spotnet-assigned' }))
+      await workspaceApi.markSpotnetAssigned(orderId)
+      await loadOrders()
+      setInfo(tr('הקצאת החבילה סומנה כהושלמה. ניתן להתחיל onboarding.', 'Bundle assignment marked as complete. Onboarding can now begin.'))
+    } catch (e) {
+      setError(e.message || tr('הפעולה נכשלה.', 'Action failed.'))
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [orderId]: null }))
     }
   }
 
@@ -213,7 +331,7 @@ export default function OrdersApproval() {
 
   const pendingCount = orders.filter(o => PENDING_APPROVAL_STATUSES.includes(o.status)).length
   const ppPendingCount = orders.filter(o => o.status === 'PENDING_CDATA_APPROVAL').length
-  const approvedCount = orders.filter(o => ['APPROVED', 'APPROVED_BY_CDATA', 'ACTIVE', 'READY_FOR_ONBOARDING'].includes(o.status)).length
+  const approvedCount = orders.filter(o => ['APPROVED', 'APPROVED_BY_CDATA', 'ACTIVE', 'READY_FOR_ONBOARDING', 'PENDING_SPOTNET_ASSIGNMENT'].includes(o.status)).length
   const rejectedCount = orders.filter(o => ['REJECTED_BY_CDATA', 'CANCELLED'].includes(o.status)).length
 
   return (
@@ -229,6 +347,7 @@ export default function OrdersApproval() {
           </div>
           <p className="text-xs text-slate-500">{tr('סקירה ואישור הזמנות Perception Point ו-SASE', 'Review and approve Perception Point and SASE orders')}</p>
           {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
+          {info && <p className="text-xs text-emerald-400 mt-1">{info}</p>}
         </div>
         {pendingCount > 0 && (
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl"
@@ -242,10 +361,10 @@ export default function OrdersApproval() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Pending CData Approval', count: ppPendingCount,  color: '#f59e0b', status: 'PENDING_CDATA_APPROVAL' },
-          { label: 'Pending (Legacy)',        count: orders.filter(o => o.status === 'PENDING_APPROVAL').length, color: '#f59e0b', status: 'PENDING_APPROVAL' },
-          { label: 'Approved / Active',       count: approvedCount,  color: '#10b981', status: null },
-          { label: 'Rejected / Cancelled',    count: rejectedCount,  color: '#ef4444', status: null },
+          { label: tr('ממתין לאישור CData', 'Pending CData Approval'), count: ppPendingCount,  color: '#f59e0b', status: 'PENDING_CDATA_APPROVAL' },
+          { label: tr('ממתין (Legacy)',        'Pending (Legacy)'),        count: orders.filter(o => o.status === 'PENDING_APPROVAL').length, color: '#f59e0b', status: 'PENDING_APPROVAL' },
+          { label: tr('מאושר / פעיל',       'Approved / Active'),       count: approvedCount,  color: '#10b981', status: null },
+          { label: tr('נדחה / בוטל',       'Rejected / Cancelled'),    count: rejectedCount,  color: '#ef4444', status: null },
         ].map(card => (
           <button key={card.label}
             onClick={() => card.status && setFilter(filter === card.status ? 'all' : card.status)}
@@ -272,8 +391,8 @@ export default function OrdersApproval() {
           <select value={productFilter} onChange={e => setProductFilter(e.target.value)}
             className="bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
             <option value="all">{tr('כל המוצרים', 'All Products')}</option>
-            <option value="sase">Forti SASE</option>
-            <option value="perception">Perception Point</option>
+            <option value="sase">{labels.products.fortiSASE}</option>
+            <option value="perception">{labels.products.perceptionPoint}</option>
           </select>
         )}
         <button onClick={() => { setSearch(''); setFilter('all'); setProductFilter(product === 'all' ? 'all' : product) }}
@@ -296,6 +415,9 @@ export default function OrdersApproval() {
           const isPending = PENDING_APPROVAL_STATUSES.includes(order.status)
           const isPPOrder = order.isPPOrder
           const isExpanded = expandedOrderId === order.id
+          const loadingAction = actionLoading[order.id]
+          const isAnyLoading = Boolean(loadingAction)
+          const canManageSpotnet = user?.role === 'SUPER_ADMIN'
           const prodColor = isPPOrder ? '#059669' : '#2C6A8A'
           const ProdIcon = isPPOrder ? Mail : ShieldCheck
 
@@ -318,13 +440,13 @@ export default function OrdersApproval() {
                         <StatusBadge status={order.status} statusConfig={statusConfig} />
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold"
                           style={{ background: `${prodColor}12`, color: prodColor }}>
-                          {isPPOrder ? 'Perception Point' : 'Forti SASE'}
+                          {isPPOrder ? labels.products.perceptionPoint : labels.products.fortiSASE}
                         </span>
                         {isPPOrder && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold"
                             style={{ background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.2)' }}>
                             <FileText className="w-2.5 h-2.5 inline mr-0.5" />
-                            Invoice
+                            {tr('חשבונית', 'Invoice')}
                           </span>
                         )}
                       </div>
@@ -338,7 +460,7 @@ export default function OrdersApproval() {
                           <>
                             <span className="flex items-center gap-0.5">
                               <Users className="w-3 h-3" />
-                              {order.estimatedUsers.toLocaleString()} est. mailboxes
+                              {order.estimatedUsers.toLocaleString()} {tr('תיבות דואר משוערות', 'est. mailboxes')}
                             </span>
                             <span className="text-slate-700">·</span>
                           </>
@@ -349,7 +471,7 @@ export default function OrdersApproval() {
                             <span className="text-slate-700">·</span>
                           </>
                         )}
-                        <span>Integrator: <span className="text-slate-400">{order.integrator?.organization?.name || order.integratorId}</span></span>
+                        <span>{tr('אינטגרטור', 'Integrator')}: <span className="text-slate-400">{order.integrator?.organization?.name || order.integratorId}</span></span>
                         <span className="text-slate-700">·</span>
                         <span>{tr('נוצר', 'Created')}: {fmt(order.createdAt, isHebrew ? 'he-IL' : 'en-US')}</span>
                         {order.totalAmount != null && (
@@ -366,6 +488,17 @@ export default function OrdersApproval() {
                           {order.failureReason}
                         </div>
                       )}
+                      {isPPOrder && order.status === 'PENDING_SPOTNET_ASSIGNMENT' && (
+                        <div
+                          className="mt-2 text-[11px] px-2.5 py-2 rounded-lg"
+                          style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.28)', color: '#c4b5fd' }}
+                        >
+                          {tr(
+                            'נדרשת הקצאת חבילה ידנית ע״י SpotNet לפני המשך הקליטה.',
+                            'Manual SpotNet bundle assignment is required before onboarding can continue.'
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -380,13 +513,15 @@ export default function OrdersApproval() {
 
                     {isPending && (
                       <>
-                        <button onClick={() => approveOrder(order.id)}
+                        <button onClick={() => approveOrder(order)}
+                          disabled={isAnyLoading}
                           className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105"
                           style={{ background: 'linear-gradient(135deg, #059669, #047857)', boxShadow: '0 2px 8px rgba(5,150,105,0.3)' }}>
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          {tr('אשר', 'Approve')}
+                          {loadingAction === 'approve' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                          {loadingAction === 'approve' ? tr('טוען...', 'Loading...') : tr('אשר', 'Approve')}
                         </button>
                         <button onClick={() => setRejectTarget(order.id)}
+                          disabled={isAnyLoading}
                           className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:scale-105"
                           style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}>
                           <XCircle className="w-3.5 h-3.5" />
@@ -397,18 +532,76 @@ export default function OrdersApproval() {
 
                     {order.status === 'APPROVED' && !isPPOrder && (
                       <button
-                        onClick={async () => { await workspaceApi.provisionOrder(order.id); await loadOrders() }}
+                        onClick={async () => {
+                          try {
+                            setActionLoading((prev) => ({ ...prev, [order.id]: 'provision' }))
+                            await workspaceApi.provisionOrder(order.id)
+                          } finally {
+                            await loadOrders()
+                            setActionLoading((prev) => ({ ...prev, [order.id]: null }))
+                          }
+                        }}
+                        disabled={isAnyLoading}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105"
                         style={{ background: 'linear-gradient(135deg, #2C6A8A, #1F5070)', boxShadow: '0 2px 8px rgba(44,106,138,0.3)' }}>
-                        <Zap className="w-3.5 h-3.5" />
-                        {tr('בצע הקמה', 'Provision')}
+                        {loadingAction === 'provision' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                        {loadingAction === 'provision' ? tr('טוען...', 'Loading...') : tr('בצע הקמה', 'Provision')}
                       </button>
+                    )}
+
+                    {order.status === 'FAILED' && (
+                      <>
+                        <button
+                          onClick={() => setRetryModal({
+                            open: true,
+                            order,
+                            email: order?.customer?.adminEmail || '',
+                            error: '',
+                          })}
+                          disabled={isAnyLoading}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold border border-cdata-500/30 text-cdata-300 hover:bg-cdata-500/10 transition-colors"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          {tr('עדכן אימייל אדמין', 'Update Admin Email')}
+                        </button>
+                        <button
+                          onClick={() => retryProvision(order)}
+                          disabled={isAnyLoading}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105"
+                          style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 2px 8px rgba(245,158,11,0.3)' }}
+                        >
+                          {loadingAction === 'retry' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                          {loadingAction === 'retry' ? tr('טוען...', 'Loading...') : tr('נסה שוב', 'Retry')}
+                        </button>
+                      </>
+                    )}
+
+                    {canManageSpotnet && isPPOrder && order.status === 'PENDING_SPOTNET_ASSIGNMENT' && (
+                      <>
+                        <button
+                          onClick={() => markSpotnetSent(order.id)}
+                          disabled={isAnyLoading}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold border border-violet-400/30 text-violet-200 hover:bg-violet-500/10 transition-colors"
+                        >
+                          {loadingAction === 'spotnet-sent' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+                          {loadingAction === 'spotnet-sent' ? tr('טוען...', 'Loading...') : tr('נשלח ל-SpotNet', 'Sent to SpotNet')}
+                        </button>
+                        <button
+                          onClick={() => markSpotnetAssigned(order.id)}
+                          disabled={isAnyLoading}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:scale-105"
+                          style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }}
+                        >
+                          {loadingAction === 'spotnet-assigned' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                          {loadingAction === 'spotnet-assigned' ? tr('טוען...', 'Loading...') : tr('סמן כהוקצה', 'Mark Assigned')}
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
 
                 {/* PP order detail expansion */}
-                {isPPOrder && isExpanded && <PPOrderDetail order={order} isHebrew={isHebrew} />}
+                {isPPOrder && isExpanded && <PPOrderDetail order={order} isHebrew={isHebrew} tr={tr} />}
               </div>
 
               {/* Rejection input */}
@@ -422,7 +615,7 @@ export default function OrdersApproval() {
                     <button onClick={() => rejectOrder(order.id)} disabled={!rejectReason.trim()}
                       className="px-4 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-40 transition-colors"
                       style={{ background: 'rgba(239,68,68,0.8)' }}>
-                      {tr('אשר דחייה', 'Confirm Reject')}
+                      {loadingAction === 'reject' ? tr('טוען...', 'Loading...') : tr('אשר דחייה', 'Confirm Reject')}
                     </button>
                     <button onClick={() => { setRejectTarget(null); setRejectReason('') }}
                       className="px-3 py-2 rounded-lg text-xs text-slate-400 hover:text-white border border-white/10">
@@ -435,6 +628,50 @@ export default function OrdersApproval() {
           )
         })}
       </div>
+
+      {retryModal.open && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="w-full max-w-md glass rounded-xl border border-white/15 p-5">
+            <div className="text-sm font-semibold text-white mb-1">
+              {tr('נדרש אימייל אדמין חדש', 'A new admin email is required')}
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              {tr(
+                'כבר קיימת הזמנה לכתובת הזו ב-Perception Point. הזן כתובת אימייל אחרת וננסה שוב.',
+                'An invitation already exists for this email in Perception Point. Enter a different email and retry.'
+              )}
+            </p>
+
+            <label className="block text-xs text-slate-400 mb-1">{tr('אימייל אדמין חדש', 'New admin email')}</label>
+            <input
+              type="email"
+              value={retryModal.email}
+              onChange={(e) => setRetryModal((prev) => ({ ...prev, email: e.target.value }))}
+              className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none"
+              placeholder="name@company.com"
+            />
+            {retryModal.error && <div className="text-xs text-red-400 mt-2">{retryModal.error}</div>}
+
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={submitRetryWithNewEmail}
+                disabled={actionLoading[retryModal.order?.id] === 'retry'}
+                className="flex-1 px-3 py-2 rounded-lg text-xs font-semibold text-white bg-cdata-500 hover:bg-cdata-400 transition-colors"
+              >
+                {actionLoading[retryModal.order?.id] === 'retry'
+                  ? <span className="inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />{tr('טוען...', 'Loading...')}</span>
+                  : tr('עדכן ונסה שוב', 'Update and Retry')}
+              </button>
+              <button
+                onClick={() => setRetryModal({ open: false, order: null, email: '', error: '' })}
+                className="px-3 py-2 rounded-lg text-xs text-slate-300 border border-white/10 hover:text-white hover:border-white/20 transition-colors"
+              >
+                {tr('ביטול', 'Cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -5,8 +5,9 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
 import { TrendingUp } from 'lucide-react'
+import { useLanguage } from '../../context/LanguageContext'
 
-const chartData = [
+const baseChartData = [
   { month: 'Jan', revenue: 12000, mailboxes: 4500, customers: 45 },
   { month: 'Feb', revenue: 19000, mailboxes: 6200, customers: 52 },
   { month: 'Mar', revenue: 15000, mailboxes: 5800, customers: 58 },
@@ -30,6 +31,17 @@ const CustomTooltip = ({ active, payload }) => {
 }
 
 export default function RevenueChartsSection() {
+  const { tr, isHebrew } = useLanguage()
+
+  const months = isHebrew
+    ? { Jan: 'ינואר', Feb: 'פברואר', Mar: 'מרץ', Apr: 'אפריל', May: 'מאי', Jun: 'יוני' }
+    : { Jan: 'Jan', Feb: 'Feb', Mar: 'Mar', Apr: 'Apr', May: 'May', Jun: 'Jun' }
+
+  const chartData = baseChartData.map((d) => ({
+    ...d,
+    month: months[d.month] || d.month,
+  }))
+
   return (
     <motion.div
       className="grid grid-cols-1 lg:grid-cols-3 gap-6 col-span-full"
@@ -45,8 +57,10 @@ export default function RevenueChartsSection() {
         <div className="flex items-center gap-2 mb-5">
           <TrendingUp className="w-5 h-5 text-emerald-400" />
           <div>
-            <h3 className="text-sm font-semibold text-white">Monthly Revenue</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Est. PP billing by protected mailboxes</p>
+            <h3 className="text-sm font-semibold text-white">{tr('הכנסה חודשית משוערת', 'Monthly Revenue')}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {tr('הערכת חיוב PP לפי תיבות דואר מוגנות', 'Est. PP billing by protected mailboxes')}
+            </p>
           </div>
         </div>
 
@@ -73,8 +87,8 @@ export default function RevenueChartsSection() {
         whileHover={{ borderColor: 'rgba(44,106,138,0.25)' }}
       >
         <div>
-          <h3 className="text-sm font-semibold text-white mb-1">Top Integrators</h3>
-          <p className="text-xs text-slate-400 mb-5">By active customers</p>
+          <h3 className="text-sm font-semibold text-white mb-1">{tr('אינטגרטורים מובילים', 'Top Integrators')}</h3>
+          <p className="text-xs text-slate-400 mb-5">{tr('לפי לקוחות פעילים', 'By active customers')}</p>
         </div>
 
         <div className="space-y-3">
@@ -98,7 +112,9 @@ export default function RevenueChartsSection() {
                 </div>
                 <div className="text-xs text-emerald-400 font-bold flex-shrink-0 ml-2">{integrator.revenue}</div>
               </div>
-              <div className="text-[10px] text-slate-500">{integrator.customers} customers</div>
+              <div className="text-[10px] text-slate-500">
+                {integrator.customers} {isHebrew ? 'לקוחות' : 'customers'}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -110,8 +126,8 @@ export default function RevenueChartsSection() {
         whileHover={{ borderColor: 'rgba(44,106,138,0.25)' }}
       >
         <div>
-          <h3 className="text-sm font-semibold text-white mb-1">Protected Mailboxes</h3>
-          <p className="text-xs text-slate-400 mb-5">Growth trend</p>
+          <h3 className="text-sm font-semibold text-white mb-1">{tr('תיבות דואר מוגנות', 'Protected Mailboxes')}</h3>
+          <p className="text-xs text-slate-400 mb-5">{tr('מגמת צמיחה', 'Growth trend')}</p>
         </div>
 
         <ResponsiveContainer width="100%" height={140}>
@@ -131,8 +147,8 @@ export default function RevenueChartsSection() {
         whileHover={{ borderColor: 'rgba(44,106,138,0.25)' }}
       >
         <div>
-          <h3 className="text-sm font-semibold text-white mb-1">Customer Growth</h3>
-          <p className="text-xs text-slate-400 mb-5">Monthly new customers</p>
+          <h3 className="text-sm font-semibold text-white mb-1">{tr('צמיחת לקוחות', 'Customer Growth')}</h3>
+          <p className="text-xs text-slate-400 mb-5">{tr('לקוחות חדשים בחודש', 'Monthly new customers')}</p>
         </div>
 
         <ResponsiveContainer width="100%" height={140}>

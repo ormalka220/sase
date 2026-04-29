@@ -48,5 +48,15 @@ export async function request(path, { method = 'GET', body, auth } = {}) {
     throw new Error(msg)
   }
 
-  return response.json()
+  // Some endpoints (e.g. DELETE) return 204 No Content.
+  if (response.status === 204) return null
+
+  // Avoid JSON parse errors on empty bodies.
+  const text = await response.text()
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
 }

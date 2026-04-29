@@ -1,7 +1,8 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle2, ExternalLink, FileText, Mail, Shield } from 'lucide-react'
+import { CheckCircle2, ExternalLink, FileText, Mail, Shield, Network, Users, SlidersHorizontal } from 'lucide-react'
 import { useLanguage } from '../../context/LanguageContext'
+import { useProduct } from '../../context/ProductContext'
 
 const pageVariants = {
   hidden: { opacity: 0 },
@@ -15,22 +16,49 @@ const itemVariants = {
 
 export default function CustomerOnboarding() {
   const { tr } = useLanguage()
+  const { product } = useProduct()
 
-  const steps = [
-    { id: 1, title: tr('הזמנה הוגשה', 'Order Submitted'), status: 'completed', icon: CheckCircle2 },
-    { id: 2, title: tr('אישור CData', 'CData Approval'), status: 'completed', icon: CheckCircle2 },
-    { id: 3, title: tr('הזמנת PP נוצרה', 'PP Organization Created'), status: 'in_progress', icon: Shield },
-    { id: 4, title: tr('מנהל הוזמן', 'Admin Invited'), status: 'pending', icon: Mail },
-    { id: 5, title: tr('חיבור Microsoft 365', 'Connect Microsoft 365'), status: 'pending', icon: ExternalLink },
-    { id: 6, title: tr('חיבור Gmail', 'Connect Gmail'), status: 'pending', icon: ExternalLink },
-  ]
+  const stepsByProduct = {
+    perception: [
+      { id: 1, title: tr('הזמנה הוגשה', 'Order Submitted'), status: 'completed', icon: CheckCircle2 },
+      { id: 2, title: tr('אישור CData', 'CData Approval'), status: 'completed', icon: CheckCircle2 },
+      { id: 3, title: tr('הזמנת PP נוצרה', 'PP Organization Created'), status: 'in_progress', icon: Shield },
+      { id: 4, title: tr('מנהל הוזמן', 'Admin Invited'), status: 'pending', icon: Mail },
+      { id: 5, title: tr('חיבור Microsoft 365', 'Connect Microsoft 365'), status: 'pending', icon: ExternalLink },
+      { id: 6, title: tr('חיבור Gmail', 'Connect Gmail'), status: 'pending', icon: ExternalLink },
+    ],
+    sase: [
+      { id: 1, title: tr('הזמנה הוגשה', 'Order Submitted'), status: 'completed', icon: CheckCircle2 },
+      { id: 2, title: tr('אישור CData', 'CData Approval'), status: 'completed', icon: CheckCircle2 },
+      { id: 3, title: tr('יצירת Tenant', 'Create Tenant'), status: 'in_progress', icon: Shield },
+      { id: 4, title: tr('הגדרת Gateway', 'Configure Gateway'), status: 'pending', icon: Network },
+      { id: 5, title: tr('התקנת Agent / Extension', 'Install Agent / Extension'), status: 'pending', icon: Users },
+      { id: 6, title: tr('הגדרת Policies', 'Define Policies'), status: 'pending', icon: SlidersHorizontal },
+    ],
+  }
 
-  const resources = [
-    { title: tr('עמוד ההתחלה', 'Getting Started'), desc: tr('מידע בסיסי על Perception Point', 'Basic Perception Point information'), icon: FileText },
-    { title: tr('חיבור Microsoft 365', 'Microsoft 365 Connection'), desc: tr('הוראות שלב אחרי שלב', 'Step-by-step instructions'), icon: ExternalLink },
-    { title: tr('חיבור Gmail', 'Gmail Connection'), desc: tr('חיבור חשבונות Gmail', 'Gmail account connection'), icon: ExternalLink },
-    { title: tr('צור קשר עם המשתתף', 'Contact Integrator'), desc: tr('קבל עזרה מהשותף שלך', 'Get help from your integrator'), icon: Mail },
-  ]
+  const steps = product === 'all' ? [...stepsByProduct.perception, ...stepsByProduct.sase] : stepsByProduct[product] || stepsByProduct.perception
+
+  const resourcesByProduct = {
+    perception: [
+      { title: tr('עמוד ההתחלה', 'Getting Started'), desc: tr('מידע בסיסי על Perception Point', 'Basic Perception Point information'), icon: FileText },
+      { title: tr('חיבור Microsoft 365', 'Microsoft 365 Connection'), desc: tr('הוראות שלב אחרי שלב', 'Step-by-step instructions'), icon: ExternalLink },
+      { title: tr('חיבור Gmail', 'Gmail Connection'), desc: tr('חיבור חשבונות Gmail', 'Gmail account connection'), icon: ExternalLink },
+      { title: tr('צור קשר עם האינטגרטור', 'Contact Integrator'), desc: tr('קבל עזרה מהשותף שלך', 'Get help from your integrator'), icon: Mail },
+    ],
+    sase: [
+      { title: tr('Tenant Quick Start', 'Tenant Quick Start'), desc: tr('הקמת סביבה תוך דקות', 'Set up your environment in minutes'), icon: FileText },
+      { title: tr('הקמת Gateway', 'Gateway Setup'), desc: tr('הגדרות רשת מומלצות', 'Recommended network settings'), icon: Network },
+      { title: tr('פריסת Agent', 'Agent Deployment'), desc: tr('התקנה למשתמשים והתקנים', 'Install for users and devices'), icon: Users },
+      { title: tr('תכנון מדיניות', 'Policy Playbook'), desc: tr('בניית ZTNA/VPN policies', 'Build ZTNA/VPN policies'), icon: SlidersHorizontal },
+    ],
+  }
+  const resources = product === 'all' ? [...resourcesByProduct.perception, ...resourcesByProduct.sase] : resourcesByProduct[product] || resourcesByProduct.perception
+  const title = product === 'sase'
+    ? tr('הכנת FortiSASE', 'FortiSASE Setup')
+    : product === 'all'
+      ? tr('הכנת מוצרים', 'Products Setup')
+      : tr('הכנת Perception Point', 'Perception Point Setup')
 
   return (
     <motion.div
@@ -41,7 +69,7 @@ export default function CustomerOnboarding() {
     >
       {/* Header */}
       <motion.div variants={itemVariants}>
-        <h1 className="text-3xl font-black text-white mb-2">{tr('הכנת Perception Point', 'Perception Point Setup')}</h1>
+        <h1 className="text-3xl font-black text-white mb-2">{title}</h1>
         <p className="text-slate-400">{tr('עקוב אחרי התקדמות ההכנה שלך', 'Follow your setup progress')}</p>
       </motion.div>
 

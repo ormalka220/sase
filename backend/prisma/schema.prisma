@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── Role / Type Enums ────────────────────────────────────────────────────────
@@ -57,6 +58,7 @@ enum OrderStatus {
   PROVISIONING_STARTED
   PP_ORG_CREATED
   PP_ADMIN_INVITED
+  PENDING_SPOTNET_ASSIGNMENT
   READY_FOR_ONBOARDING
 }
 

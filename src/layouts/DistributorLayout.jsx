@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   LayoutDashboard, Building2, BarChart3, Settings2,
-  ChevronLeft, Bell, LogOut, ShoppingCart
+  ChevronLeft, Bell, LogOut, ShoppingCart, ShieldCheck
 } from 'lucide-react'
 import { CDataLogo, CDataMark } from '../components/Logos'
 import ProductSwitch from '../components/ProductSwitch'
@@ -12,10 +12,11 @@ import { useLanguage } from '../context/LanguageContext'
 import LanguageSwitch from '../components/LanguageSwitch'
 import { getCommonLabels } from '../i18n/labels'
 
-const createNavItems = (labels) => [
+const createNavItems = (labels, isSuperAdmin, tr) => [
   { icon: LayoutDashboard, label: labels.navigation.dashboard, path: '/distribution/dashboard' },
   { icon: Building2, label: labels.navigation.integrators, path: '/distribution/integrators' },
   { icon: ShoppingCart, label: labels.navigation.orders, path: '/distribution/orders' },
+  ...(isSuperAdmin ? [{ icon: ShieldCheck, label: tr('הקצאות SpotNet', 'SpotNet Assignments'), path: '/distribution/spotnet-assignments' }] : []),
   { icon: BarChart3, label: labels.navigation.reports, path: '/distribution/reports' },
   { icon: Settings2, label: labels.navigation.settings, path: '/distribution/settings' },
 ]
@@ -28,11 +29,12 @@ export default function DistributorLayout() {
   const { user, logout } = useAuth()
   const { tr, isHebrew } = useLanguage()
   const labels = getCommonLabels(tr)
-  const navItems = createNavItems(labels)
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN'
+  const navItems = createNavItems(labels, isSuperAdmin, tr)
 
   const orgName = user?.organizationName || tr('C-DATA הפצה', 'C-DATA Distribution')
-  const userName = user?.name || labels.roles.admin
-  const roleLabel = user?.role?.replace(/_/g, ' ') || labels.roles.distributorAdmin
+  const userName = user?.name || tr('מנהל', 'Admin')
+  const roleLabel = user?.role?.replace(/_/g, ' ') || tr('מנהל מפיץ', 'Distributor Admin')
   const userInitials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const productLabel = product === 'all'
     ? labels.products.allProducts
@@ -44,7 +46,10 @@ export default function DistributorLayout() {
   `
 
   return (
-    <div className="min-h-screen bg-navy-900 flex rtl:flex-row-reverse" style={{ background: appBackground }}>
+    <div
+      className="min-h-screen bg-navy-900 flex"
+      style={{ background: appBackground, flexDirection: 'row' }}
+    >
       {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? 'w-60' : 'w-16'} flex-shrink-0 flex flex-col transition-all duration-300 relative z-20 sidebar-cdata`}
@@ -133,7 +138,7 @@ export default function DistributorLayout() {
         {/* Toggle button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`absolute top-14 w-6 h-6 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors ${isHebrew ? '-right-3 rtl:rotate-180' : '-left-3'}`}
+          className={`absolute top-14 w-6 h-6 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors ${isHebrew ? '-left-3' : '-right-3'}`}
           style={{ background: '#0B1929', border: '1px solid rgba(44,106,138,0.2)' }}
         >
           <ChevronLeft className={`w-3 h-3 transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} />

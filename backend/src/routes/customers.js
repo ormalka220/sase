@@ -5,6 +5,7 @@ const { requireRole, requireMinRole, ROLES } = require('../middleware/auth')
 const { NotFoundError, ForbiddenError, ValidationError } = require('../utils/errors')
 const { auditLog } = require('../utils/audit')
 const { parsePagination, paginatedResponse } = require('../utils/pagination')
+const { validateAdminEmailForPP } = require('../services/adminEmailValidationService')
 
 const router = express.Router()
 
@@ -15,6 +16,18 @@ const createCustomerSchema = z.object({
   adminName: z.string().min(2),
   adminEmail: z.string().email(),
   adminPhone: z.string().min(3),
+})
+
+// GET /api/customers/admin-email-availability?email=...
+router.get('/admin-email-availability', requireRole([ROLES.INTEGRATOR_ADMIN, ROLES.SUPER_ADMIN]), async (req, res, next) => {
+  try {
+    const email = String(req.query.email || '').trim()
+    const ignoreCustomerId = req.query.customerId ? String(req.query.customerId) : undefined
+    const result = await validateAdminEmailForPP(email, { ignoreCustomerId })
+    return res.json(result)
+  } catch (err) {
+    next(err)
+  }
 })
 
 // Derive the Prisma `where` filter that enforces ownership for the calling user
@@ -60,6 +73,11 @@ router.post('/', requireRole([ROLES.INTEGRATOR_ADMIN, ROLES.SUPER_ADMIN]), async
   try {
     const parsed = createCustomerSchema.safeParse(req.body)
     if (!parsed.success) throw new ValidationError('Invalid input', parsed.error.flatten())
+
+    const adminEmailValidation = await validateAdminEmailForPP(parsed.data.adminEmail)
+    if (!adminEmailValidation.ok) {
+      throw new ValidationError(adminEmailValidation.reason || 'Invalid admin email for Perception Point')
+    }
 
     const { role, orgId } = req.auth
     const integratorId = role === ROLES.INTEGRATOR_ADMIN ? orgId : parsed.data.integratorId
@@ -217,6 +235,39 @@ router.patch('/:id', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, ne
     })
 
     return res.json(updated)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// DELETE /api/customers/:id
+router.delete('/:id', requireMinRole(ROLES.INTEGRATOR_ADMIN), async (req, res, next) => {
+  try {
+    const baseWhere = await ownershipWhere(req.auth)
+    const existing = await prisma.customer.findFirst({
+      where: { id: req.params.id, ...baseWhere },
+      include: {
+        organization: { select: { id: true } },
+      },
+    })
+    if (!existing) throw new NotFoundError('Customer')
+
+    // Log before delete so we can preserve who/what was removed.
+    await auditLog({
+      entityType: 'CUSTOMER',
+      entityId: existing.id,
+      action: 'DELETED',
+      actor: req.auth,
+      oldState: { id: existing.id, companyName: existing.companyName },
+    })
+
+    await prisma.$transaction([
+      prisma.user.deleteMany({ where: { organizationId: existing.organization.id } }),
+      prisma.customer.delete({ where: { id: existing.id } }),
+      prisma.organization.delete({ where: { id: existing.organization.id } }),
+    ])
+
+    return res.status(204).send()
   } catch (err) {
     next(err)
   }
