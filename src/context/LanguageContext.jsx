@@ -27,6 +27,14 @@ export function LanguageProvider({ children }) {
     const rtl = language === 'he'
     html.lang = language
     html.dir = rtl ? 'rtl' : 'ltr'
+
+    // Add rtl/ltr classes to document element for CSS selectors
+    html.classList.remove('rtl', 'ltr')
+    html.classList.add(rtl ? 'rtl' : 'ltr')
+
+    // Also add to body for full coverage
+    document.body.classList.remove('rtl', 'ltr')
+    document.body.classList.add(rtl ? 'rtl' : 'ltr')
   }, [language])
 
   const value = useMemo(() => ({
@@ -45,4 +53,3 @@ export function useLanguage() {
   if (!ctx) throw new Error('useLanguage must be used within LanguageProvider')
   return ctx
 }
-

@@ -9,15 +9,16 @@ import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import ProductSwitch from '../components/ProductSwitch'
 import LanguageSwitch from '../components/LanguageSwitch'
+import { getCommonLabels } from '../i18n/labels'
 
-const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/integrator/dashboard' },
-  { icon: Users, label: 'Customers', path: '/integrator/customers' },
-  { icon: ShoppingCart, label: 'Orders', path: '/integrator/orders' },
-  { icon: CheckSquare, label: 'Onboarding', path: '/integrator/onboarding' },
-  { icon: FileText, label: 'Billing', path: '/integrator/billing' },
-  { icon: BarChart3, label: 'Reports', path: '/integrator/reports' },
-  { icon: Settings, label: 'Settings', path: '/integrator/settings' },
+const createNavItems = (labels) => [
+  { icon: LayoutDashboard, label: labels.navigation.dashboard, path: '/integrator/dashboard' },
+  { icon: Users, label: labels.navigation.customers, path: '/integrator/customers' },
+  { icon: ShoppingCart, label: labels.navigation.orders, path: '/integrator/orders' },
+  { icon: CheckSquare, label: labels.navigation.onboarding, path: '/integrator/onboarding' },
+  { icon: FileText, label: labels.navigation.billing, path: '/integrator/billing' },
+  { icon: BarChart3, label: labels.navigation.reports, path: '/integrator/reports' },
+  { icon: Settings, label: labels.navigation.settings, path: '/integrator/settings' },
 ]
 
 export default function IntegratorLayout() {
@@ -25,6 +26,8 @@ export default function IntegratorLayout() {
   const location = useLocation()
   const { user, logout } = useAuth()
   const { tr } = useLanguage()
+  const labels = getCommonLabels(tr)
+  const navItems = createNavItems(labels)
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const integrator = user?.integrator || { name: 'Channel Partner Inc' }
@@ -53,8 +56,8 @@ export default function IntegratorLayout() {
           <CDataMark className={sidebarOpen ? 'w-8 h-8 flex-shrink-0' : 'w-8 h-8'} />
           {sidebarOpen && (
             <div className="min-w-0 leading-tight">
-              <div className="font-black text-white text-sm tracking-tight">Integrator</div>
-              <div className="text-[10px] font-medium text-cdata-400">Portal</div>
+              <div className="font-black text-white text-sm tracking-tight">{labels.portals.integrator}</div>
+              <div className="text-[10px] font-medium text-cdata-400">{labels.portals.integratorPortal}</div>
             </div>
           )}
         </div>
@@ -69,8 +72,8 @@ export default function IntegratorLayout() {
               <div className="min-w-0">
                 <div className="text-xs font-semibold text-white truncate">{integrator.name}</div>
                 <div className="text-[10px] px-2 py-0.5 rounded-full inline-flex mt-1 bg-cdata-500/15 text-cdata-300 border border-cdata-500/30">
-                  Partner
-                </div>
+                {labels.portals.integrator}
+              </div>
               </div>
             </div>
           </div>
@@ -102,19 +105,19 @@ export default function IntegratorLayout() {
         {/* Branding strip */}
         {sidebarOpen && (
           <div className="mx-3 mb-3 p-2.5 rounded-xl border border-white/5 bg-white/[0.02]">
-            <div className="text-[9px] text-slate-600 mb-1.5 text-center">Powered by</div>
+            <div className="text-[9px] text-slate-600 mb-1.5 text-center">{labels.ui.poweredBy}</div>
             <CDataLogo className="h-5 mx-auto" />
           </div>
         )}
 
         {/* Bottom actions */}
         <div className="px-2 py-4 border-t border-white/5 space-y-1">
-          <button 
+          <button
             onClick={() => { logout(); navigate('/integrator/login') }}
             className="nav-item w-full text-slate-600 hover:text-slate-400"
           >
             <LogOut className="w-4 h-4 flex-shrink-0" />
-            {sidebarOpen && <span className="text-sm">Logout</span>}
+            {sidebarOpen && <span className="text-sm">{labels.navigation.logout}</span>}
           </button>
         </div>
 
@@ -148,9 +151,9 @@ export default function IntegratorLayout() {
               </button>
             )}
             <div>
-              <div className="text-xs text-slate-500">Integrator Portal</div>
-              <div className="text-sm font-semibold text-white">{integrator.name}</div>
-            </div>
+            <div className="text-xs text-slate-500">{labels.portals.integratorPortal}</div>
+            <div className="text-sm font-semibold text-white">{integrator.name}</div>
+          </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -163,7 +166,7 @@ export default function IntegratorLayout() {
             <div className="flex items-center gap-2.5 pl-3 border-l border-white/5">
               <div className="text-right">
                 <div className="text-xs font-medium text-white">{userName}</div>
-                <div className="text-[10px] text-slate-500">Channel Manager</div>
+                <div className="text-[10px] text-slate-500">{labels.roles.distributorAdmin}</div>
               </div>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"

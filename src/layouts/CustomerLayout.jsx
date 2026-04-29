@@ -6,22 +6,26 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import LanguageSwitch from '../components/LanguageSwitch'
+import { useLanguage } from '../context/LanguageContext'
+import { getCommonLabels } from '../i18n/labels'
 
-const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/customer/dashboard' },
-  { icon: Shield, label: 'Security', path: '/customer/security' },
-  { icon: CheckSquare, label: 'Protection', path: '/customer/protection' },
-  { icon: AlertTriangle, label: 'Onboarding', path: '/customer/onboarding' },
-  { icon: BarChart3, label: 'Threats', path: '/customer/threats' },
-  { icon: BarChart3, label: 'Reports', path: '/customer/reports' },
-  { icon: FileText, label: 'Billing', path: '/customer/billing' },
-  { icon: Settings, label: 'Settings', path: '/customer/settings' },
+const createNavItems = (labels) => [
+  { icon: LayoutDashboard, label: labels.navigation.overview, path: '/customer/overview' },
+  { icon: Shield, label: labels.navigation.security, path: '/customer/security' },
+  { icon: CheckSquare, label: labels.navigation.onboarding, path: '/customer/onboarding' },
+  { icon: AlertTriangle, label: labels.navigation.threats, path: '/customer/threats' },
+  { icon: BarChart3, label: labels.navigation.reports, path: '/customer/reports' },
+  { icon: FileText, label: labels.navigation.billing, path: '/customer/billing' },
+  { icon: Settings, label: labels.navigation.settings, path: '/customer/settings' },
 ]
 
 export default function CustomerLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { tr } = useLanguage()
+  const labels = getCommonLabels(tr)
+  const navItems = createNavItems(labels)
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const customer = user?.customer || { name: 'Acme Corporation' }
@@ -50,8 +54,8 @@ export default function CustomerLayout() {
           <Lock className="w-8 h-8 text-cdata-400 flex-shrink-0" />
           {sidebarOpen && (
             <div className="min-w-0 leading-tight">
-              <div className="font-black text-white text-sm tracking-tight">Perception</div>
-              <div className="text-[10px] font-medium text-cdata-400">Point</div>
+              <div className="font-black text-white text-sm tracking-tight">{labels.products.perceptionPoint}</div>
+              <div className="text-[10px] font-medium text-cdata-400">{labels.portals.customerPortal}</div>
             </div>
           )}
         </div>
@@ -66,7 +70,7 @@ export default function CustomerLayout() {
               <div className="min-w-0">
                 <div className="text-xs font-semibold text-white truncate">{customer.name}</div>
                 <div className="text-[10px] px-2 py-0.5 rounded-full inline-flex mt-1 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  Protected
+                  {labels.ui.error}
                 </div>
               </div>
             </div>
@@ -98,12 +102,12 @@ export default function CustomerLayout() {
 
         {/* Bottom actions */}
         <div className="px-2 py-4 border-t border-white/5 space-y-1">
-          <button 
+          <button
             onClick={() => { logout(); navigate('/customer/login') }}
             className="nav-item w-full text-slate-600 hover:text-slate-400"
           >
             <LogOut className="w-4 h-4 flex-shrink-0" />
-            {sidebarOpen && <span className="text-sm">Logout</span>}
+            {sidebarOpen && <span className="text-sm">{labels.navigation.logout}</span>}
           </button>
         </div>
 
@@ -129,9 +133,9 @@ export default function CustomerLayout() {
         >
           <div className="flex items-center gap-2">
             <div>
-              <div className="text-xs text-slate-500">Protected with</div>
-              <div className="text-sm font-semibold text-white">Perception Point</div>
-            </div>
+            <div className="text-xs text-slate-500">{labels.customer.overviewTitle}</div>
+            <div className="text-sm font-semibold text-white">{labels.products.perceptionPoint}</div>
+          </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -142,7 +146,7 @@ export default function CustomerLayout() {
             <div className="flex items-center gap-2.5 pl-3 border-l border-white/5">
               <div className="text-right">
                 <div className="text-xs font-medium text-white">{userName}</div>
-                <div className="text-[10px] text-slate-500">Organization Admin</div>
+                <div className="text-[10px] text-slate-500">{labels.roles.customerAdmin}</div>
               </div>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"

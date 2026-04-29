@@ -1,9 +1,15 @@
-import React, { Suspense, lazy } from 'react'
+import React, { Suspense, lazy, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth, ROLE_PORTAL } from './context/AuthContext'
 import { ProductProvider, useProduct } from './context/ProductContext'
 import { CustomerProductProvider, useCustomerProducts } from './context/CustomerProductContext'
 import { LanguageProvider, useLanguage } from './context/LanguageContext'
+import { initAuditTools } from './i18n/auditHelper'
+
+// Initialize i18n audit tools in development
+if (process.env.NODE_ENV === 'development') {
+  initAuditTools()
+}
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 
