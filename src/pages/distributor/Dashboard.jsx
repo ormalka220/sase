@@ -13,6 +13,7 @@ import { integrators, customers, customerEnvironments, growthData, getCustomersB
 import { useProduct } from '../../context/ProductContext'
 import { workspaceApi } from '../../api/workspaceApi'
 import { useLanguage } from '../../context/LanguageContext'
+import { getCommonLabels } from '../../i18n/labels'
 import KPICard from '../../components/distribution/KPICard'
 import PageHeader from '../../components/distribution/PageHeader'
 import ApprovalQueuePreview from '../../components/distribution/ApprovalQueuePreview'
@@ -41,7 +42,8 @@ const itemVariants = {
 export default function DistributorDashboard() {
   const navigate = useNavigate()
   const { product, config } = useProduct()
-  const { tr, isHebrew } = useLanguage()
+  const { tr } = useLanguage()
+  const labels = getCommonLabels(tr)
   const [ppOverview, setPpOverview] = useState(null)
   const [ppError, setPpError] = useState('')
   const [ppLoading, setPpLoading] = useState(false)
@@ -84,9 +86,9 @@ export default function DistributorDashboard() {
       >
         {/* Page Header */}
         <PageHeader
-          title="Distribution Dashboard"
-          subtitle="Perception Point"
-          description="Live overview of all integrators, customers, orders, and onboarding"
+          title={labels.distribution.dashboardTitle}
+          subtitle={labels.products.perceptionPoint}
+          description={labels.distribution.overviewSubtitle}
           icon={LayoutDashboard}
         />
 
@@ -115,13 +117,13 @@ export default function DistributorDashboard() {
               <CheckCircle className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-white">System Status</div>
-              <div className="text-xs text-slate-500">All services operational</div>
+              <div className="text-sm font-semibold text-white">{labels.distribution.systemStatus}</div>
+              <div className="text-xs text-slate-500">{labels.distribution.allServicesOperational}</div>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-emerald-400 font-semibold">Live</span>
+            <span className="text-xs text-emerald-400 font-semibold">{labels.ui.live}</span>
           </div>
         </motion.div>
 
@@ -134,81 +136,81 @@ export default function DistributorDashboard() {
         >
           <KPICard
             icon={Building2}
-            label="Total Integrators"
+            label={labels.distribution.totalIntegrators}
             value={integrators.length}
             trend={12}
             trendDirection="up"
-            explanation="Active channel partners"
+            explanation={tr('שותפי ערוץ פעילים', 'Active channel partners')}
             status="active"
           />
 
           <KPICard
             icon={Users}
-            label="Active Customers"
+            label={labels.distribution.activeCustomers}
             value={customers.length}
             trend={8}
             trendDirection="up"
-            explanation="Across all integrators"
+            explanation={tr('בכל האינטגרטורים', 'Across all integrators')}
             status="active"
           />
 
           <KPICard
             icon={AlertTriangle}
-            label="Pending Approvals"
+            label={labels.distribution.pendingApprovals}
             value={orders.filter(o => ['PENDING_APPROVAL', 'PENDING_CDATA_APPROVAL'].includes(o.status)).length}
             trend={null}
-            explanation="Waiting for review"
+            explanation={tr('ממתינים לבדיקה', 'Waiting for review')}
             status="warning"
           />
 
           <KPICard
             icon={Mail}
-            label="Active PP Customers"
+            label={labels.distribution.activePpCustomers}
             value={ppOverview?.kpis?.totalCustomers || 0}
             trend={15}
             trendDirection="up"
-            explanation="Perception Point deployments"
+            explanation={tr('פיתוחי Perception Point', 'Perception Point deployments')}
             status="active"
           />
 
           <KPICard
             icon={Banknote}
-            label="Monthly Est. Revenue"
+            label={labels.distribution.monthlyEstRevenue}
             value={orders.filter(o => o.status === 'ACTIVE').reduce((sum, o) => sum + (o.totalAmount || 0), 0) || 0}
             trend={18}
             trendDirection="up"
-            explanation="From PP subscriptions"
+            explanation={tr('מנויי Perception Point', 'From PP subscriptions')}
             status="active"
             format="currency"
           />
 
           <KPICard
             icon={Shield}
-            label="Mailboxes Protected"
+            label={labels.distribution.mailboxesProtected}
             value={Math.floor(Math.random() * 500000) + 100000}
             trend={22}
             trendDirection="up"
-            explanation="Across connected environments"
+            explanation={tr('בכל הסביבות המחוברות', 'Across connected environments')}
             status="active"
             format="number"
           />
 
           <KPICard
             icon={Zap}
-            label="Avg Onboarding Days"
+            label={labels.distribution.avgOnboardingDays}
             value={8}
             trend={-5}
             trendDirection="down"
-            explanation="Faster than last month"
+            explanation={tr('מהר יותר מהחודש שעבר', 'Faster than last month')}
             status="active"
           />
 
           <KPICard
             icon={AlertCircle}
-            label="Failed Onboarding"
+            label={labels.distribution.failedOnboarding}
             value={orders.filter(o => o.status === 'FAILED').length}
             trend={null}
-            explanation="Requires attention"
+            explanation={tr('דורש תשומת לב', 'Requires attention')}
             status={orders.filter(o => o.status === 'FAILED').length > 0 ? 'critical' : 'active'}
           />
         </motion.div>
@@ -248,8 +250,8 @@ export default function DistributorDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-slate-500 text-sm mt-0.5">Distributor Overview · {product === 'all' ? 'All Products' : 'FortiSASE'}</p>
+        <h1 className="text-2xl font-bold text-white">{labels.navigation.dashboard}</h1>
+        <p className="text-slate-500 text-sm mt-0.5">{tr('סקירה מפיץ', 'Distributor Overview')} · {product === 'all' ? labels.products.allProducts : labels.products.fortiSASE}</p>
       </div>
 
       {/* FortiSASE KPI Cards */}
@@ -261,7 +263,7 @@ export default function DistributorDashboard() {
             </div>
           </div>
           <div className="text-3xl font-black text-white mb-1">{scopedIntegrators.length}</div>
-          <div className="text-sm text-slate-500">Integrators</div>
+          <div className="text-sm text-slate-500">{labels.navigation.integrators}</div>
         </div>
 
         <div className="stat-card">
@@ -271,7 +273,7 @@ export default function DistributorDashboard() {
             </div>
           </div>
           <div className="text-3xl font-black text-white mb-1">{scopedCustomers.length}</div>
-          <div className="text-sm text-slate-500">Customers</div>
+          <div className="text-sm text-slate-500">{labels.navigation.customers}</div>
         </div>
 
         <div className="stat-card">
@@ -281,7 +283,7 @@ export default function DistributorDashboard() {
             </div>
           </div>
           <div className="text-3xl font-black text-white mb-1">{scopedProtectedUsers.toLocaleString()}</div>
-          <div className="text-sm text-slate-500">Protected Users</div>
+          <div className="text-sm text-slate-500">{tr('משתמשים מוגנים', 'Protected Users')}</div>
         </div>
 
         <div className="stat-card">
@@ -291,13 +293,13 @@ export default function DistributorDashboard() {
             </div>
           </div>
           <div className="text-3xl font-black text-white mb-1">{scopedAlerts}</div>
-          <div className="text-sm text-slate-500">Active Alerts</div>
+          <div className="text-sm text-slate-500">{tr('התראות פעילות', 'Active Alerts')}</div>
         </div>
       </div>
 
       {/* Chart */}
       <div className="glass glow-border rounded-2xl p-5">
-        <div className="text-sm font-semibold text-white mb-3">Customer Growth</div>
+        <div className="text-sm font-semibold text-white mb-3">{labels.components.customerGrowth}</div>
         <ResponsiveContainer width="100%" height={180}>
           <AreaChart data={growthData}>
             <defs>

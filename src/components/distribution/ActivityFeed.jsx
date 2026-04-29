@@ -1,6 +1,8 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Clock, CheckCircle, Mail, Zap, Building2, FileText } from 'lucide-react'
+import { useLanguage } from '../../context/LanguageContext'
+import { getCommonLabels } from '../../i18n/labels'
 
 const itemVariants = {
   hidden: { opacity: 0, x: -10 },
