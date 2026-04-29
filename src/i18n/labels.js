@@ -430,7 +430,149 @@ export function getCommonLabels(tr) {
       viewer: tr('צופה', 'Viewer'),
     },
 
-    // ==================== MISSING KEY FALLBACK ====================
+    // ==================== PAGE-SPECIFIC STRINGS ====================
+    // Distributor Dashboard specific
+    distributorDashboard: {
+      title: tr('לוח בקרה הפצה', 'Distribution Dashboard'),
+      subtitle: tr('סקירה חיה של כל הנתונים', 'Live overview of all data'),
+      systemStatus: tr('מצב המערכת', 'System Status'),
+      allServicesOperational: tr('כל השירותים פעילים', 'All services operational'),
+      live: tr('חי', 'Live'),
+      totalIntegrators: tr('סה"כ אינטגרטורים', 'Total Integrators'),
+      totalCustomers: tr('סה"כ לקוחות', 'Total Customers'),
+      pendingApprovals: tr('אישורים ממתינים', 'Pending Approvals'),
+    },
+
+    // Distributor Integrators List
+    distributorIntegrators: {
+      channelPartners: tr('שותפי ערוץ', 'Channel Partners'),
+      createNewPartner: tr('צור שותף חדש', 'Create New Partner'),
+      searchByNameOrEmail: tr('חיפוש לפי שם או דוא"ל', 'Search by name or email...'),
+      noIntegratorsYet: tr('אין אינטגרטורים עדיין', 'No integrators yet'),
+      noMatchingIntegrators: tr('אין אינטגרטורים תואמים', 'No matching integrators'),
+    },
+
+    // Integrator Dashboard specific
+    integratorDashboard: {
+      salesAndOpsHub: tr('מרכז מכירות ותפעול', 'Sales & Operations Hub'),
+      activeCustomersCount: tr('לקוחות פעילים', 'Active Customers'),
+      pendingOrdersCount: tr('הזמנות ממתינות', 'Pending Orders'),
+      recentActivity: tr('פעילות אחרונה', 'Recent Activity'),
+    },
+
+    // Customer Dashboard / Overview
+    customerDashboard: {
+      organizationProtected: tr('הארגון מוגן ופעיל', 'Organization is protected and active'),
+      overallSecurityScore: tr('ציון אבטחה כולל', 'Overall Security Score'),
+      protectedUsers: tr('משתמשים מוגנים', 'Protected Users'),
+      openAlerts: tr('התראות פתוחות', 'Open Alerts'),
+      securityPostureDetails: tr('פירוט ציון אבטחה', 'Security Posture — Details'),
+      emailProtectionStatus: tr('מצב הגנת דוא"ל', 'Email Protection Status'),
+      allSystemsSecure: tr('כל המערכות מאובטחות ופועלות כראוי', 'All systems are secure and functioning normally'),
+      allServicesActive: tr('כל השירותים פעילים', 'All services active'),
+    },
+
+    // Customer Security page
+    customerSecurity: {
+      protectionStatus: tr('מצב הגנה', 'Protection Status'),
+      organizationHighlyProtected: tr('הארגון שלך מוגן ברמה גבוהה מאוד', 'Your organization is protected with high-level'),
+      activeServices: tr('שירותים פעילים', 'Active Services'),
+      openEvents: tr('אירועים פתוחים', 'Open Events'),
+      complianceStatus: tr('עמידה בתקנים', 'Compliance Status'),
+      emailSecurity: tr('אבטחת אימייל', 'Email Security'),
+      browserSecurity: tr('אבטחת דפדפן', 'Browser Security'),
+      sovereignSase: tr('SASE ריבוני', 'Sovereign SASE'),
+    },
+
+    // Customer Users/Devices/Sites
+    customerUsers: {
+      department: tr('מחלקה', 'Department'),
+      threats: tr('איומים', 'Threats'),
+    },
+
+    customerDevices: {
+      allDevices: tr('כל ההתקנים', 'All Devices'),
+      windows: tr('Windows', 'Windows'),
+      macOS: tr('macOS', 'macOS'),
+      nonCompliant: tr('לא תקני', 'Non-Compliant'),
+      compliant: tr('תקני', 'Compliant'),
+      managed: tr('מנוהל', 'Managed'),
+      unmanaged: tr('לא מנוהל', 'Unmanaged'),
+      partial: tr('חלקי', 'Partial'),
+      lowRisk: tr('סיכון נמוך', 'Low Risk'),
+      mediumRisk: tr('סיכון בינוני', 'Medium Risk'),
+      highRisk: tr('סיכון גבוה', 'High Risk'),
+      lastSeen: tr('נצפה לאחרונה', 'Last Seen'),
+    },
+
+    // Reports and Analytics
+    reports: {
+      monthlySecurityReport: tr('דוח אבטחה חודשי', 'Monthly Security Report'),
+      threatIntelligenceReport: tr('דוח Threat Intelligence', 'Threat Intelligence Report'),
+      executiveReport: tr('דוח Executive', 'Executive Report'),
+      phishing: 'Phishing',
+      malware: 'Malware',
+      bec: 'BEC',
+      june: tr('יוני', 'June'),
+      july: tr('יולי', 'July'),
+      august: tr('אוגוסט', 'August'),
+      september: tr('ספטמבר', 'September'),
+      october: tr('אוקטובר', 'October'),
+      november: tr('נובמבר', 'November'),
+    },
+
+    // Onboarding steps/progress
+    onboardingSteps: {
+      createOrganization: tr('צור ארגון', 'Create Organization'),
+      inviteAdmin: tr('הזמן אדמין', 'Invite Admin'),
+      connectEmailServices: tr('התחבר למוקדי דוא"ל', 'Connect Email Services'),
+      configureMxRecords: tr('הגדר MX Records', 'Configure MX Records'),
+      completeOnboarding: tr('השלם קליטה', 'Complete Onboarding'),
+      organizationCreated: tr('ארגון נוצר', 'Organization Created'),
+      adminInvited: tr('אדמין הוזמן', 'Admin Invited'),
+      microsoftConnected: tr('Microsoft 365 מחובר', 'Microsoft 365 Connected'),
+      gmailConnected: tr('Gmail מחובר', 'Gmail Connected'),
+      ppOrgCreated: tr('ארגון PP נוצר', 'PP Organization Created'),
+      mxRecordsPending: tr('DNS/Mail Flow ממתין', 'DNS/Mail Flow Pending'),
+    },
+
+    // Order related
+    orders: {
+      orderTimeline: tr('ציר זמן הזמנה', 'Order Timeline'),
+      draft: tr('טיוטה', 'Draft'),
+      submitted: tr('הוגש', 'Submitted'),
+      paymentPending: tr('ממתין לתשלום', 'Payment Pending'),
+      awaitingApproval: tr('ממתין לאישור', 'Awaiting Approval'),
+      approved: tr('אושר', 'Approved'),
+      provisioning: tr('בהקמה', 'Provisioning'),
+      active: tr('פעיל', 'Active'),
+      failed: tr('נכשל', 'Failed'),
+      cancelled: tr('בוטל', 'Cancelled'),
+      current: tr('נוכחי', 'CURRENT'),
+      customer: tr('לקוח', 'Customer'),
+      package: tr('חבילה', 'Package'),
+      billingCycle: tr('מחזור חיוב', 'Billing Cycle'),
+      billingMethod: tr('שיטת חיוב', 'Billing Method'),
+      invoiceOnly: tr('חשבונית בלבד', 'Invoice Only'),
+      usageBasedBilling: tr('חיוב על בסיס שימוש', 'Usage-Based Billing'),
+      notesFromIntegrator: tr('הערות מהאינטגרטור', 'Notes from integrator'),
+      estimatedUsers: tr('משתמשים משוערים', 'Est. Users'),
+      estimatedAmount: tr('סכום משוער', 'Est. Amount'),
+      approveOrder: tr('אשר הזמנה', 'Approve Order'),
+      rejectOrder: tr('דחה הזמנה', 'Reject Order'),
+      rejectionReason: tr('סיבת דחייה (חובה)', 'Rejection Reason (required)'),
+      confirmRejection: tr('אשר דחייה', 'Confirm Rejection'),
+      addInternalNote: tr('הוסף הערה פנימית (אופציונלי)', 'Add Internal Note (optional)'),
+      confirmApproval: tr('אשר אישור', 'Confirm Approval'),
+      orderSubmittedForApproval: tr('ההזמנה הוגשה לאישור CData', 'Order Submitted for CData Approval'),
+      sku: tr('SKU', 'SKU'),
+      from: tr('מ', 'from'),
+      or: tr('או', 'or'),
+      mailbox: tr('תיבת דוא"ל', 'mailbox'),
+      month: tr('חודש', 'month'),
+    },
+
+    // MISSING KEY FALLBACK ====================
     // This is used by the tr() helper to indicate missing keys
     // It should not be directly accessed
   }

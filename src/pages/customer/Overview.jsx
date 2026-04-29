@@ -11,6 +11,7 @@ import {
   threatData,
 } from '../../data/mockData'
 import { useLanguage } from '../../context/LanguageContext'
+import { getCommonLabels } from '../../i18n/labels'
 
 const CUSTOMER_ID = 'c1'
 const env = getCustomerEnvironment(CUSTOMER_ID)
@@ -58,6 +59,7 @@ function ThreatTooltip({ active, payload, label }) {
 
 export default function CustomerOverview() {
   const { tr } = useLanguage()
+  const labels = getCommonLabels(tr)
   const handleCopyUser = () => {
     navigator.clipboard.writeText(customer.fortisaseUser).catch(() => {})
   }
@@ -68,9 +70,9 @@ export default function CustomerOverview() {
       {/* ── 1. Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">סקירה כללית</h1>
+          <h1 className="text-2xl font-bold text-white">{labels.customer.overviewTitle}</h1>
           <p className="text-slate-500 text-sm mt-0.5">
-            {customer.companyName} · FortiSASE {customer.packageName}
+            {customer.companyName} · {labels.products.fortiSASE} {customer.packageName}
           </p>
         </div>
         <a

@@ -3,17 +3,20 @@ import { ShieldCheck, Mail, Layers } from 'lucide-react'
 import { useProduct } from '../context/ProductContext'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
+import { getCommonLabels } from '../i18n/labels'
 
-const ALL_TABS = [
-  { key: 'all', labelHe: 'הכל', labelEn: 'All', Icon: Layers, gradient: 'linear-gradient(135deg, #7C3AED, #4C1D95)', glow: 'rgba(124,58,237,0.4)' },
-  { key: 'sase', labelHe: 'FortiSASE', labelEn: 'FortiSASE', Icon: ShieldCheck, gradient: 'linear-gradient(135deg, #DC2626, #F97316)', glow: 'rgba(220,38,38,0.4)' },
-  { key: 'perception', labelHe: 'Perception Point', labelEn: 'Perception Point', Icon: Mail, gradient: 'linear-gradient(135deg, #2563EB, #7C3AED)', glow: 'rgba(37,99,235,0.4)' },
+const createAllTabs = (labels) => [
+  { key: 'all', label: labels.products.allProducts, Icon: Layers, gradient: 'linear-gradient(135deg, #7C3AED, #4C1D95)', glow: 'rgba(124,58,237,0.4)' },
+  { key: 'sase', label: labels.products.fortiSASE, Icon: ShieldCheck, gradient: 'linear-gradient(135deg, #DC2626, #F97316)', glow: 'rgba(220,38,38,0.4)' },
+  { key: 'perception', label: labels.products.perceptionPoint, Icon: Mail, gradient: 'linear-gradient(135deg, #2563EB, #7C3AED)', glow: 'rgba(37,99,235,0.4)' },
 ]
 
 export default function ProductSwitch({ className = '', allowedProducts }) {
   const { product, setProduct } = useProduct()
   const { user } = useAuth()
-  const { isHebrew } = useLanguage()
+  const { tr } = useLanguage()
+  const labels = getCommonLabels(tr)
+  const ALL_TABS = createAllTabs(labels)
 
   // Admin/integrator/distributor users see all tabs (they manage multiple customers)
   const isAdmin = user && !['CUSTOMER_ADMIN', 'CUSTOMER_VIEWER'].includes(user.role)
@@ -34,7 +37,7 @@ export default function ProductSwitch({ className = '', allowedProducts }) {
       className={`flex items-center gap-0.5 p-1 rounded-xl ${className}`}
       style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
     >
-      {tabs.map(({ key, labelHe, labelEn, Icon, gradient, glow }) => (
+      {tabs.map(({ key, label, Icon, gradient, glow }) => (
         <button
           key={key}
           onClick={() => setProduct(key)}
@@ -44,7 +47,7 @@ export default function ProductSwitch({ className = '', allowedProducts }) {
           style={product === key ? { background: gradient, boxShadow: `0 2px 8px ${glow}` } : {}}
         >
           <Icon className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{isHebrew ? labelHe : labelEn}</span>
+          <span className="hidden sm:inline">{label}</span>
         </button>
       ))}
     </div>
