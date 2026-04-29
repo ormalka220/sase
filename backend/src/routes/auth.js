@@ -23,7 +23,9 @@ router.post('/login', async (req, res, next) => {
     const parsed = loginSchema.safeParse(req.body)
     if (!parsed.success) throw new ValidationError('Invalid input', parsed.error.flatten())
 
-    const { email } = parsed.data
+    const { email, password } = parsed.data
+    const demoUsersEnabled =
+      process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_USERS === 'true'
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -43,10 +45,14 @@ router.post('/login', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid credentials' })
     }
 
-    // TODO: compare parsed.data.password with user.passwordHash using bcrypt
-    // For now, demo mode accepts any password for seeded users
-    if (process.env.NODE_ENV === 'production' && !user.passwordHash) {
-      return res.status(401).json({ error: 'Invalid credentials' })
+    // TODO: compare parsed.data.password with user.passwordHash using bcrypt.
+    // For seeded demo users without password hashes, allow login only when
+    // demo mode is explicitly enabled and password is the expected demo value.
+    if (!user.passwordHash) {
+      const allowDemoLogin = demoUsersEnabled && password === 'demo'
+      if (!allowDemoLogin) {
+        return res.status(401).json({ error: 'Invalid credentials' })
+      }
     }
 
     await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } })
