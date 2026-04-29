@@ -121,9 +121,13 @@ router.get('/me', authenticate, async (req, res, next) => {
   }
 })
 
-// GET /api/auth/demo-users — returns demo login shortcuts (dev only)
+// GET /api/auth/demo-users — returns demo login shortcuts.
+// In production this is disabled by default unless explicitly enabled.
 router.get('/demo-users', async (req, res, next) => {
-  if (process.env.NODE_ENV === 'production') {
+  const demoUsersEnabled =
+    process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_USERS === 'true'
+
+  if (!demoUsersEnabled) {
     return res.status(404).json({ error: 'Not found' })
   }
   try {
